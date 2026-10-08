@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "timestamp": "2026-10-08T17:11:27.623470+00:00",
+    "case_id": "RMA-79487",
+    "order_id": "ORD-7834",
+    "serial_number": "132422000100",
+    "product_value": 3000.0,
+    "tier": "T4",
+    "disposition": "ESCALATE",
+    "risk_score": 8,
+    "anomaly_score": 0.12,
+    "anomaly_region": "Pristine Hardware Surface (Factory Standard)",
+    "cited_clause": "Ambiguous Defect / Manual Inspection Required",
+    "source_doc": "Warranty - GIGABYTE Global.pdf",
+    "page": 3,
+    "fraud_flags": [],
+    "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "block_hash": "1c6a36616140b627e2b7db2da0b43acca4fccafc68a372de89e9ddef1f6fdcfe"
+  }
+]

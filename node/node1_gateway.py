@@ -388,9 +388,9 @@ def get_cases():
                         clean_data = [
                             c for c in data
                             if not str(c.get("orderId", "")).upper().startswith(("ORD-CONCUR", "ORD-AUDIT", "ORD-STRESS", "ORD-TEST", "TEST-", "ORD-BOMB"))
-                            and not str(c.get("serialNumber", "")).upper().startswith(("SN-STRESS", "SN-TRAVERSAL", "TEST-"))
+                            and not str(c.get("serialNumber", "")).upper().startswith(("SN-STRESS", "SN-TRAVERSAL", "TEST-", "SN-INTAKE-PENDING"))
                             and not str(c.get("id", "")).upper().startswith(("RMA-CONCUR", "RMA-AUDIT", "RMA-TEST", "RMA-1042", "RMA-1045", "RMA-1052", "RMA-1039", "RMA-1036", "RMA-1028", "RMA-78758", "RMA-73502", "RMA-73649", "RMA-75767"))
-                            and str(c.get("orderId", "")).upper() not in ("ORD-7654", "ORD-6287", "ORD-7634")
+                            and str(c.get("orderId", "")).upper() not in ("ORD-7654", "ORD-6287", "ORD-7634", "ORD-783", "ORD-78", "ORD-7", "ORD-", "OR", "O")
                         ]
                         return {"count": len(clean_data), "cases": clean_data}
             except Exception:
@@ -404,9 +404,9 @@ def save_case(case_data: Dict[str, Any] = Body(...)):
     s_num = str(case_data.get("serialNumber", ""))
     if (
         oid.upper().startswith(("ORD-CONCUR", "ORD-AUDIT", "ORD-STRESS", "ORD-TEST", "TEST-", "ORD-BOMB")) or
-        s_num.upper().startswith(("SN-STRESS", "SN-TRAVERSAL", "TEST-")) or
+        s_num.upper().startswith(("SN-STRESS", "SN-TRAVERSAL", "TEST-", "SN-INTAKE-PENDING")) or
         cid.upper().startswith(("RMA-CONCUR", "RMA-AUDIT", "RMA-TEST", "RMA-1042", "RMA-1045", "RMA-1052", "RMA-1039", "RMA-1036", "RMA-1028", "RMA-78758", "RMA-73502", "RMA-73649", "RMA-75767")) or
-        oid.upper() in ("ORD-7654", "ORD-6287", "ORD-7634")
+        oid.upper() in ("ORD-7654", "ORD-6287", "ORD-7634", "ORD-783", "ORD-78", "ORD-7", "ORD-", "OR", "O")
     ):
         return {"status": "SKIPPED_SYNTHETIC", "case_id": cid}
 
@@ -449,6 +449,7 @@ def record_case_decision(case_id: str, payload: Dict[str, Any] = Body(...)):
     reason = payload.get("reason", "Technician reviewed and confirmed.")
     operator = payload.get("operator", "TECH-402")
     timestamp = datetime.now(timezone.utc).isoformat()
+    norm_id = case_id.replace("-", "").upper()
     
     with CASES_LOCK:
         if os.path.exists(CASES_FILE):
@@ -456,7 +457,9 @@ def record_case_decision(case_id: str, payload: Dict[str, Any] = Body(...)):
                 with open(CASES_FILE, "r", encoding="utf-8") as f:
                     existing = json.load(f)
                     for c in existing:
-                        if c.get("id") == case_id:
+                        cid = str(c.get("id", ""))
+                        oid = str(c.get("orderId", ""))
+                        if cid == case_id or oid == case_id or cid.replace("-", "").upper() == norm_id or oid.replace("-", "").upper() == norm_id:
                             c["st"] = decision
                             c["resolvedOperator"] = operator
                             c["resolvedReason"] = reason

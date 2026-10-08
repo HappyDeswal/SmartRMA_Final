@@ -27,19 +27,21 @@ const FAKE_CASE_IDS = new Set([
   'RMA-1042', 'RMA-1045', 'RMA-1052', 'RMA-1039', 'RMA-1036', 'RMA-1028', 'RMA-78758',
   'RMA-TEST-999', 'RMA-76781', 'RMA-76775', 'RMA-76774', 'RMA-76773', 'RMA-76771', 'RMA-76770',
   'RMA-76759', 'RMA-75198', 'RMA-75928', 'RMA-TEST-01', 'RMA-TEST-02',
-  'RMA-73502', 'RMA-73649', 'RMA-75767', 'ORD-7654', 'ORD-6287', 'ORD-7634'
+  'RMA-73502', 'RMA-73649', 'RMA-75767', 'ORD-7654', 'ORD-6287', 'ORD-7634',
+  'ORD-783', 'ORD-78', 'ORD-7', 'ORD-', 'OR', 'O',
+  'RMA-ORD783', 'RMA-ORD78', 'RMA-ORD7', 'RMA-ORD', 'RMA-OR', 'RMA-O'
 ]);
 
 function isSyntheticCase(id, orderId, serial) {
   const sId = String(id || '').toUpperCase();
   const sOrder = String(orderId || '').toUpperCase();
   const sSerial = String(serial || '').toUpperCase();
-  if (FAKE_CASE_IDS.has(String(id || ''))) return true;
+  if (FAKE_CASE_IDS.has(String(id || '')) || FAKE_CASE_IDS.has(String(orderId || ''))) return true;
   if (/^(ORD-CONCUR|ORD-AUDIT|ORD-STRESS|ORD-TEST|TEST-|SN-STRESS|SN-TRAVERSAL|ORD-BOMB)/i.test(sOrder)) return true;
   if (/^(SN-STRESS|SN-TRAVERSAL|TEST-)/i.test(sSerial)) return true;
   if (/^(RMA-CONCUR|RMA-AUDIT|RMA-TEST|TEST-)/i.test(sId)) return true;
-  if (['ORD-7654', 'ORD-6287', 'ORD-7634'].includes(sOrder)) return true;
-  if (['RMA-73502', 'RMA-73649', 'RMA-75767'].includes(sId)) return true;
+  if (['ORD-7654', 'ORD-6287', 'ORD-7634', 'ORD-783', 'ORD-78', 'ORD-7', 'ORD-', 'OR', 'O'].includes(sOrder)) return true;
+  if (['RMA-73502', 'RMA-73649', 'RMA-75767', 'RMA-ORD783', 'RMA-ORD78', 'RMA-ORD7', 'RMA-ORD', 'RMA-OR', 'RMA-O'].includes(sId)) return true;
   return false;
 }
 
@@ -189,14 +191,14 @@ function getInitialCases() {
     if (draftStr) {
       const draft = JSON.parse(draftStr);
       const userImagesList = (draft.images || []).filter(Boolean);
-      if (draft.orderId || draft.serialNumber || userImagesList.length > 0) {
-        const draftId = (draft.orderId ? `RMA-${draft.orderId.replace(/[^a-zA-Z0-9]/g, '')}` : '') || `RMA-${Math.floor(10000 + Math.random() * 90000)}`;
+      const draftId = (draft.orderId ? `RMA-${draft.orderId.replace(/[^a-zA-Z0-9]/g, '')}` : '') || '';
+      if (draft.orderId && draft.serialNumber && draft.serialNumber !== 'SN-INTAKE-PENDING' && !isSyntheticCase(draftId, draft.orderId, draft.serialNumber) && userImagesList.length > 0) {
         const t = (draft.productValue < 300) ? 'T1' : (draft.productValue <= 1000) ? 'T2' : (draft.productValue <= 2500) ? 'T3' : 'T4';
         const primaryImg = (draft.images && draft.images[3]) || (draft.images && draft.images[0]) || (userImagesList[0] || '');
         const draftCase = {
           id: draftId,
           orderId: draft.orderId || draftId,
-          serialNumber: draft.serialNumber || 'SN-INTAKE-PENDING',
+          serialNumber: draft.serialNumber,
           oem: draft.manufacturer || 'Hardware OEM',
           modelName: draft.modelName || 'Hardware Component',
           p: `${draft.manufacturer || 'Hardware'} ${draft.modelName || 'Component'}`.trim(),

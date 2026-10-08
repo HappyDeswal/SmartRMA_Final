@@ -22,7 +22,6 @@ function saveCurrentIntakeDraft() {
   const oem = ($('#mfg-select') ? $('#mfg-select').value.trim() : '') || '';
   const modelLine = ($('#model-line') ? $('#model-line').value.trim() : '') || '';
   const rsn = ($('#rsn') ? $('#rsn').value.trim() : '') || '';
-  const userImagesList = ph.filter(Boolean);
 
   const draft = {
     orderId: oid,
@@ -36,75 +35,6 @@ function saveCurrentIntakeDraft() {
   try {
     sessionStorage.setItem('smartrma_current_draft', JSON.stringify(draft));
   } catch(e) {}
-
-  if (oid || ser || userImagesList.length > 0 || rsn || val > 0) {
-    const caseId = (oid ? `RMA-${oid.replace(/[^a-zA-Z0-9]/g, '')}` : '') || `RMA-${Math.floor(10000 + Math.random() * 90000)}`;
-    const t = getTier(val || 1200);
-    const primaryImg = ph[3] || ph[0] || (userImagesList.length > 0 ? userImagesList[0] : '');
-
-    const pendingCase = {
-      id: caseId,
-      orderId: oid || caseId,
-      serialNumber: ser || 'SN-INTAKE-PENDING',
-      oem: oem || 'Hardware OEM',
-      modelName: modelLine || 'Hardware Component',
-      p: `${oem || 'Hardware'} ${modelLine || 'Component'}`.trim(),
-      v: val || 1200,
-      t: t,
-      r: 35,
-      a: 0.25,
-      conf: 92,
-      escalationReason: 'RMA Intake Uploaded — Awaiting Lead Technician Inspection & Sign-off',
-      rn: 'Primary Hardware Inspection Bay',
-      cl: 'Manufacturer Standard Hardware Limited Warranty Terms',
-      src: `${oem || 'OEM'} Limited Hardware Warranty`,
-      st: 'Pending',
-      subImg: primaryImg,
-      userImages: userImagesList,
-      at: [50, 50],
-      symptom: rsn || 'Customer hardware claim uploaded for physical inspection.',
-      ledgerHash: 'sha256:intake_pending',
-      submittedAt: new Date().toISOString(),
-      isAutoApproved: false,
-      autoApproveReason: null,
-      resolvedReason: null,
-      resolvedOperator: null,
-      resolvedTime: null,
-      resolvedHash: null,
-      visionTelemetry: {
-        anomaly_score: 0.25,
-        flagged_region: 'Customer Uploaded Views',
-        severity: 'NOMINAL',
-        visual_findings: `${userImagesList.length} customer inspection view(s) uploaded. Ready for technician verification.`,
-        model_used: 'llama3.2-vision:latest',
-        at: [50, 50]
-      },
-      policyGrounding: {
-        verdict: 'PENDING_TECHNICIAN_REVIEW',
-        cited_clause: 'Standard warranty terms apply under normal operating conditions.',
-        source_document: `${oem || 'OEM'} Warranty Policy Document`,
-        page: 1,
-        explanation: 'Intake test case queued for technician verification.'
-      }
-    };
-
-    try {
-      let savedCases = JSON.parse(localStorage.getItem('smartrma_cases') || '[]');
-      savedCases = savedCases.filter(c => c.id !== pendingCase.id && c.orderId !== pendingCase.orderId);
-      savedCases.unshift(pendingCase);
-      if (savedCases.length > 20) savedCases = savedCases.slice(0, 20);
-      localStorage.setItem('smartrma_cases', JSON.stringify(savedCases));
-      localStorage.setItem('smartrma_active_case_id', pendingCase.id);
-    } catch(e) {}
-
-    try {
-      fetch(getGatewayUrl('/api/v1/cases'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(pendingCase)
-      }).catch(() => {});
-    } catch(e) {}
-  }
 }
 
 function compressImage(file, maxWidth = 640, quality = 0.72) {
