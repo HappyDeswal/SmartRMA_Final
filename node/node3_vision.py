@@ -187,17 +187,31 @@ def extract_vision_telemetry(vision_text: str, slot_name: str, symptoms: str) ->
     vt_lower = vision_text.lower()
     sym_lower = symptoms.lower()
 
+    # 0. Check for explicit negative indicators of damage / clean affirmation
+    negated_damage = any(phrase in vt_lower for phrase in [
+        "no damage", "no visible damage", "no visible signs of damage", "not damaged", 
+        "without damage", "no sign of damage", "no wear", "no signs of wear", 
+        "no burns", "no scorch", "no cracks", "intact and undamaged", "good working order",
+        "good condition", "pristine condition", "factory condition", "clean condition"
+    ])
+
     # 1. Critical CID Trauma patterns (burns, melts, liquid, cracks)
-    burn_keywords = ["burnt", "burn", "scorch", "melt", "damaged", "overheat", "overheating", "crack", "corrosion", "liquid", "bent pin", "broken", "arc", "smoke", "blown", "charred"]
-    is_burnt = any(k in vt_lower for k in burn_keywords) or any(k in sym_lower for k in ["burn", "melt", "scorch", "smoke", "spill"])
+    burn_keywords = ["burnt", "burn ", "scorch", "melt", "crack", "corrosion", "liquid", "bent pin", "broken", "charred", "soot"]
+    if not negated_damage:
+        burn_keywords.extend(["damage", "damaged", "overheat", "overheating", "blown", "arc"])
+
+    has_burn_in_text = any(k in vt_lower for k in burn_keywords) and not (negated_damage and not any(k in vt_lower for k in ["burnt", "melt", "scorch", "corrosion"]))
+    has_burn_in_sym = any(k in sym_lower for k in ["burn", "melt", "scorch", "smoke", "spill", "corrosion", "crack", "bent"])
+
+    is_burnt = has_burn_in_text or has_burn_in_sym
 
     # 2. Silicon component failure patterns (capacitors, traces, vram, artifacts)
     silicon_keywords = ["capacitor", "resistor", "chip", "transistor", "circuit board", "traces", "vram", "artifact", "solder", "wear", "swelling", "discolor"]
     is_silicon = any(k in vt_lower for k in silicon_keywords) or any(k in sym_lower for k in ["artifact", "code 43", "black screen", "crash", "blank"])
 
     # 3. Clean condition patterns
-    clean_keywords = ["good condition", "no visible signs of damage", "working order", "clean", "intact", "normal"]
-    is_clean = any(k in vt_lower for k in clean_keywords) and not is_burnt
+    clean_keywords = ["good condition", "no visible signs of damage", "working order", "clean", "intact", "normal", "pristine", "factory fresh"]
+    is_clean = (any(k in vt_lower for k in clean_keywords) or negated_damage) and not is_burnt
 
     if is_burnt:
         anomaly_score = 0.88

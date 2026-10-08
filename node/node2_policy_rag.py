@@ -568,14 +568,21 @@ def triage_evaluate(req: TriageRequest):
     relevant_chunks = search_policy_chunks(query, target_mfg=req.manufacturer, top_k=3)
     
     # Defect pattern check for immediate CID exclusions
-    is_cid = any(term in query.lower() for term in ["crack", "burnt", "burn mark", "liquid", "water", "corrosion", "bent pin", "scratched pcb", "unauthorized modification"])
+    cid_terms = ["crack", "burnt", "burn mark", "liquid", "water", "corrosion", "bent pin", "scratched pcb", "unauthorized modification", "melted", "tamper"]
+    is_cid = False
+    ql = query.lower()
+    for term in cid_terms:
+        if term in ql:
+            if not any(neg in ql for neg in [f"no {term}", f"not {term}", f"without {term}", "no visible signs of damage"]):
+                is_cid = True
+                break
     
     if is_cid:
         status = "REJECTED"
         risk = 92
         clause = "Physical / Liquid Damage Exclusion (Customer Induced Damage - CID)"
         notes = "Physical fracture, overvoltage burnout, or liquid contact detected. Standard manufacturer limited warranties explicitly exclude external physical trauma."
-    elif any(term in query.lower() for term in ["artifact", "code 43", "black screen", "fan rattle", "coil whine", "no display", "reboot under load"]):
+    elif any(term in query.lower() for term in ["artifact", "code 43", "black screen", "fan rattle", "coil whine", "no display", "reboot under load", "crash", "freeze", "blank screen", "dead"]):
         status = "APPROVED"
         risk = 14
         clause = "Standard Manufacturing Hardware Defect Coverage"

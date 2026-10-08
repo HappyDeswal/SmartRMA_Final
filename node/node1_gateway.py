@@ -370,7 +370,8 @@ def clear_ledger():
         try:
             with open(LEDGER_FILE, "w", encoding="utf-8") as f:
                 json.dump([], f)
-            return {"status": "SUCCESS", "message": "Audit ledger cleared successfully."}
+            KNOWN_PHASH_DB.clear()
+            return {"status": "SUCCESS", "message": "Audit ledger and pHash cache cleared successfully."}
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to clear ledger: {e}")
 
@@ -517,7 +518,7 @@ def process_intake(req: IntakeRequest):
     risk_score = int(round(anomaly_score * 70 + policy_penalty + fraud_penalty))
     risk_score = max(0, min(100, risk_score))
 
-    confidence = 0.94 if (anomaly_score > 0.8 or anomaly_score < 0.2) else 0.84
+    confidence = 0.96 if (anomaly_score > 0.8 or anomaly_score < 0.2) else 0.88 if (anomaly_score <= 0.6 and node2_result.get("determination") == "APPROVED") else 0.84
 
     # 5. Deterministic Decision Tier Matrix SLA Resolution
     disposition = "ESCALATE"
@@ -527,11 +528,11 @@ def process_intake(req: IntakeRequest):
     elif t == "T4":
         disposition = "ESCALATE"  # Tier 4 (> $2500) mandatory human teardown
     elif t == "T1":
-        disposition = "APPROVE" if risk_score < 30 else "ESCALATE"
+        disposition = "APPROVE" if (risk_score <= 45 and node2_result.get("determination") != "REJECTED") else "ESCALATE"
     elif t in ["T2", "T3"]:
-        threshold = 0.95 if t == "T3" else 0.85
+        threshold = 0.85
         if confidence >= threshold:
-            if risk_score < 30 and node2_result.get("determination") != "REJECTED":
+            if risk_score <= 45 and node2_result.get("determination") == "APPROVED":
                 disposition = "APPROVE"
             elif risk_score >= 70 or node2_result.get("determination") == "REJECTED":
                 disposition = "REJECT"
