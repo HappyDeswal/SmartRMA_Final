@@ -104,9 +104,9 @@
         <!-- Queue Toolbar -->
         <div class="queue-toolbar">
           <div class="queue-tabs">
-            <button class="q-tab active" data-filter="all">All (5)</button>
-            <button class="q-tab" data-filter="high-risk">High Risk (2)</button>
-            <button class="q-tab" data-filter="t3-t4">Tier 3/4 (3)</button>
+            <button class="q-tab active" data-filter="pending">Pending (<span id="tab-pending-count">5</span>)</button>
+            <button class="q-tab" data-filter="resolved">History / Resolved (<span id="tab-resolved-count">0</span>)</button>
+            <button class="q-tab" data-filter="all">All Escalated (<span id="tab-all-count">5</span>)</button>
           </div>
           <div class="search-box">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -143,7 +143,7 @@
       </div>
     </div>
 
-    <!-- Immutable Audit Ledger -->
+    <!-- Immutable Audit Ledger & History on Same Page -->
     <div class="card" style="margin-top:24px">
       <div class="card-header-bar">
         <div class="card-title-group">
@@ -154,10 +154,10 @@
             </svg>
           </div>
           <div>
-            <h2>Compliance Audit Ledger</h2>
+            <h2>Decision History &amp; Compliance Audit Ledger</h2>
           </div>
         </div>
-        <span class="mono brand-pill">APPEND-ONLY SECURE LEDGER</span>
+        <span class="mono brand-pill" id="history-badge">LIVE LEDGER</span>
       </div>
       <div id="log" class="audit-log-feed">
         <div class="mu" style="font-size:0.85rem">No technician overrides recorded in this active session.</div>

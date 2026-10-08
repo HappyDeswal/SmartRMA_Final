@@ -1,21 +1,28 @@
 // SmartRMA Technician Review & Hardware Comparator Workbench
 
-const CASES = [
-  {
-    id: 'RMA-1042',
-    p: 'RTX 4090 OC Founders Edition',
-    v: 1240,
-    t: 'T3',
-    r: 80,
-    a: 0.86,
-    conf: 94,
-    rn: '12VHPWR Power Connector (Pin 3)',
-    cl: 'Damage from electrical overload or scorched pin connectors is explicitly excluded.',
-    st: 'Pending',
-    refImg: 'assets/rma_055_power_12vhpwr_socket_ortho_90_vis_clean.jpg',
-    subImg: 'assets/rma_056_power_12vhpwr_socket_ortho_90_vis_defect.jpg',
-    at: [62, 38]
-  },
+function requiresTechnicianApproval(c) {
+  // 1. Tier 4 (> $2500): Mandatory Physical Teardown by SLA
+  if (c.t === 'T4' || c.v > 2500) return true;
+  // 2. Fraud & Forensic Flags: Duplicate pHash or EXIF alteration
+  if (c.fraud) return true;
+  // 3. Tier 1 (< $300): Auto-approved only if risk < 30. If risk >= 30, escalates
+  if (c.t === 'T1' || c.v < 300) return c.r >= 30;
+  // 4. Tier 3 ($1000 - $2500): Requires conf >= 95%. Escalate if conf < 95% or ambiguous risk [30, 70)
+  if (c.t === 'T3' || (c.v >= 1000 && c.v <= 2500)) {
+    if (c.conf < 95) return true;
+    if (c.r >= 30 && c.r < 70) return true;
+    return false;
+  }
+  // 5. Tier 2 ($300 - $1000): Requires conf >= 85%. Escalate if conf < 85% or ambiguous risk [30, 70)
+  if (c.t === 'T2' || (c.v >= 300 && c.v < 1000)) {
+    if (c.conf < 85) return true;
+    if (c.r >= 30 && c.r < 70) return true;
+    return false;
+  }
+  return false;
+}
+
+const RAW_CASES = [
   {
     id: 'RMA-1045',
     p: 'NVIDIA RTX 6000 Ada Server Edition',
@@ -24,12 +31,46 @@ const CASES = [
     r: 55,
     a: 0.62,
     conf: 84,
+    escalationReason: 'Tier 4 Enterprise SLA (> $2,500): Mandatory Forensic Lab Teardown',
     rn: 'GPU Core BGA / Power Stages',
     cl: 'High-value enterprise returns require mandatory physical teardown inspection prior to credit release.',
     st: 'Pending',
     refImg: 'assets/rma_001_gpu_silicon_core_ortho_90_vis_clean.jpg',
     subImg: 'assets/rma_003_gpu_silicon_core_ortho_90_thermal_flir.jpg',
     at: [48, 52]
+  },
+  {
+    id: 'RMA-1042',
+    p: 'RTX 4090 OC Founders Edition',
+    v: 1240,
+    t: 'T3',
+    r: 80,
+    a: 0.86,
+    conf: 94,
+    escalationReason: 'Confidence 94% below Tier 3 SLA Threshold (95%)',
+    rn: '12VHPWR Power Connector (Pin 3)',
+    cl: 'Damage from electrical overload or scorched pin connectors is explicitly excluded.',
+    st: 'Pending',
+    refImg: 'assets/rma_055_power_12vhpwr_socket_ortho_90_vis_clean.jpg',
+    subImg: 'assets/rma_056_power_12vhpwr_socket_ortho_90_vis_defect.jpg',
+    at: [62, 38]
+  },
+  {
+    id: 'RMA-1052',
+    p: 'RTX 4080 Gaming X Trio',
+    v: 1150,
+    t: 'T3',
+    r: 78,
+    a: 0.82,
+    conf: 91,
+    fraud: true,
+    escalationReason: 'Security Audit: Perceptual Hash (pHash) Duplicate Image Reuse Detected',
+    rn: 'PCIe Connector & Shroud Pins',
+    cl: 'Claims exhibiting serial recycling or photographic reuse require forensic review.',
+    st: 'Pending',
+    refImg: 'assets/rma_089_pcie4_gold_fingers_ortho_90_vis_clean.jpg',
+    subImg: 'assets/rma_089_pcie4_gold_fingers_ortho_90_vis_clean.jpg',
+    at: [30, 70]
   },
   {
     id: 'RMA-1039',
@@ -39,6 +80,7 @@ const CASES = [
     r: 41,
     a: 0.58,
     conf: 84,
+    escalationReason: 'Inconclusive Risk (41/100) & Confidence 84% below Tier 2 Threshold (85%)',
     rn: 'VRAM Bank A0-A2 Traces',
     cl: 'Defects in silicon materials or factory soldering under normal use are fully covered.',
     st: 'Pending',
@@ -54,6 +96,7 @@ const CASES = [
     r: 34,
     a: 0.44,
     conf: 84,
+    escalationReason: 'Tier 1 Risk Score (34/100) exceeds Auto-Approval Ceiling (< 30)',
     rn: 'Solid Capacitor Bank C14',
     cl: 'Cosmetic wear that does not affect electrical continuity is not a defect.',
     st: 'Pending',
@@ -69,6 +112,7 @@ const CASES = [
     r: 8,
     a: 0.12,
     conf: 94,
+    escalationReason: 'None (Clean Spec & 94% Confidence)',
     rn: 'No Region Flagged (Clean Spec)',
     cl: 'Unused products in original condition may be returned within the standard 30-day window.',
     st: 'Pending',
@@ -76,10 +120,15 @@ const CASES = [
     subImg: 'assets/rma_089_pcie4_gold_fingers_ortho_90_vis_clean.jpg',
     at: [30, 70]
   }
-].sort((x, y) => (y.v * y.r) - (x.v * x.r));
+];
+
+// FILTER: Technician workbench strictly displays cases requiring technician approval based on conditions
+const CASES = RAW_CASES
+  .filter(c => requiresTechnicianApproval(c))
+  .sort((x, y) => (y.v * y.r) - (x.v * x.r));
 
 let activeIndex = 0;
-let currentFilter = 'all';
+let currentFilter = 'pending';
 let searchQuery = '';
 const auditLedger = [];
 
@@ -104,23 +153,47 @@ function generateAuditHash() {
   return hash;
 }
 
+// Update Toolbar Tab Counts
+function updateTabCounts() {
+  const pendingCount = CASES.filter(c => c.st === 'Pending').length;
+  const resolvedCount = CASES.filter(c => c.st === 'Approved' || c.st === 'Rejected').length;
+  const allCount = CASES.length;
+
+  const elPending = $('#tab-pending-count');
+  const elResolved = $('#tab-resolved-count');
+  const elAll = $('#tab-all-count');
+  const elQueueCount = $('#queue-count');
+
+  if (elPending) elPending.textContent = pendingCount;
+  if (elResolved) elResolved.textContent = resolvedCount;
+  if (elAll) elAll.textContent = allCount;
+  if (elQueueCount) elQueueCount.textContent = `${pendingCount} PENDING ACTION`;
+}
+
 // Render Queue Table
 function renderQueue() {
   const tbody = $('#q');
   if (!tbody) return;
 
-  const filtered = CASES.filter((c, idx) => {
+  updateTabCounts();
+
+  const filtered = CASES.filter(c => {
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       if (!c.id.toLowerCase().includes(q) && !c.p.toLowerCase().includes(q)) return false;
     }
-    if (currentFilter === 'high-risk') return c.r >= 50;
-    if (currentFilter === 't3-t4') return c.t === 'T3' || c.t === 'T4';
-    return true;
+    if (currentFilter === 'pending') return c.st === 'Pending';
+    if (currentFilter === 'resolved') return c.st === 'Approved' || c.st === 'Rejected';
+    return true; // 'all'
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">No matching cases in this queue view.</td></tr>`;
+    const emptyMsg = currentFilter === 'pending'
+      ? 'All escalated cases have been finalized! No pending reviews.'
+      : currentFilter === 'resolved'
+      ? 'No cases have been resolved yet in this session.'
+      : 'No matching cases in this queue view.';
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:28px 14px;color:var(--text-muted)">${emptyMsg}</td></tr>`;
     return;
   }
 
@@ -179,7 +252,12 @@ function renderDetails() {
   if (!d) return;
 
   const c = CASES[activeIndex];
-  if (!c) return;
+  if (!c) {
+    d.innerHTML = `<div style="padding:32px;text-align:center;color:var(--text-muted)">Select a case from the queue to inspect.</div>`;
+    return;
+  }
+
+  const isResolved = c.st === 'Approved' || c.st === 'Rejected';
 
   d.innerHTML = `
     <div class="card-header-bar">
@@ -196,6 +274,16 @@ function renderDetails() {
         </div>
       </div>
       <span class="badge ${escapeHtml(c.st)}">${escapeHtml(c.st)}</span>
+    </div>
+
+    <!-- Escalation Trigger Notice -->
+    <div class="escalation-trigger-banner">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="12 2 2 22 22 22 12 2"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+      <span><strong>Escalation Trigger:</strong> ${escapeHtml(c.escalationReason || 'Technician manual adjudication required by SLA')}</span>
     </div>
 
     <!-- Case Metrics Bar -->
@@ -249,64 +337,111 @@ function renderDetails() {
       <div class="clause-text">&ldquo;${escapeHtml(c.cl)}&rdquo;</div>
     </div>
 
-    <!-- Override Reason Section -->
-    <label for="rs" style="font-weight:600;display:block;margin-top:16px;color:var(--text-primary)">
-      Mandatory Override Justification &amp; Findings
-    </label>
-    
-    <!-- Quick Reason Chips -->
-    <div class="reason-quick-chips">
-      <button type="button" class="r-chip" data-reason="Confirmed external electrical surge burn">
-        ⚡ External surge burn
-      </button>
-      <button type="button" class="r-chip" data-reason="Verified genuine silicon manufacturing defect">
-        🔬 Verified factory defect
-      </button>
-      <button type="button" class="r-chip" data-reason="Customer provided proof of surge protector coverage">
-        🛡️ Surge protector proof
-      </button>
-      <button type="button" class="r-chip" data-reason="Escalating to Tier 4 Forensic teardown lab">
-        📦 Forensic lab escalation
-      </button>
-    </div>
+    ${isResolved ? `
+      <!-- Finalized Resolution Banner: Buttons are locked & hidden -->
+      <div class="resolution-finalized-card ${c.st === 'Approved' ? 'approved' : 'rejected'}">
+        <div class="finalized-header">
+          <div class="finalized-title">
+            ${c.st === 'Approved' ? `
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              <span style="color:var(--success-text);font-weight:800;font-size:0.95rem">
+                TECHNICIAN DETERMINATION FINALIZED: APPROVED
+              </span>
+            ` : `
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+              <span style="color:var(--danger-text);font-weight:800;font-size:0.95rem">
+                TECHNICIAN DETERMINATION FINALIZED: REJECTED
+              </span>
+            `}
+          </div>
+          <span class="mono brand-pill" style="background:rgba(0,0,0,0.08);color:var(--text-secondary)">
+            IMMUTABLE &bull; COMMITTED TO LEDGER
+          </span>
+        </div>
 
-    <textarea id="rs" rows="2" placeholder="Document empirical findings before confirming or overriding triage verdict..."></textarea>
+        <div class="finalized-body">
+          <div style="font-size:0.84rem;margin-bottom:8px">
+            <strong>Logged Forensic Justification:</strong>
+            <div class="finalized-quote">&ldquo;${escapeHtml(c.resolvedReason || 'Forensic inspection completed and decision committed.')}&rdquo;</div>
+          </div>
 
-    <!-- Action Buttons -->
-    <div class="acts" style="margin-top:14px;justify-content:space-between">
-      <div class="acts">
-        <button class="btn g" id="btn-approve" type="button">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-          Approve Return
+          <div class="finalized-meta-grid">
+            <div><span>Auditor ID:</span> <b>${escapeHtml(c.resolvedOperator || 'TECH-402')}</b></div>
+            <div><span>Decision Time:</span> <b>${escapeHtml(c.resolvedTime || 'Just now')}</b></div>
+            <div><span>SHA-256 Ledger Stamp:</span> <code class="mono">${escapeHtml(c.resolvedHash || '0x4f8a...')}</code></div>
+            <div><span>Current Status:</span> <span class="badge ${escapeHtml(c.st)}">${escapeHtml(c.st)}</span></div>
+          </div>
+        </div>
+      </div>
+    ` : `
+      <!-- Action Inputs: Only shown when case is pending -->
+      <label for="rs" style="font-weight:600;display:block;margin-top:16px;color:var(--text-primary)">
+        Mandatory Forensic Justification &amp; Findings
+      </label>
+      
+      <!-- Quick Reason Chips -->
+      <div class="reason-quick-chips">
+        <button type="button" class="r-chip" data-reason="Confirmed external electrical surge burn beyond manufacturer tolerance">
+          ⚡ External surge burn
         </button>
-        <button class="btn r" id="btn-reject" type="button">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <line x1="18" y1="6" x2="6" y2="18"/>
-            <line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-          Reject Return
+        <button type="button" class="r-chip" data-reason="Verified genuine silicon manufacturing defect under warranty">
+          🔬 Factory silicon defect
+        </button>
+        <button type="button" class="r-chip" data-reason="Customer provided proof of surge protector coverage and power log">
+          🛡️ Surge protector proof
+        </button>
+        <button type="button" class="r-chip" data-reason="Escalating to Tier 4 clean-room forensic teardown lab">
+          📦 Teardown lab escalation
         </button>
       </div>
-      <span class="mono" style="font-size:0.75rem;color:var(--text-muted)">OPERATOR: TECH-402</span>
-    </div>
-    <p class="err" id="e2" role="alert"></p>
+
+      <textarea id="rs" rows="2" placeholder="Document empirical findings before confirming or overriding triage verdict..."></textarea>
+
+      <!-- Action Buttons -->
+      <div class="acts" style="margin-top:14px;justify-content:space-between">
+        <div class="acts">
+          <button class="btn g" id="btn-approve" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Approve Return
+          </button>
+          <button class="btn r" id="btn-reject" type="button">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            Reject Return
+          </button>
+        </div>
+        <span class="mono" style="font-size:0.75rem;color:var(--text-muted)">OPERATOR: TECH-402</span>
+      </div>
+      <p class="err" id="e2" role="alert"></p>
+    `}
   `;
 
-  // Bind quick reason chips safely
-  $$('.r-chip', d).forEach(chip => {
-    chip.onclick = () => {
-      const reason = chip.dataset.reason || '';
-      applyReason(reason);
-    };
-  });
+  if (!isResolved) {
+    // Bind quick reason chips
+    $$('.r-chip', d).forEach(chip => {
+      chip.onclick = () => {
+        const reason = chip.dataset.reason || '';
+        applyReason(reason);
+      };
+    });
 
-  // Action listeners
-  const approveBtn = $('#btn-approve');
-  const rejectBtn = $('#btn-reject');
-  if (approveBtn) approveBtn.onclick = () => executeOverride('Approve');
-  if (rejectBtn) rejectBtn.onclick = () => executeOverride('Reject');
+    // Action button listeners
+    const approveBtn = $('#btn-approve');
+    const rejectBtn = $('#btn-reject');
+    if (approveBtn) approveBtn.onclick = () => executeOverride('Approve');
+    if (rejectBtn) rejectBtn.onclick = () => executeOverride('Reject');
+  }
 }
 
 window.applyReason = function(text) {
@@ -320,6 +455,11 @@ function executeOverride(decision) {
   const c = CASES[activeIndex];
   if (!c) return;
 
+  if (c.st === 'Approved' || c.st === 'Rejected') {
+    showToast(`Case ${c.id} is already finalized as ${c.st.toUpperCase()}`, 'info');
+    return;
+  }
+
   const reasonInput = $('#rs');
   const reason = reasonInput ? reasonInput.value.trim() : '';
   const errEl = $('#e2');
@@ -330,16 +470,25 @@ function executeOverride(decision) {
     return;
   }
 
-  c.st = decision;
+  const finalStatus = decision === 'Approve' ? 'Approved' : 'Rejected';
+  c.st = finalStatus;
   const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const hash = generateAuditHash();
 
+  c.resolvedReason = reason;
+  c.resolvedTime = timestamp;
+  c.resolvedHash = hash;
+  c.resolvedOperator = 'TECH-402';
+
+  // Push new decision to the top of audit history on this same page
   auditLedger.unshift({
     time: timestamp,
     caseId: c.id,
-    decision,
-    reason,
-    hash,
+    product: c.p,
+    tier: c.t,
+    decision: finalStatus,
+    reason: reason,
+    hash: hash,
     operator: 'TECH-402'
   });
 
@@ -347,12 +496,17 @@ function executeOverride(decision) {
   renderQueue();
   renderDetails();
 
-  showToast(`Case ${c.id} updated to ${decision.toUpperCase()}`, decision === 'Approve' ? 'success' : 'error');
+  showToast(`Case ${c.id} finalized as ${finalStatus.toUpperCase()}`, finalStatus === 'Approved' ? 'success' : 'error');
 }
 
 function renderAuditLog() {
   const logEl = $('#log');
   if (!logEl) return;
+
+  const historyBadge = $('#history-badge');
+  if (historyBadge) {
+    historyBadge.textContent = `${auditLedger.length} AUDITED RECORDS`;
+  }
 
   if (auditLedger.length === 0) {
     logEl.innerHTML = `<div class="mu" style="font-size:0.85rem">No technician overrides recorded in this active session.</div>`;
@@ -366,10 +520,11 @@ function renderAuditLog() {
         <span class="audit-hash">${escapeHtml(item.hash)}</span>
       </div>
       <div style="flex:1">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap">
           <strong class="mono" style="color:var(--text-primary)">${escapeHtml(item.caseId)}</strong>
+          ${item.product ? `<span style="font-size:0.75rem;color:var(--text-secondary)">(${escapeHtml(item.product)})</span>` : ''}
           <span class="badge ${escapeHtml(item.decision)}" style="font-size:0.68rem;padding:2px 7px">${escapeHtml(item.decision)}</span>
-          <span class="mono brand-pill">${escapeHtml(item.operator)}</span>
+          <span class="mono brand-pill">${escapeHtml(item.operator || 'TECH-402')}</span>
         </div>
         <div style="color:var(--text-secondary);font-size:0.8rem">${escapeHtml(item.reason)}</div>
       </div>
@@ -377,9 +532,38 @@ function renderAuditLog() {
   `).join('');
 }
 
+// Pre-load historical blocks from Node 1 ledger on the same page
+async function loadLedgerHistory() {
+  try {
+    const res = await fetch('http://localhost:8000/api/v1/ledger?limit=12');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.recent_blocks && data.recent_blocks.length > 0) {
+        data.recent_blocks.reverse().forEach(b => {
+          if (!auditLedger.some(item => item.caseId === b.case_id)) {
+            const blockTime = b.timestamp ? new Date(b.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '11:42:10 AM';
+            auditLedger.push({
+              time: blockTime,
+              caseId: b.case_id,
+              product: b.order_id ? `${b.order_id} (${b.tier || 'T3'})` : 'Hardware Unit',
+              tier: b.tier,
+              decision: b.disposition === 'APPROVE' ? 'Approved' : b.disposition === 'REJECT' ? 'Rejected' : 'Escalated',
+              reason: b.cited_clause || (b.fraud_flags && b.fraud_flags.length ? b.fraud_flags.join(', ') : 'Autonomous policy evaluation'),
+              hash: b.block_hash ? (b.block_hash.substring(0, 16) + '...') : generateAuditHash(),
+              operator: b.disposition === 'ESCALATE' ? 'GATEWAY-AUTONOMOUS' : 'SYSTEM-LEDGER'
+            });
+          }
+        });
+        renderAuditLog();
+      }
+    }
+  } catch (err) {
+    console.log('[Offline ledger history fallback]', err);
+  }
+}
+
 // Keyboard Navigation & Shortcuts
 document.addEventListener('keydown', e => {
-  // Ignore shortcuts if user is typing in textarea or search input
   if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
 
   if (e.key === 'ArrowDown') {
@@ -398,10 +582,14 @@ document.addEventListener('keydown', e => {
     }
   } else if (e.key === 'a' || e.key === 'A') {
     e.preventDefault();
-    executeOverride('Approve');
+    const c = CASES[activeIndex];
+    if (c && c.st === 'Pending') executeOverride('Approve');
+    else if (c) showToast(`Case ${c.id} is already finalized`, 'info');
   } else if (e.key === 'r' || e.key === 'R') {
     e.preventDefault();
-    executeOverride('Reject');
+    const c = CASES[activeIndex];
+    if (c && c.st === 'Pending') executeOverride('Reject');
+    else if (c) showToast(`Case ${c.id} is already finalized`, 'info');
   }
 });
 
@@ -426,4 +614,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
   renderQueue();
   renderDetails();
+  loadLedgerHistory();
 });
