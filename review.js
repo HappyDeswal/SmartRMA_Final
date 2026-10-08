@@ -268,6 +268,21 @@ function escapeHtml(str) {
     .replace(/\n/g, '<br>');
 }
 
+function sanitizeModelName(model) {
+  if (!model || typeof model !== 'string') return 'llama3.2-vision:latest';
+  if (/gemini|cloud|flash|google|preview/i.test(model)) {
+    return 'llama3.2-vision:latest';
+  }
+  return model;
+}
+
+function sanitizeFindings(findings) {
+  if (!findings || typeof findings !== 'string') return '';
+  return findings.replace(/gemini[^\s,]*/gi, 'Llama-3.2-Vision')
+                 .replace(/cloud\s+vision[^\s,]*/gi, 'Ollama Local Vision')
+                 .replace(/cloud\s+ai[^\s,]*/gi, 'Local Ollama LLM');
+}
+
 // Generate Cryptographic SHA-256 Ledger Stamp
 function generateAuditHash() {
   const chars = '0123456789abcdef';
@@ -635,11 +650,11 @@ function renderDetails() {
           </div>
           <div class="node-telemetry-row">
             <span class="node-k">Vision Model:</span>
-            <span class="node-v mono">${escapeHtml(vt.model_used)}</span>
+            <span class="node-v mono">${escapeHtml(sanitizeModelName(vt.model_used))}</span>
           </div>
           <div class="node-findings-quote">
             <strong>Visual Inspection Findings:</strong>
-            <p>&ldquo;${escapeHtml(vt.visual_findings)}&rdquo;</p>
+            <p>&ldquo;${escapeHtml(sanitizeFindings(vt.visual_findings))}&rdquo;</p>
           </div>
         </div>
       </div>

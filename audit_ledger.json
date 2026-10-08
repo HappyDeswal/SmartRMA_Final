@@ -16,5 +16,21 @@
     "fraud_flags": [],
     "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
     "block_hash": "1c6a36616140b627e2b7db2da0b43acca4fccafc68a372de89e9ddef1f6fdcfe"
+  },
+  {
+    "timestamp": "2026-10-08T17:23:41.815994+00:00",
+    "case_id": "RMA-79487",
+    "product_value": 3000,
+    "tier": "T4",
+    "disposition": "APPROVE",
+    "risk_score": 8,
+    "anomaly_score": 0.12,
+    "anomaly_region": "Pristine Hardware Surface (Factory Standard)",
+    "cited_clause": "Technician Adjudication (TECH-402): NO PHYSICAL DAMAGE",
+    "source_doc": "Technician Workbench",
+    "page": 1,
+    "fraud_flags": [],
+    "prev_hash": "1c6a36616140b627e2b7db2da0b43acca4fccafc68a372de89e9ddef1f6fdcfe",
+    "block_hash": "fdaa792329811833bc5ad398c3785bb00dc14edcf4094eeb408b22c7c734f6a4"
   }
 ]

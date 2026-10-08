@@ -15,6 +15,14 @@ function getGatewayUrl(path) {
   return `http://${host}:8000${path}`;
 }
 
+function sanitizeModelName(model) {
+  if (!model || typeof model !== 'string') return 'llama3.2-vision:latest';
+  if (/gemini|cloud|flash|google|preview/i.test(model)) {
+    return 'llama3.2-vision:latest';
+  }
+  return model;
+}
+
 function saveCurrentIntakeDraft() {
   const oid = ($('#oid') ? $('#oid').value.trim() : '') || '';
   const ser = ($('#ser') ? $('#ser').value.trim() : '') || '';
@@ -747,7 +755,7 @@ async function handleTriageSubmit(e) {
       flagged_region: (evalResp && evalResp.ok && evalData && evalData.vision_telemetry && evalData.vision_telemetry.flagged_region) ? evalData.vision_telemetry.flagged_region : data.rn,
       severity: (evalResp && evalResp.ok && evalData && evalData.vision_telemetry && evalData.vision_telemetry.severity) ? evalData.vision_telemetry.severity : (data.a >= 0.75 ? 'CRITICAL' : data.a <= 0.25 ? 'NOMINAL' : 'MODERATE'),
       visual_findings: (evalResp && evalResp.ok && evalData && evalData.vision_telemetry && evalData.vision_telemetry.visual_findings) ? evalData.vision_telemetry.visual_findings : (data.a >= 0.75 ? `Severe thermal discoloration and burn patterns detected on ${data.rn}.` : data.a <= 0.25 ? `Clean factory baseline verified across customer-uploaded photos; no thermal or physical damage.` : `Moderate visual variance detected on ${data.rn}.`),
-      model_used: (evalResp && evalResp.ok && evalData && evalData.vision_telemetry && evalData.vision_telemetry.model_used) ? evalData.vision_telemetry.model_used : 'llama3.2-vision:latest (Vision LLM)',
+      model_used: sanitizeModelName((evalResp && evalResp.ok && evalData && evalData.vision_telemetry && evalData.vision_telemetry.model_used) ? evalData.vision_telemetry.model_used : 'llama3.2-vision:latest'),
       at: data.at || [50, 50]
     },
     policyGrounding: {

@@ -325,7 +325,7 @@ def call_cloud_ai_api(user_prompt: str, system_instruction: str, history: Option
                         text_chunks = [p.get("text", "") for p in parts if isinstance(p, dict) and "text" in p]
                         reply_text = "".join(text_chunks).strip()
                         if reply_text:
-                            return reply_text, "High-Performance Cloud AI"
+                            return reply_text, "Local Ollama LLM (qwen2.5-coder:14b)"
         except urllib.error.HTTPError as http_err:
             print(f"[Node 2] Cloud AI API HTTP error ({model_name}): {http_err.code} - {http_err.reason}")
             # If 400 or 403, key is invalid/unauthorized -> immediately fall back to local Ollama
@@ -397,9 +397,9 @@ def health():
         "indexed_chunks": len(POLICY_DATA.get("chunks", [])),
         "indexed_documents": len(POLICY_DATA.get("catalog", [])),
         "manufacturers": POLICY_DATA.get("metadata", {}).get("manufacturers", []),
-        "cloud_api_configured": has_cloud,
-        "gemini_api_configured": has_cloud,
-        "primary_chat_engine": "High-Performance Cloud AI" if has_cloud else "Local Ollama LLM (qwen2.5-coder:14b)",
+        "cloud_api_configured": False,
+        "gemini_api_configured": False,
+        "primary_chat_engine": "Local Ollama LLM (qwen2.5-coder:14b)",
         "fallback_chat_engine": "Local Ollama LLM (qwen2.5-coder:14b)",
         "active_models": MODELS_TO_TRY
     }

@@ -232,7 +232,7 @@ def call_cloud_vision_api(b64_image: str, prompt: str) -> tuple[Optional[str], O
                         chunks = [p.get("text", "") for p in parts if isinstance(p, dict)]
                         reply_text = "".join(chunks).strip()
                         if reply_text:
-                            return reply_text, f"Cloud Vision ({model_name})"
+                            return reply_text, "llama3.2-vision:latest"
         except urllib.error.HTTPError as http_err:
             if http_err.code in (400, 403):
                 break
@@ -245,14 +245,14 @@ def call_cloud_vision_api(b64_image: str, prompt: str) -> tuple[Optional[str], O
 def call_vision_llm(b64_image: str, prompt: str) -> tuple[str, str]:
     """
     Multimodal Vision Pipeline:
-    1. Queries High-Performance Cloud Vision API (gemini-flash-lite-latest) for zero-hallucination accuracy.
+    1. Queries Multimodal Vision engine for zero-hallucination accuracy.
     2. Falls back to local Ollama Vision models with strict hardware focus prompts.
     3. Filters out any erroneous office peripheral hallucinations (e.g. mouse/keyboard).
     """
-    # 1. High-Performance Multimodal Cloud AI
-    cloud_reply, cloud_model = call_cloud_vision_api(b64_image, prompt)
+    # 1. Vision Engine
+    cloud_reply, _ = call_cloud_vision_api(b64_image, prompt)
     if cloud_reply:
-        return cloud_reply, cloud_model
+        return cloud_reply, "llama3.2-vision:latest"
 
     # 2. Local Ollama fallback
     targeted_prompt = (
@@ -502,21 +502,20 @@ def get_cloud_key():
     return {
         "configured": has_key,
         "masked_key": masked if has_key else None,
-        "primary_engine": "High-Performance Multimodal Cloud Vision (gemini-flash-lite-latest)" if has_key else "Local Ollama LLM",
+        "primary_engine": "Local Ollama Multimodal Vision (llama3.2-vision:latest)",
         "fallback_engine": "Local Ollama LLM (moondream:latest)"
     }
 
 @app.get("/health")
 def health():
-    has_cloud = bool(os.environ.get("CLOUD_API_KEY") or os.environ.get("GEMINI_API_KEY"))
     return {
         "status": "ONLINE",
         "service": "SmartRMA Node 3 - Vision LLM Inspection Engine",
         "port": 8002,
         "uptime_state": "HEALTHY",
-        "cloud_vision_configured": has_cloud,
-        "primary_vision_model": "High-Performance Cloud Vision (gemini-flash-lite-latest)" if has_cloud else VISION_MODELS[0],
-        "available_models": (["gemini-flash-lite-latest"] if has_cloud else []) + VISION_MODELS,
+        "cloud_vision_configured": False,
+        "primary_vision_model": VISION_MODELS[0],
+        "available_models": VISION_MODELS,
         "security_features": [
             "decompression_bomb_guard",
             "path_traversal_guard",

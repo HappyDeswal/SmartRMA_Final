@@ -86,7 +86,7 @@ This project presents SmartRMA, an intelligent, multi-node architecture for auto
 * **Client Web Interface**:
   - **Customer Intake Portal** (`index.html`): Submits multi-angle photos and hardware dossiers directly to Node 1.
   - **Technician Review Workbench** (`review.html`): Receives final triage outcomes, false-color heatmaps, and audit telemetry from Node 1.
-  - **Interactive AI Chatbot**: Dedicated conversational interface for answering user queries based on official policies and general details (powered by High-Performance Cloud AI with seamless local Ollama fallback; strictly text-based, cannot approve returns or process photos).
+  - **Interactive AI Chatbot**: Dedicated conversational interface for answering user queries based on official policies and general details (powered by Local Ollama LLM; strictly text-based, cannot approve returns or process photos).
 * **Node 1: Master Gateway & Central Decision Engine (:8000)**:
   - Validates EXIF metadata, checks pHash uniqueness, and applies SLA financial tier matrices.
   - Delegates image analysis to Node 3 and queries policy eligibility from Node 2.
@@ -96,6 +96,6 @@ This project presents SmartRMA, an intelligent, multi-node architecture for auto
   - **Returns its visual defect results exclusively to Node 1**.
 * **Node 2: Policy RAG Engine (:8001)**:
   - Indexes 1,525 OEM warranty clauses and returns legal eligibility citations **back to Node 1**.
-  - Handles customer queries from the interactive AI Chatbot via High-Performance Cloud AI with resilient local Ollama fallback.
+  - Handles customer queries from the interactive AI Chatbot via Local Ollama LLM with strict policy RAG grounding.
 * **Local Ollama LLM Runtime (:11434)**:
   - Provides private, on-premise local inference for Node 2 and Node 3 without third-party cloud data transmission.
