@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1050 820" width="1050" height="820">
+  <defs>
+    <linearGradient id="bg-tri" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#050811"/>
+      <stop offset="50%" stop-color="#0B132B"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="glow-edge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="50%" stop-color="#A855F7"/>
+      <stop offset="100%" stop-color="#2DD4BF"/>
+    </linearGradient>
+    <marker id="arr-tri-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#38BDF8" stroke-width="2" stroke-linecap="round"/>
+    </marker>
+    <marker id="arr-tri-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#C084FC" stroke-width="2" stroke-linecap="round"/>
+    </marker>
+    <marker id="arr-tri-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#2DD4BF" stroke-width="2" stroke-linecap="round"/>
+    </marker>
+  </defs>
+
+  <rect width="1050" height="820" fill="url(#bg-tri)"/>
+
+  <!-- Title Block -->
+  <text x="525" y="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="24" font-weight="800" fill="#F8FAFC" text-anchor="middle">SMARTRMA "TRIANGLE OF TRUTH" SYSTEM TOPOLOGY</text>
+  <text x="525" y="68" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12.5" font-weight="500" fill="#94A3B8" text-anchor="middle">Distributed Microservice Coordination: Security Edge (Node 1) &bull; Vision Inference (Node 3) &bull; Policy RAG (Node 2)</text>
+
+  <!-- Large Faint Triangle Guide in Background -->
+  <polygon points="525,140 180,520 870,520" fill="rgba(56, 189, 248, 0.02)" stroke="url(#glow-edge)" stroke-width="1.8" stroke-dasharray="6 6"/>
+
+  <!-- Center Hub Label -->
+  <circle cx="525" cy="390" r="48" fill="#0B132B" stroke="#38BDF8" stroke-width="1.5"/>
+  <text x="525" y="386" font-family="sans-serif" font-size="11" font-weight="800" fill="#38BDF8" text-anchor="middle">TRI-NODE</text>
+  <text x="525" y="402" font-family="sans-serif" font-size="10" font-weight="700" fill="#E2E8F0" text-anchor="middle">CONSENSUS</text>
+
+  <!-- ================= APEX 1: NODE 1 (TOP) ================= -->
+  <g transform="translate(345, 90)">
+    <rect width="360" height="120" rx="14" fill="#0F172A" stroke="#38BDF8" stroke-width="2"/>
+    <rect x="0" y="0" width="360" height="32" rx="14" fill="#1E293B"/>
+    <text x="180" y="21" font-family="sans-serif" font-size="13" font-weight="800" fill="#38BDF8" text-anchor="middle">NODE 1: GATEWAY &amp; DECISION ROUTER</text>
+    <text x="180" y="52" font-family="monospace" font-size="11" font-weight="700" fill="#10B981" text-anchor="middle">PORT :8000 • ONLINE ACTIVE</text>
+    <text x="180" y="74" font-family="sans-serif" font-size="11" fill="#E2E8F0" text-anchor="middle">• 64-bit DCT pHash Duplicate Filter &amp; EXIF Audit</text>
+    <text x="180" y="92" font-family="sans-serif" font-size="11" fill="#E2E8F0" text-anchor="middle">• Multi-Factor Risk Formula (R ∈ [0, 100])</text>
+    <text x="180" y="108" font-family="sans-serif" font-size="11" fill="#E2E8F0" text-anchor="middle">• Tiers 1-4 SLA Boundaries &amp; Cryptographic Ledger</text>
+  </g>
+
+  <!-- ================= APEX 2: NODE 3 (BOTTOM LEFT) ================= -->
+  <g transform="translate(40, 460)">
+    <rect width="360" height="130" rx="14" fill="#1E0A2A" stroke="#C084FC" stroke-width="2"/>
+    <rect x="0" y="0" width="360" height="32" rx="14" fill="#3B0764"/>
+    <text x="180" y="21" font-family="sans-serif" font-size="13" font-weight="800" fill="#E879F9" text-anchor="middle">NODE 3: VISION TELEMETRY</text>
+    <text x="180" y="52" font-family="monospace" font-size="11" font-weight="700" fill="#10B981" text-anchor="middle">PORT :8002 • ONLINE ACTIVE</text>
+    <text x="180" y="74" font-family="sans-serif" font-size="11" fill="#E2E8F0" text-anchor="middle">• 5 Multi-Angle Hardware Inspection Bays</text>
+    <text x="180" y="92" font-family="sans-serif" font-size="11" fill="#E2E8F0" text-anchor="middle">• Ollama Moondream Multimodal Vision LLM</text>
+    <text x="180" y="108" font-family="sans-serif" font-size="11" fill="#E2E8F0" text-anchor="middle">• Transmits Vision Findings to Node 2 &amp; Node 1</text>
+    <text x="180" y="122" font-family="sans-serif" font-size="10.5" fill="#C084FC" text-anchor="middle">• Pinpoints Defect (Pin 3: X=62%, Y=38%)</text>
+  </g>
+
+  <!-- ================= APEX 3: NODE 2 (BOTTOM RIGHT) ================= -->
+  <g transform="translate(650, 460)">
+    <rect width="360" height="130" rx="14" fill="#042F2E" stroke="#2DD4BF" stroke-width="2"/>
+    <rect x="0" y="0" width="360" height="32" rx="14" fill="#064E3B"/>
+    <text x="180" y="21" font-family="sans-serif" font-size="13" font-weight="800" fill="#5EEAD4" text-anchor="middle">NODE 2: POLICY RAG &amp; LLM</text>
+    <text x="180" y="52" font-family="monospace" font-size="11" font-weight="700" fill="#10B981" text-anchor="middle">PORT :8001 • ONLINE ACTIVE</text>
+    <text x="180" y="74" font-family="sans-serif" font-size="11" fill="#E2E8F0" text-anchor="middle">• 25 Manufacturer PDFs (1,525 Chunks)</text>
+    <text x="180" y="92" font-family="sans-serif" font-size="11" fill="#E2E8F0" text-anchor="middle">• Ollama Qwen2.5-Coder:14b Integration</text>
+    <text x="180" y="108" font-family="sans-serif" font-size="11" fill="#E2E8F0" text-anchor="middle">• Polite Persona &amp; Zero-Claim Guardrail</text>
+    <text x="180" y="122" font-family="sans-serif" font-size="10.5" fill="#2DD4BF" text-anchor="middle">• Cites Exact PDF Page &amp; Section Clause</text>
+  </g>
+
+  <!-- ================= INTER-NODE DATA FLOWS ================= -->
+  <!-- Leg 1: Node 1 to Node 3 (Down-Left) -->
+  <line x1="420" y1="210" x2="260" y2="455" stroke="#C084FC" stroke-width="2.2" marker-end="url(#arr-tri-purple)"/>
+  <rect x="250" y="300" width="135" height="40" rx="6" fill="#0B132B" stroke="#C084FC" stroke-width="1"/>
+  <text x="317" y="318" font-family="sans-serif" font-size="10" font-weight="700" fill="#FAF5FF" text-anchor="middle">5 Photo Tensors</text>
+  <text x="317" y="332" font-family="sans-serif" font-size="9" fill="#C084FC" text-anchor="middle">&larr; Returns A = 0.86</text>
+
+  <!-- Leg 2: Node 1 to Node 2 (Down-Right) -->
+  <line x1="630" y1="210" x2="790" y2="455" stroke="#2DD4BF" stroke-width="2.2" marker-end="url(#arr-tri-green)"/>
+  <rect x="665" y="300" width="145" height="40" rx="6" fill="#0B132B" stroke="#2DD4BF" stroke-width="1"/>
+  <text x="737" y="318" font-family="sans-serif" font-size="10" font-weight="700" fill="#F0FDFA" text-anchor="middle">Symptoms &amp; Mfg</text>
+  <text x="737" y="332" font-family="sans-serif" font-size="9" fill="#2DD4BF" text-anchor="middle">&larr; Cites CID Clause</text>
+
+  <!-- Leg 3: Node 3 to Node 2 (Bottom Cross-Coordination) -->
+  <line x1="400" y1="525" x2="645" y2="525" stroke="#38BDF8" stroke-width="1.8" stroke-dasharray="4 4" marker-end="url(#arr-tri-blue)"/>
+  <rect x="445" y="505" width="160" height="38" rx="6" fill="#0B132B" stroke="#38BDF8" stroke-width="1"/>
+  <text x="525" y="521" font-family="sans-serif" font-size="9.5" font-weight="700" fill="#38BDF8" text-anchor="middle">Cross-Reference Context</text>
+  <text x="525" y="534" font-family="sans-serif" font-size="8.5" fill="#E2E8F0" text-anchor="middle">Defect Region &rarr; Policy Query</text>
+
+  <!-- ================= FINAL DETERMINATION BUS (BELOW TRIANGLE) ================= -->
+  <!-- Downward Flow to Resolution -->
+  <line x1="525" y1="560" x2="525" y2="620" stroke="#38BDF8" stroke-width="2.5" marker-end="url(#arr-tri-blue)"/>
+
+  <g transform="translate(145, 625)">
+    <rect width="760" height="90" rx="14" fill="#0F172A" stroke="#38BDF8" stroke-width="2"/>
+    <text x="380" y="24" font-family="sans-serif" font-size="13" font-weight="800" fill="#38BDF8" text-anchor="middle">DETERMINISTIC SLA OUTCOME RESOLUTION</text>
+
+    <!-- Branch A: Approve -->
+    <g transform="translate(30, 36)">
+      <rect width="210" height="42" rx="8" fill="rgba(16,185,129,0.15)" stroke="#10B981" stroke-width="1.5"/>
+      <text x="105" y="20" font-family="sans-serif" font-size="11.5" font-weight="800" fill="#10B981" text-anchor="middle">APPROVE</text>
+      <text x="105" y="34" font-family="sans-serif" font-size="9" fill="#E2E8F0" text-anchor="middle">R &lt; 30 • Packing Slip</text>
+    </g>
+
+    <!-- Branch B: Escalate -->
+    <g transform="translate(275, 36)">
+      <rect width="210" height="42" rx="8" fill="rgba(245,158,11,0.15)" stroke="#F59E0B" stroke-width="1.5"/>
+      <text x="105" y="20" font-family="sans-serif" font-size="11.5" font-weight="800" fill="#F59E0B" text-anchor="middle">ESCALATE</text>
+      <text x="105" y="34" font-family="sans-serif" font-size="9" fill="#E2E8F0" text-anchor="middle">L2 Tech Workbench</text>
+    </g>
+
+    <!-- Branch C: Reject -->
+    <g transform="translate(520, 36)">
+      <rect width="210" height="42" rx="8" fill="rgba(239,68,68,0.15)" stroke="#EF4444" stroke-width="1.5"/>
+      <text x="105" y="20" font-family="sans-serif" font-size="11.5" font-weight="800" fill="#EF4444" text-anchor="middle">REJECT</text>
+      <text x="105" y="34" font-family="sans-serif" font-size="9" fill="#E2E8F0" text-anchor="middle">Verified CID Exclusion</text>
+    </g>
+  </g>
+
+  <!-- Append-Only Audit Ledger Bottom Bar -->
+  <g transform="translate(145, 740)">
+    <rect width="760" height="48" rx="10" fill="#030712" stroke="#38BDF8" stroke-width="1.5"/>
+    <text x="380" y="22" font-family="monospace" font-size="11.5" font-weight="700" fill="#38BDF8" text-anchor="middle">🔒 SHA-256 APPEND-ONLY CRYPTOGRAPHIC AUDIT LEDGER</text>
+    <text x="380" y="38" font-family="sans-serif" font-size="10" fill="#94A3B8" text-anchor="middle">Merkle block hash binds: Photos + pHash + Defect Coordinates + Cited Clause + Final Decision</text>
+  </g>
+</svg>

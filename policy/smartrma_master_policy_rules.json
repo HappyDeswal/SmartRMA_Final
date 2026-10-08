@@ -1,0 +1,87 @@
+{
+  "policy_metadata": {
+    "version": "2024.2",
+    "updated_at": "2026-10-06T11:30:00Z",
+    "scope": "GPU and PCB Return Merchandise Authorization (RMA) Triaging",
+    "vector_index": "chroma_policy_chunks_v2"
+  },
+  "chunks": [
+    {
+      "chunk_id": "NV-4.2-C",
+      "brand": "NVIDIA",
+      "category": "electrical_damage",
+      "title": "Section 4.2(c): Electrical Overload & Connector Damage",
+      "clause_text": "Damage resulting from electrical overload, external power surges, improper or fluctuating voltage transients, short circuits, or scorched 12VHPWR pin connectors is explicitly excluded from standard limited warranty coverage.",
+      "is_exclusion": true,
+      "severity": "CRITICAL",
+      "citation": "NVIDIA Hardware Warranty Policy, Rev 2024.2, Section 4.2(c)",
+      "keywords": ["burn", "scorched", "12vhpwr", "electrical", "surge", "melted", "overcurrent", "power"]
+    },
+    {
+      "chunk_id": "NV-2.1-A",
+      "brand": "NVIDIA",
+      "category": "material_defects",
+      "title": "Section 2.1(a): Covered Manufacturing Defects",
+      "clause_text": "Defects in silicon materials, internal GPU processor die integrity, video memory soldering, or factory workmanship under normal operating parameters are fully covered under standard 3-year limited warranty.",
+      "is_exclusion": false,
+      "severity": "NOMINAL",
+      "citation": "NVIDIA Hardware Warranty Policy, Rev 2024.2, Section 2.1(a)",
+      "keywords": ["defect", "artifact", "workmanship", "vram", "silicon", "crash", "driver", "black screen"]
+    },
+    {
+      "chunk_id": "ASUS-CID-3.1",
+      "brand": "ASUS",
+      "category": "customer_induced_damage",
+      "title": "CID Section 3.1: PCB Gouges & Broken Traces",
+      "clause_text": "Damage to the printed circuit board including more than three severed copper trace lines, deep screwdriver gouges, cracked fiberglass weave, or sheared surface-mount capacitors constitutes non-repairable Customer Induced Damage (CID) and voids warranty.",
+      "is_exclusion": true,
+      "severity": "CRITICAL",
+      "citation": "ASUS Component Return Policy, Section CID-3.1",
+      "keywords": ["trace", "scratch", "gouge", "broken", "cracked", "severed", "pcb", "dropped"]
+    },
+    {
+      "chunk_id": "ASUS-CID-3.4",
+      "brand": "ASUS",
+      "category": "connector_burn",
+      "title": "CID Section 3.4: Melted Power Input Terminals",
+      "clause_text": "Melted plastic connector housings or discolored terminal pins resulting from external cable strain, third-party angle adapters, or improper cable seating are classified as external damage not covered by ASUS limited warranty.",
+      "is_exclusion": true,
+      "severity": "CRITICAL",
+      "citation": "ASUS Component Return Policy, Section CID-3.4",
+      "keywords": ["melted", "housing", "pins", "terminal", "connector", "adapter", "strain"]
+    },
+    {
+      "chunk_id": "GEN-RET-1.0",
+      "brand": "Direct Retail Store",
+      "category": "direct_return",
+      "title": "Section 1.0: 30-Day Unopened Product Returns",
+      "clause_text": "Unused products in unopened, original factory-sealed manufacturer packaging with all serial numbers intact are eligible for immediate full refund within thirty (30) calendar days of purchase invoice.",
+      "is_exclusion": false,
+      "severity": "NOMINAL",
+      "citation": "Direct Consumer Return Policy, Section 1.0",
+      "keywords": ["unopened", "sealed", "unused", "wrong model", "changed mind", "return window", "30 days"]
+    },
+    {
+      "chunk_id": "EVGA-RMA-2.2",
+      "brand": "EVGA",
+      "category": "tamper_void",
+      "title": "Section 2.2: Serial Number & Warranty Void Seal",
+      "clause_text": "Removal, alteration, defacing, or absence of the factory serial number barcode sticker or pierced warranty tamper seal screws immediately terminates all warranty obligations.",
+      "is_exclusion": true,
+      "severity": "CRITICAL",
+      "citation": "EVGA RMA Return Guidelines, Section 2.2",
+      "keywords": ["barcode", "serial", "sticker", "tamper", "void", "peeled", "label", "missing serial"]
+    },
+    {
+      "chunk_id": "ENT-T4-FORENSIC",
+      "brand": "Enterprise / Server",
+      "category": "tier4_rules",
+      "title": "Tier 4: Enterprise Hardware Teardown Protocol",
+      "clause_text": "All returns with a declared value exceeding $2,500 USD require physical laboratory intake, microscopic X-ray inspection of the BGA solder ball array, and senior forensic engineer sign-off prior to credit or replacement authorization.",
+      "is_exclusion": false,
+      "severity": "MANDATORY_REVIEW",
+      "citation": "Enterprise Server RMA SLA, Section T4-01",
+      "keywords": ["server", "enterprise", "tier 4", "high value", "teardown", "x-ray", "forensic"]
+    }
+  ]
+}

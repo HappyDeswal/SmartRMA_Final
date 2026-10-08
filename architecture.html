@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>System Architecture &amp; Telemetry Topology | SmartRMA</title>
+  <meta name="description" content="Distributed system architecture: FastAPI, Anomalib PyTorch vision engine, ChromaDB policy RAG, and immutable audit logs.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="bar">
+      <a class="brand-wrapper" href="index.html">
+        <div class="brand-logo-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <rect x="4" y="4" width="16" height="16" rx="3"/>
+            <path d="M9 9h6v6H9z"/>
+            <path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 15h3M1 9h3M1 15h3"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">SmartRMA</span>
+          <span class="brand-subtitle">Hardware Triage &amp; Telemetry</span>
+        </div>
+        <span class="brand-pill">v2.4 Pro</span>
+      </a>
+
+      <nav aria-label="Main Navigation">
+        <a href="index.html" id="nav-triage">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+          RMA Triage
+        </a>
+        <a href="review.html" id="nav-review">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+          Technician Review
+        </a>
+        <a href="architecture.html" aria-current="page" id="nav-arch">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="2" width="20" height="8" rx="2"/>
+            <rect x="2" y="14" width="20" height="8" rx="2"/>
+            <line x1="6" y1="6" x2="6.01" y2="6"/>
+            <line x1="6" y1="18" x2="6.01" y2="18"/>
+          </svg>
+          Architecture
+        </a>
+      </nav>
+
+      <div class="header-actions">
+        <div class="sys-status-pill">
+          <span class="status-dot" style="background:#00A884"></span>
+          <span>Nodes 1, 2 &amp; 3: ONLINE (:8000, :8001 &amp; :8002)</span>
+        </div>
+        <button id="theme-toggle" class="icon-btn" type="button" aria-label="Toggle theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-header">
+      <h1>Distributed Architecture &amp; Execution Topology</h1>
+      <p class="sub">Three isolated container services operating over an encrypted internal service mesh. Deterministic rule routing guarantees every case resolves to Approve, Escalate, or Reject with cryptographic auditability.</p>
+    </div>
+
+    <!-- Live System Topology SVG Diagram -->
+    <div class="card" style="margin-bottom:24px;overflow:hidden">
+      <div class="card-header-bar">
+        <div class="card-title-group">
+          <div class="card-title-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="18" cy="5" r="3"/>
+              <circle cx="6" cy="12" r="3"/>
+              <circle cx="18" cy="19" r="3"/>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+            </svg>
+          </div>
+          <div>
+            <h2>Real-Time Microservice Topology</h2>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="mono brand-pill"><span class="status-dot"></span> LIVE DATASTREAM</span>
+          <span class="mono brand-pill">NETWORK: VPC-SEC-9</span>
+        </div>
+      </div>
+
+      <svg class="dg" viewBox="0 0 720 580" role="img" aria-labelledby="dgt">
+        <title id="dgt">SmartRMA Data Pipeline: Customer Input -> Intake Gateway -> Vision Engine -> Policy RAG -> Decision Router -> Verdicts -> Immutable Ledger</title>
+        <defs>
+          <linearGradient id="grad-intake" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#1E293B"/>
+            <stop offset="100%" stop-color="#0F172A"/>
+          </linearGradient>
+          <linearGradient id="grad-node1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#1E3A8A"/>
+            <stop offset="100%" stop-color="#172554"/>
+          </linearGradient>
+          <linearGradient id="grad-node3" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#701A75"/>
+            <stop offset="100%" stop-color="#4A044E"/>
+          </linearGradient>
+          <linearGradient id="grad-node2" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#065F46"/>
+            <stop offset="100%" stop-color="#064E3B"/>
+          </linearGradient>
+          <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="#38BDF8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+
+        <!-- Customer Input -->
+        <g class="flow-node dg-box dg-box-intake">
+          <rect x="230" y="20" width="260" height="46" rx="10"/>
+          <text class="h" x="360" y="43">Customer Hardware Return</text>
+        </g>
+
+        <!-- Line to Node 1 -->
+        <line class="ar-pulse" x1="360" y1="66" x2="360" y2="92" stroke-width="2" marker-end="url(#ah)"/>
+
+        <!-- Node 1: Intake & Security -->
+        <g class="flow-node dg-box dg-box-node1">
+          <rect x="200" y="92" width="320" height="58" rx="10"/>
+          <text class="h" x="360" y="112">Node 1: Ingest &amp; Security [ONLINE :8000]</text>
+          <text class="s" x="360" y="132">EXIF Audit &bull; 64-bit pHash Duplicate Detector</text>
+        </g>
+
+        <!-- Line to Node 3 -->
+        <line class="ar-pulse" x1="360" y1="150" x2="360" y2="176" stroke-width="2" marker-end="url(#ah)"/>
+
+        <!-- Node 3: Vision Engine -->
+        <g class="flow-node dg-box dg-box-node3">
+          <rect x="200" y="176" width="320" height="58" rx="10"/>
+          <text class="h" x="360" y="196">Node 3: Vision LLM Engine [ONLINE :8002]</text>
+          <text class="s" x="360" y="216">Ollama Moondream Vision &bull; Multimodal Anomaly Stream</text>
+        </g>
+
+        <!-- Line to Node 2 -->
+        <line class="ar-pulse" x1="360" y1="234" x2="360" y2="260" stroke-width="2" marker-end="url(#ah)"/>
+
+        <!-- Node 2: Policy RAG -->
+        <g class="flow-node dg-box dg-box-node2">
+          <rect x="200" y="260" width="320" height="58" rx="10"/>
+          <text class="h" x="360" y="280">Node 2: Policy RAG [ONLINE :8001]</text>
+          <text class="s" x="360" y="300">FastAPI &bull; Ollama Qwen2.5 &bull; 25 PDFs Indexed</text>
+        </g>
+
+        <!-- Line to Node 1 Decision -->
+        <line class="ar-pulse" x1="360" y1="318" x2="360" y2="344" stroke-width="2" marker-end="url(#ah)"/>
+
+        <!-- Node 1: Decision Engine -->
+        <g class="flow-node dg-box dg-box-node1">
+          <rect x="200" y="344" width="320" height="58" rx="10"/>
+          <text class="h" x="360" y="364">Node 1: Decision Router [ONLINE :8000]</text>
+          <text class="s" x="360" y="384">Tier Boundary SLA Matrix &bull; Cryptographic Ledger</text>
+        </g>
+
+        <!-- Branched Outcomes -->
+        <line class="ar-pulse" x1="280" y1="402" x2="130" y2="432" stroke-width="2" marker-end="url(#ah)"/>
+        <line class="ar-pulse" x1="360" y1="402" x2="360" y2="432" stroke-width="2" marker-end="url(#ah)"/>
+        <line class="ar-pulse" x1="440" y1="402" x2="590" y2="432" stroke-width="2" marker-end="url(#ah)"/>
+
+        <!-- Outcome 1: Approve -->
+        <g class="flow-node dg-box dg-box-approve">
+          <rect x="40" y="432" width="180" height="56" rx="10"/>
+          <text class="h" x="130" y="450">APPROVE</text>
+          <text class="s" x="130" y="470">Risk &lt; 30 &bull; Covered</text>
+        </g>
+
+        <!-- Outcome 2: Escalate -->
+        <g class="flow-node dg-box dg-box-escalate">
+          <rect x="270" y="432" width="180" height="56" rx="10"/>
+          <text class="h" x="360" y="450">ESCALATE</text>
+          <text class="s" x="360" y="470">L2 Technician Workbench</text>
+        </g>
+
+        <!-- Outcome 3: Reject -->
+        <g class="flow-node dg-box dg-box-reject">
+          <rect x="500" y="432" width="180" height="56" rx="10"/>
+          <text class="h" x="590" y="450">REJECT</text>
+          <text class="s" x="590" y="470">Verified Exclusion Only</text>
+        </g>
+
+        <!-- Lines to Ledger -->
+        <line class="ar-pulse" x1="130" y1="488" x2="260" y2="520" stroke-width="1.5"/>
+        <line class="ar-pulse" x1="360" y1="488" x2="360" y2="520" stroke-width="1.5"/>
+        <line class="ar-pulse" x1="590" y1="488" x2="460" y2="520" stroke-width="1.5" marker-end="url(#ah)"/>
+
+        <!-- Append-Only Audit Ledger -->
+        <g class="flow-node dg-box dg-box-ledger">
+          <rect x="40" y="520" width="640" height="44" rx="10"/>
+          <text class="h" x="360" y="542">Append-Only Cryptographic Audit Ledger &bull; Customer Notification</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- 3 Container Microservices Specifications -->
+    <div class="g3">
+      <div class="card" style="border:1px solid rgba(0, 168, 132, 0.5);box-shadow:0 0 16px rgba(0,168,132,0.08)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <span class="mono brand-pill" style="color:#00A884;background:rgba(0,168,132,0.16);border-color:rgba(0,168,132,0.4)">PORT :8000 &bull; ONLINE ACTIVE</span>
+          <span class="status-dot" style="background:#00A884"></span>
+        </div>
+        <h2>Node 1: Gateway &amp; Router</h2>
+        <div class="chips" style="margin:8px 0 12px">
+          <span class="chip-tag" style="color:#00A884;border-color:rgba(0,168,132,0.4)">Status: Online</span>
+          <span class="chip-tag">FastAPI</span>
+          <span class="chip-tag">pHash Engine</span>
+          <span class="chip-tag">SHA-256 Ledger</span>
+        </div>
+        <p style="font-size:0.84rem;color:var(--text-secondary);margin-bottom:12px">
+          <strong style="color:#00A884">Service Status: Online.</strong> Live FastAPI service listening on port 8000. Handles EXIF camera audits, 64-bit pHash duplicate detection, and deterministic SLA tier routing.
+        </p>
+        <ul style="padding-left:18px;font-size:0.82rem;color:var(--text-secondary);display:flex;flex-direction:column;gap:5px">
+          <li>64-bit DCT perceptual hash (pHash) clone &amp; web image filter</li>
+          <li>Camera EXIF and editing software audit (Photoshop, GIMP)</li>
+          <li>Orchestrates policy queries with Node 2 and telemetry with Node 3</li>
+          <li>Cryptographic append-only SHA-256 audit ledger signing</li>
+        </ul>
+      </div>
+
+      <div class="card" style="border:1px solid rgba(239, 68, 68, 0.3)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <span class="mono brand-pill" style="color:#EF4444;background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.3)">PORT :8002 &bull; OFFLINE</span>
+          <span class="status-dot" style="background:#EF4444"></span>
+        </div>
+        <h2>Node 3: Vision Telemetry</h2>
+        <div class="chips" style="margin:8px 0 12px">
+          <span class="chip-tag" style="color:#EF4444;border-color:rgba(239,68,68,0.3)">Status: Offline</span>
+          <span class="chip-tag">PyTorch</span>
+          <span class="chip-tag">Anomalib</span>
+          <span class="chip-tag">CUDA 12.4</span>
+        </div>
+        <p style="font-size:0.84rem;color:var(--text-secondary);margin-bottom:12px">
+          <strong style="color:#EF4444">Service Status: Offline.</strong> High-precision GPU PyTorch container is offline awaiting dedicated GPU worker. Heatmaps run in simulated preview mode.
+        </p>
+        <ul style="padding-left:18px;font-size:0.82rem;color:var(--text-secondary);display:flex;flex-direction:column;gap:5px">
+          <li>Automated glare filtration &amp; contrast normalization</li>
+          <li>PatchCore memory bank anomaly score extraction</li>
+          <li>False-color JET heatmap tensor generation</li>
+          <li>Component coordinate localization (e.g. Pin 3)</li>
+        </ul>
+      </div>
+
+      <div class="card" style="border:1px solid rgba(0, 168, 132, 0.5);box-shadow:0 0 16px rgba(0,168,132,0.08)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <span class="mono brand-pill" style="color:#00A884;background:rgba(0,168,132,0.16);border-color:rgba(0,168,132,0.4)">PORT :8001 &bull; ONLINE ACTIVE</span>
+          <span class="status-dot" style="background:#00A884"></span>
+        </div>
+        <h2>Node 2: Policy RAG Engine</h2>
+        <div class="chips" style="margin:8px 0 12px">
+          <span class="chip-tag" style="color:#00A884;border-color:rgba(0,168,132,0.4)">Status: Online</span>
+          <span class="chip-tag">FastAPI</span>
+          <span class="chip-tag">Ollama LLM</span>
+          <span class="chip-tag">1,525 Clauses</span>
+        </div>
+        <p style="font-size:0.84rem;color:var(--text-secondary);margin-bottom:12px">
+          <strong style="color:#00A884">Service Status: Online.</strong> Live FastAPI service listening on port 8001. Connected to local Ollama LLM and indexing 25 manufacturer policy PDFs.
+        </p>
+        <ul style="padding-left:18px;font-size:0.82rem;color:var(--text-secondary);display:flex;flex-direction:column;gap:5px">
+          <li>BM25 + Semantic keyword matching over 1,525 extracted policy clauses</li>
+          <li>Local Ollama reasoning with empathetic, polite tone and strict boundaries</li>
+          <li>Customer Induced Damage (CID) &amp; physical fracture rule verification</li>
+          <li>Zero-claim guardrail: courteous deferral to human RMA representative when unindexed</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Decision Tier Specifications Table -->
+    <div class="card tw" style="margin-top:24px">
+      <div class="card-header-bar">
+        <div class="card-title-group">
+          <div class="card-title-icon">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+              <polyline points="2 17 12 22 22 17"/>
+              <polyline points="2 12 12 17 22 12"/>
+            </svg>
+          </div>
+          <div>
+            <h2>Decision Tier Matrix Specifications</h2>
+          </div>
+        </div>
+        <span class="mono brand-pill">SLA RULES v2.4</span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Tier</th>
+            <th>Value Bracket</th>
+            <th>Mandatory Verification Heuristics</th>
+            <th>Automated Determination Boundary</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b class="mono brand-pill">T1</b></td>
+            <td class="mono">Under $300</td>
+            <td>Serial/order match, pHash duplicate check</td>
+            <td>Auto-approve if risk score is under 30</td>
+          </tr>
+          <tr>
+            <td><b class="mono brand-pill">T2</b></td>
+            <td class="mono">$300 to $1,000</td>
+            <td>Serial check, AI defect grading, fraud history score</td>
+            <td>Auto-decide if confidence is &ge; 85%, else route to escalation</td>
+          </tr>
+          <tr>
+            <td><b class="mono brand-pill">T3</b></td>
+            <td class="mono">$1,000 to $2,500</td>
+            <td>T2 + swap detection, socket inspection, packaging verify</td>
+            <td>Auto-decide only if confidence is &ge; 95%, else route to escalation</td>
+          </tr>
+          <tr>
+            <td><b class="mono brand-pill">T4</b></td>
+            <td class="mono">Over $2,500</td>
+            <td>T3 + mandatory L2 technician forensic review</td>
+            <td>No automated approval permitted; refund released post physical lab inspection</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Fault-Tolerance & Circuit-Breaker Matrix -->
+    <div class="card tw" style="margin-top:20px">
+      <div class="card-header-bar">
+        <div class="card-title-group">
+          <div class="card-title-icon" style="background:var(--warning-subtle);color:var(--warning-text)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+          <div>
+            <h2>Fail-Safe Circuit Breaker Matrix</h2>
+          </div>
+        </div>
+        <span class="mono brand-pill">FAIL-SAFE PROTOCOL</span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>System Anomaly / Degradation Condition</th>
+            <th>Fail-Safe Routing Behavior</th>
+            <th>Compliance Policy</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Service Timeout (&gt; 2500ms)</b></td>
+            <td>Immediate failover to technician review queue</td>
+            <td>Customer notified of standard queue processing</td>
+          </tr>
+          <tr>
+            <td><b>Degraded Photo Quality / Glare</b></td>
+            <td>Rejected at edge; prompt customer with alignment guide</td>
+            <td>No inference run on sub-standard imagery</td>
+          </tr>
+          <tr>
+            <td><b>Serial Barcode Tamper / Mismatch</b></td>
+            <td>Hard freeze; automatic fraud investigation flag raised</td>
+            <td>Zero automated approval authorized</td>
+          </tr>
+          <tr>
+            <td><b>Low Model Confidence (&lt; Threshold)</b></td>
+            <td>Routed to human workbench with annotated defect heatmap</td>
+            <td>Never auto-reject without forensic confirmation</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="common.js"></script>
+</body>
+</html>

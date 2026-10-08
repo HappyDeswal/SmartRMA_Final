@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 700" width="960" height="700">
+  <defs>
+    <linearGradient id="bg-n2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#022C22"/>
+      <stop offset="100%" stop-color="#061A14"/>
+    </linearGradient>
+    <linearGradient id="card-n2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#064E3B"/>
+      <stop offset="100%" stop-color="#022C22"/>
+    </linearGradient>
+    <marker id="arr-n2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="#2DD4BF" stroke-width="2" stroke-linecap="round"/>
+    </marker>
+  </defs>
+
+  <rect width="960" height="700" fill="url(#bg-n2)"/>
+
+  <!-- Title Block -->
+  <text x="480" y="42" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="22" font-weight="800" fill="#F0FDFA" text-anchor="middle">NODE 2: WARRANTY POLICY RAG &amp; LOCAL LLM REASONING</text>
+  <text x="480" y="66" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="500" fill="#5EEAD4" text-anchor="middle">Service Port :8001 • 25 Official Manufacturer PDFs • 1,525 Chunks • Ollama Qwen2.5-Coder • Strict Boundary Guardrails</text>
+
+  <!-- Step 1: Policy Ingestion -->
+  <g transform="translate(60, 95)">
+    <rect width="260" height="135" rx="12" fill="url(#card-n2)" stroke="#2DD4BF" stroke-width="1.5"/>
+    <text x="20" y="32" font-family="sans-serif" font-size="14" font-weight="700" fill="#2DD4BF">1. PDF Policy Ingestion</text>
+    <text x="20" y="56" font-family="sans-serif" font-size="11" fill="#CCFBF1">• 25 Official Manufacturer Docs</text>
+    <text x="20" y="74" font-family="sans-serif" font-size="11" fill="#99F6E4">  (Dell, Apple, Gigabyte, Acer,</text>
+    <text x="20" y="90" font-family="sans-serif" font-size="11" fill="#99F6E4">   ASUS, EVGA, HP, Lenovo, Intel)</text>
+    <text x="20" y="108" font-family="sans-serif" font-size="11" fill="#CCFBF1">• PyPDF Text &amp; Table Normalizer</text>
+    <text x="20" y="124" font-family="sans-serif" font-size="11" fill="#CCFBF1">• 1,525 Categorized Policy Chunks</text>
+  </g>
+
+  <!-- Arrow 1 to 2 -->
+  <line x1="320" y1="162" x2="380" y2="162" stroke="#2DD4BF" stroke-width="2" marker-end="url(#arr-n2)"/>
+
+  <!-- Step 2: Query & Retrieval Engine -->
+  <g transform="translate(380, 95)">
+    <rect width="520" height="135" rx="12" fill="url(#card-n2)" stroke="#14B8A6" stroke-width="1.5"/>
+    <text x="20" y="32" font-family="sans-serif" font-size="14" font-weight="700" fill="#2DD4BF">2. Dual Channel Inquiry &amp; BM25 Retrieval</text>
+    
+    <rect x="20" y="46" width="230" height="74" rx="8" fill="#042F2E" stroke="rgba(45,212,191,0.3)"/>
+    <text x="32" y="66" font-family="sans-serif" font-size="11" font-weight="700" fill="#F0FDFA">Channel A: Triage Form Evaluator</text>
+    <text x="32" y="84" font-family="sans-serif" font-size="10" fill="#99F6E4">• Defect Type: Burnt pin / cracked PCB</text>
+    <text x="32" y="100" font-family="sans-serif" font-size="10" fill="#99F6E4">• Direct match to CID exclusion rules</text>
+
+    <rect x="270" y="46" width="230" height="74" rx="8" fill="#042F2E" stroke="rgba(45,212,191,0.3)"/>
+    <text x="282" y="66" font-family="sans-serif" font-size="11" font-weight="700" fill="#F0FDFA">Channel B: WhatsApp Customer Chat</text>
+    <text x="282" y="84" font-family="sans-serif" font-size="10" fill="#99F6E4">• Natural language warranty question</text>
+    <text x="282" y="100" font-family="sans-serif" font-size="10" fill="#99F6E4">• Manufacturer auto-detection</text>
+  </g>
+
+  <!-- Arrow down to Branching Decision -->
+  <line x1="640" y1="230" x2="640" y2="275" stroke="#2DD4BF" stroke-width="2" marker-end="url(#arr-n2)"/>
+
+  <!-- Step 3: Guardrail & Policy Match Gate -->
+  <g transform="translate(180, 275)">
+    <rect width="600" height="70" rx="10" fill="#042F2E" stroke="#2DD4BF" stroke-width="1.5"/>
+    <text x="300" y="28" font-family="sans-serif" font-size="13.5" font-weight="700" fill="#F0FDFA" text-anchor="middle">3. Policy Grounding Verification Gate</text>
+    <text x="300" y="48" font-family="sans-serif" font-size="11" fill="#5EEAD4" text-anchor="middle">Is matching clause found in indexed manufacturer PDF documentation?</text>
+  </g>
+
+  <!-- Left Arrow to Ollama Grounded -->
+  <line x1="330" y1="345" x2="260" y2="390" stroke="#10B981" stroke-width="2" marker-end="url(#arr-n2)"/>
+  <!-- Right Arrow to Guardrail Fallback -->
+  <line x1="630" y1="345" x2="700" y2="390" stroke="#F59E0B" stroke-width="2" marker-end="url(#arr-n2)"/>
+
+  <!-- Step 4A: Grounded LLM Response -->
+  <g transform="translate(60, 390)">
+    <rect width="400" height="175" rx="12" fill="url(#card-n2)" stroke="#10B981" stroke-width="2"/>
+    <text x="20" y="30" font-family="sans-serif" font-size="13" font-weight="700" fill="#10B981">Case A: Official Clause Verified</text>
+    <text x="20" y="52" font-family="sans-serif" font-size="11" fill="#F0FDFA">• Prompt Ollama (Qwen2.5-Coder:14b)</text>
+    <text x="20" y="70" font-family="sans-serif" font-size="11" fill="#CCFBF1">• Synthesize exact policy terms politely</text>
+    <text x="20" y="88" font-family="sans-serif" font-size="11" fill="#CCFBF1">• Quote Document Name, Section &amp; Page</text>
+    
+    <rect x="15" y="105" width="370" height="55" rx="6" fill="#042F2E"/>
+    <text x="25" y="125" font-family="sans-serif" font-size="10" font-weight="600" fill="#5EEAD4">"According to Gigabyte Global Policy (Page 5),</text>
+    <text x="25" y="140" font-family="sans-serif" font-size="10" fill="#99F6E4">customer induced damage &amp; liquid spills are excluded."</text>
+  </g>
+
+  <!-- Step 4B: Unindexed Representative Fallback -->
+  <g transform="translate(500, 390)">
+    <rect width="400" height="175" rx="12" fill="url(#card-n2)" stroke="#F59E0B" stroke-width="2"/>
+    <text x="20" y="30" font-family="sans-serif" font-size="13" font-weight="700" fill="#F59E0B">Case B: Unindexed / Missing Policy Guardrail</text>
+    <text x="20" y="52" font-family="sans-serif" font-size="11" fill="#F0FDFA">• STRICT RULE: Zero false claims / zero guessing</text>
+    <text x="20" y="70" font-family="sans-serif" font-size="11" fill="#FEF3C7">• Never promise refunds or warranty coverage</text>
+    <text x="20" y="88" font-family="sans-serif" font-size="11" fill="#FEF3C7">• Courteous Deferral to Human Representative</text>
+    
+    <rect x="15" y="105" width="370" height="55" rx="6" fill="#042F2E"/>
+    <text x="25" y="125" font-family="sans-serif" font-size="9.5" font-weight="600" fill="#FBBF24">"This condition is not in our indexed policies.</text>
+    <text x="25" y="140" font-family="sans-serif" font-size="9.5" fill="#FDE68A">Our representative will review your query shortly."</text>
+  </g>
+
+  <!-- Step 5: WhatsApp Chat UI Integration -->
+  <g transform="translate(140, 595)">
+    <rect width="680" height="75" rx="10" fill="#064E3B" stroke="#2DD4BF" stroke-width="1.5"/>
+    <text x="340" y="28" font-family="sans-serif" font-size="13" font-weight="700" fill="#F0FDFA" text-anchor="middle">5. Delivery into Live WhatsApp Chat Stream (index.html)</text>
+    <text x="340" y="48" font-family="sans-serif" font-size="11" fill="#5EEAD4" text-anchor="middle">• Green WhatsApp bubble &bull; Verified Business Account Badge &bull; Read ticks &bull; Citation Pills</text>
+    <text x="340" y="64" font-family="sans-serif" font-size="10.5" fill="#FEF3C7" text-anchor="middle">• One-Click Action: [🛎️ Connect with Human RMA Representative]</text>
+  </g>
+</svg>

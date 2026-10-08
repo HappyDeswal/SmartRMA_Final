@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Technician Review Workbench | SmartRMA</title>
+  <meta name="description" content="Operations workbench for technician inspection, golden sample comparator, and audit-compliant RMA overrides.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="bar">
+      <a class="brand-wrapper" href="index.html">
+        <div class="brand-logo-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <rect x="4" y="4" width="16" height="16" rx="3"/>
+            <path d="M9 9h6v6H9z"/>
+            <path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 15h3M1 9h3M1 15h3"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">SmartRMA</span>
+          <span class="brand-subtitle">Hardware Triage &amp; Telemetry</span>
+        </div>
+        <span class="brand-pill">v2.4 Pro</span>
+      </a>
+
+      <nav aria-label="Main Navigation">
+        <a href="index.html" id="nav-triage">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+          RMA Triage
+        </a>
+        <a href="review.html" aria-current="page" id="nav-review">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+          Technician Review
+        </a>
+        <a href="architecture.html" id="nav-arch">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="2" width="20" height="8" rx="2"/>
+            <rect x="2" y="14" width="20" height="8" rx="2"/>
+            <line x1="6" y1="6" x2="6.01" y2="6"/>
+            <line x1="6" y1="18" x2="6.01" y2="18"/>
+          </svg>
+          Architecture
+        </a>
+      </nav>
+
+      <div class="header-actions">
+        <div class="sys-status-pill">
+          <span class="status-dot"></span>
+          <span>Lead Tech #402 Signed In</span>
+        </div>
+        <button id="theme-toggle" class="icon-btn" type="button" aria-label="Toggle theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-header">
+      <h1>Technician Review &amp; Comparator Workbench</h1>
+      <p class="sub">High-value and escalated cases prioritized by value &times; risk score. Side-by-side golden reference comparison with mandatory cryptographic audit trail.</p>
+    </div>
+
+    <div class="g2">
+      <!-- Left Column: Operations Queue -->
+      <div class="card tw">
+        <div class="card-header-bar">
+          <div class="card-title-group">
+            <div class="card-title-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="8" y1="6" x2="21" y2="6"/>
+                <line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/>
+                <line x1="3" y1="12" x2="3.01" y2="12"/>
+                <line x1="3" y1="18" x2="3.01" y2="18"/>
+              </svg>
+            </div>
+            <div>
+              <h2>Escalation Queue</h2>
+            </div>
+          </div>
+          <span class="mono brand-pill" id="queue-count">5 ACTIVE CASES</span>
+        </div>
+
+        <!-- Queue Toolbar -->
+        <div class="queue-toolbar">
+          <div class="queue-tabs">
+            <button class="q-tab active" data-filter="all">All (5)</button>
+            <button class="q-tab" data-filter="high-risk">High Risk (2)</button>
+            <button class="q-tab" data-filter="t3-t4">Tier 3/4 (3)</button>
+          </div>
+          <div class="search-box">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="q-search" placeholder="Search Case ID...">
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Case ID &amp; Model</th>
+              <th>Value</th>
+              <th>Risk</th>
+              <th>Tier</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="q"></tbody>
+        </table>
+
+        <div style="margin-top:14px;padding-top:10px;border-top:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;font-size:0.75rem;color:var(--text-muted)">
+          <span>Navigation: <span class="kbd">&uarr;</span> <span class="kbd">&darr;</span> Keys</span>
+          <span>Shortcuts: <span class="kbd">A</span> Approve &bull; <span class="kbd">R</span> Reject</span>
+        </div>
+      </div>
+
+      <!-- Right Column: Dual Viewport Comparator & Override -->
+      <div class="card" id="d">
+        <!-- Injected via review.js -->
+      </div>
+    </div>
+
+    <!-- Immutable Audit Ledger -->
+    <div class="card" style="margin-top:24px">
+      <div class="card-header-bar">
+        <div class="card-title-group">
+          <div class="card-title-icon" style="background:var(--info-subtle);color:var(--info-text)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          <div>
+            <h2>Compliance Audit Ledger</h2>
+          </div>
+        </div>
+        <span class="mono brand-pill">APPEND-ONLY SECURE LEDGER</span>
+      </div>
+      <div id="log" class="audit-log-feed">
+        <div class="mu" style="font-size:0.85rem">No technician overrides recorded in this active session.</div>
+      </div>
+    </div>
+  </main>
+
+  <script src="common.js"></script>
+  <script src="review.js"></script>
+</body>
+</html>
