@@ -270,7 +270,7 @@ try:
     req = urllib.request.Request("http://127.0.0.1:8002/health")
     with urllib.request.urlopen(req, timeout=5) as resp:
         data = json.loads(resp.read().decode())
-        has_n3 = data.get("status") == "ONLINE" and data.get("primary_vision_model") == "moondream:latest"
+        has_n3 = data.get("status") == "ONLINE" and data.get("primary_vision_model") == "llama3.2-vision:latest"
         log_test("Node 3 Health & Vision Model", has_n3, f"(model={data.get('primary_vision_model')})")
 except Exception as e:
     log_test("Node 3 Health & Vision Model", False, str(e))

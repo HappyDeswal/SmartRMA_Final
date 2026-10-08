@@ -42,11 +42,13 @@ Node 2 operates in two interconnected modes:
 
 ---
 
-## 3. Local LLM Reasoning & Boundary Guardrails
+## 3. Dual-Engine LLM Architecture & Boundary Guardrails
 
-Node 2 integrates with local **Ollama** (`http://localhost:11434`) using the high-performance **`qwen2.5-coder:14b`** model (with automatic fallback to `llama3.2-vision:latest` / `qwen3.5:35b-a3b`).
+Node 2 implements a resilient **Dual-Engine Architecture** for conversational chat:
+1. **Primary Cloud Engine**: Google Gemini API (`gemini-1.5-flash` / `gemini-2.0-flash` via `GEMINI_API_KEY`).
+2. **Resilient Local Fallback**: When `GEMINI_API_KEY` is unset, rate-limited, or quota is exhausted (HTTP 429), Node 2 automatically redirects to the local Ollama LLM (`qwen2.5-coder:14b` with fallback to `llama3.2-vision:latest`).
 
-### Strict System Guardrails Enforced in Node 2:
+### Strict System Guardrails & Limitations Enforced in Node 2:
 
 ```
                                 [Incoming Customer Inquiry]
@@ -54,27 +56,28 @@ Node 2 integrates with local **Ollama** (`http://localhost:11434`) using the hig
                                              ▼
                  [Manufacturer & Keyword Retrieval across 1,525 Chunks]
                                              │
-                ┌────────────────────────────┴────────────────────────────┐
-                ▼                                                         ▼
-    [Strong Matching Policy Found]                           [No Matching Policy / Unindexed]
-                │                                                         │
- • Synthesize official terms into clean bullet points.     • STRICT RULE: Never hallucinate or assume.
- • Quote official source document, page, and category.     • STRICT RULE: Never make financial promises.
- • Explain exclusions (CID, liquid, burnt) politely.       • Courteous Fallback Triggered:
- • Maintain empathetic, respectful tone.                     "This specific condition or product line is
-                                                              not explicitly detailed in our indexed
-                                                              manufacturer policy documentation. To ensure
-                                                              you receive accurate guidance, our RMA
-                                                              representative will review your query shortly."
-                                                           • Inject interactive button:
-                                                             [🛎️ Connect with Human RMA Representative]
+                                ┌────────────┴────────────┐
+                                ▼                         ▼
+                     [Google Gemini API]          [Gemini 429 / Unset]
+                     (Primary Cloud LLM)                  │
+                                │                         ▼
+                                │                [Local Ollama LLM]
+                                │               (qwen2.5-coder:14b)
+                                └────────────┬────────────┘
+                                             │
+                                             ▼
+                        [Strict Safety Boundary Filter]
+  • CHAT PURPOSE ONLY: Never accepts image uploads or photo attachments in chat.
+  • NO RETURN GUARANTEES: Never promises, approves, or claims returns/refunds.
+  • INFORMATIONAL ONLY: Clarifies official returns require formal Intake submission.
+  • POLICY GROUNDING: Synthesizes indexed clauses into clean preparation steps.
 ```
 
-### Safety & Persona Guidelines:
-1. **Empathy**: Validates the customer's hardware frustration (*"I understand how inconvenient hardware issues can be..."*).
-2. **Preliminary Notice**: Always reminds the user that automated triage is preliminary and subject to final physical verification at the depot.
-3. **Firm on Exclusions**: Respectfully explains manufacturer CID exclusions without being confrontational or argumentative.
-4. **Off-Topic Deflection**: Declines coding requests, roleplay, or general trivia, politely guiding users back to RMA and hardware inspection.
+### Safety & Operational Limitations:
+1. **Chat Purpose Only**: The assistant is strictly for answering questions about policies and general hardware details. Image uploads and file attachments are prohibited in chat; hardware inspection requires filing a claim in the Return Intake portal.
+2. **No Return Approvals or Claims**: The chatbot never states or guarantees that a return or refund will be accepted. Official determinations require formal intake with verified photos and technician review.
+3. **Policy Grounding**: Synthesizes verified clauses into step-by-step preparation guidance (receipt verification, anti-static ESD packaging, no CID, official RMA authorization).
+4. **General Technical Guidance**: Accurately explains hardware concepts (PCIe lanes, thermal paste, artifacting, architecture) without hallucination.
 
 ---
 
@@ -89,6 +92,9 @@ Node 2 integrates with local **Ollama** (`http://localhost:11434`) using the hig
   "indexed_chunks": 1525,
   "indexed_documents": 25,
   "manufacturers": ["Dell", "Apple", "GIGABYTE", "Acer", "ASUS", "Lenovo", "HP", "Intel", "EVGA", "NVIDIA"],
+  "gemini_api_configured": true,
+  "primary_chat_engine": "Google Gemini API (gemini-1.5-flash)",
+  "fallback_chat_engine": "Local Ollama LLM (qwen2.5-coder:14b)",
   "active_models": ["qwen2.5-coder:14b", "llama3.2-vision:latest", "qwen3.5:35b-a3b"]
 }
 ```

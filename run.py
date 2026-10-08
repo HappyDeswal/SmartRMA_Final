@@ -141,11 +141,11 @@ def check_or_start_ollama() -> bool:
             print(f"  {C_CYAN}Installed Models ({len(installed)}):{C_RESET} {', '.join(installed[:5])}")
             
             # Check Vision LLM
-            has_vision = any("moondream" in m for m in installed)
+            has_vision = any("llama3.2-vision" in m or "llama" in m or "moondream" in m for m in installed)
             if has_vision:
-                print(f"  {C_GREEN}✔{C_RESET} Vision LLM: 'moondream:latest' available for Node 3")
+                print(f"  {C_GREEN}✔{C_RESET} Vision LLM: 'llama3.2-vision:latest' available for Node 3")
             else:
-                print(f"  {C_YELLOW}⚠{C_RESET} 'moondream:latest' not installed. Pulling in background or using fallback...")
+                print(f"  {C_YELLOW}⚠{C_RESET} 'llama3.2-vision:latest' not installed. Pulling in background or using fallback...")
                 
             # Check Policy LLM
             has_policy = any("qwen2.5-coder" in m or "llama3" in m or "qwen" in m for m in installed)
@@ -220,7 +220,7 @@ def print_status_dashboard():
   {C_BOLD}⚡ BACKEND MICROSERVICES:{C_RESET}
     • Node 1 (Ingest & Decision Router): {C_MAGENTA}http://127.0.0.1:8000{C_RESET}  (EXIF, pHash, Ledger, SLA)
     • Node 2 (Policy RAG & Web Host)  : {C_MAGENTA}http://127.0.0.1:8001{C_RESET}  (1,525 Clauses, Chatbot)
-    • Node 3 (Vision LLM Telemetry)    : {C_MAGENTA}http://127.0.0.1:8002{C_RESET}  (Moondream Multimodal)
+    • Node 3 (Vision LLM Telemetry)    : {C_MAGENTA}http://127.0.0.1:8002{C_RESET}  (Llama 3.2 Vision Multimodal)
     • Local LLM Engine (Ollama)        : {C_MAGENTA}http://localhost:11434{C_RESET}  (Local Model Inference)
 
   {C_BOLD}🔒 SECURITY & LEDGER:{C_RESET}

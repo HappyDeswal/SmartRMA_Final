@@ -1,7 +1,7 @@
 # Node 3: Vision Telemetry & Multimodal Vision LLM Inspection Engine
 
 ## 1. Overview & Role in the Pipeline
-**Node 3** is the deep learning computer vision inference microservice of SmartRMA (located in [`node/node3_vision.py`](file:///Users/happydeswal/Downloads/files/node/node3_vision.py) and operating **ONLINE** on **Port 8002**). Its role is to subject hardware return photographs to microscopic structural inspection using an integrated local multimodal **Vision LLM (`moondream:latest`)** running directly via Ollama.
+**Node 3** is the deep learning computer vision inference microservice of SmartRMA (located in [`node/node3_vision.py`](file:///Users/happydeswal/Downloads/files/node/node3_vision.py) and operating **ONLINE** on **Port 8002**). Its role is to subject hardware return photographs to microscopic structural inspection using an integrated local multimodal **Vision LLM (`llama3.2-vision:latest`)** running directly via Ollama.
 
 Rather than simple static bounding boxes, Node 3 performs natural visual understanding:
 1. It analyzes the hardware photograph to identify the exact component (e.g. 12VHPWR connector, PCIe Gen4 fingers, GPU silicon die, VRM MOSFETs, cooling fans).
@@ -33,8 +33,8 @@ Rather than simple static bounding boxes, Node 3 performs natural visual underst
                                     ▼
        ┌─────────────────────────────────────────────────────────┐
        │ Multimodal Vision LLM Inference (Ollama)                │
-       │  • Primary Model: moondream:latest (1.6B Vision)        │
-       │  • Fallback: llama3.2-vision:latest / Local CV Matrix   │
+       │  • Primary Model: llama3.2-vision:latest (11B Vision)   │
+       │  • Fallback: moondream:latest / Local CV Matrix         │
        │  • Generates rich empirical physical inspection text    │
        └────────────────────────────┬────────────────────────────┘
                                     │

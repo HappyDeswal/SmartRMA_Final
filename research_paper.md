@@ -305,14 +305,15 @@ Node 2 houses the regulatory and policy intelligence:
 * **Static Asset Server**: Serves `index.html`, `review.html`, `architecture.html`, stylesheets, and JavaScript assets.
 * **Vector Policy Repository**: Manages 1,525 parsed policy chunks extracted from official PDF documents stored in `policy/`.
 * **Internal Triage API (`/api/triage/evaluate`)**: Evaluates specific hardware symptoms for Node 1, cross-referencing factory defect terms against Customer Induced Damage exclusions.
-* **Conversational AI API (`/api/chat`)**: Powers the **Interactive AI Chatbot**. The endpoint operates in two distinct modes:
-  - *General Hardware Guidance*: Explains concepts (e.g., thermal throttling, PCIe lane splitting) directly from the LLM's internal knowledge without RAG distortion.
-  - *Return Process Walkthrough*: Guides users step-by-step through the return process (Proof of Purchase, Condition Inspection, Anti-Static Packaging, RMA Authorization) without robotic canned responses.
+* **Conversational AI API (`/api/chat`)**: Powers the **Interactive AI Chatbot** with a resilient **Dual-Engine Architecture** (Google Gemini Cloud API with automatic fallback to local Ollama LLM):
+  - *Strict Operational Boundaries*: Operates exclusively for informational inquiries. Prohibits image uploads in chat, and explicitly forbids approving or guaranteeing return/refund outcomes.
+  - *General Hardware Guidance*: Explains concepts (e.g., thermal throttling, PCIe lane splitting) directly from internal knowledge.
+  - *Return Process Walkthrough*: Guides users step-by-step through return preparation (Proof of Purchase, Condition Inspection, Anti-Static Packaging, RMA Authorization via portal) without robotic canned responses.
 * **Security Guardrails**: Includes a path-traversal firewall blocking dotfiles (`.env`, `.git`), internal source code (`.py`), and direct ledger downloads.
 
 #### Node 3: Multimodal Vision LLM Engine (`node3_vision.py` — Port 8002)
-Node 3 executes the computational vision tasks:
-* **Model Pipeline**: Houses the quantized `moondream:latest` multimodal model.
+Node 3 executes computational vision tasks:
+* **Model Pipeline**: Houses the primary local `llama3.2-vision:latest` (11B Vision LLM) multimodal model (with fallback to `moondream:latest`).
 * **Heatmap Synthesis**: Evaluates component coordinates (e.g., 12VHPWR sockets, PCIe gold fingers, VRM MOSFETs) and generates false-color overlay heatmaps indicating anomalous pixel clusters.
 * **Isolated Reporting**: Transmits its structured findings (`anomaly_score`, `detected_defects`, `heatmap_coordinates`) **strictly to Node 1**, maintaining clean separation of concerns.
 
@@ -329,9 +330,8 @@ SmartRMA was evaluated across four rigorous testing dimensions: (1) visual defec
 * **Hardware Platform**: Apple Silicon Mac (M-Series Unified Memory Architecture, 36GB Unified RAM).
 * **Software Environment**: macOS 15, Python 3.14.6, FastAPI 0.115, Uvicorn 0.34, Pillow 11.1, OpenCV 4.10, Ollama 0.5.
 * **Deployed Neural Models**:
-  - Policy & Reasoning: `qwen2.5-coder:14b` (4-bit quantization, context window: 32k).
-  - Vision Telemetry: `moondream:latest` (1B parameter multimodal vision model).
-  - Fallback Vision: `llama3.2-vision:latest` (11B multimodal vision model).
+  - Policy & Reasoning: `qwen2.5-coder:14b` / Google Gemini 1.5 Flash Cloud API.
+  - Vision Telemetry: `llama3.2-vision:latest` (11B parameter multimodal vision model; primary) and `moondream:latest` (fallback).
 
 ### 5.2 Visual Anomaly Detection & Defect Classification Performance
 We benchmarked Node 3's visual defect localization across a curated test dataset of 250 multi-angle hardware images representing five defect classes: Burnt 12VHPWR Sockets, Cracked Solder/PCB, Liquid Corrosion, Gold Pin Peeling, and Factory Clean Boards.

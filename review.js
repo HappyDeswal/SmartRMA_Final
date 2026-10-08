@@ -31,14 +31,6 @@ function requiresTechnicianApproval(c) {
 }
 
 function getInitialCases() {
-  const defaultUserImages = [
-    'assets/gpu_front.jpg',
-    'assets/gpu_reference.jpg',
-    'assets/gpu_reference.jpg',
-    'assets/gpu_damaged.jpg',
-    'assets/gpu_reference.jpg'
-  ];
-
   const defaultCases = [
     {
       id: 'RMA-1042',
@@ -53,15 +45,15 @@ function getInitialCases() {
       cl: 'Damage from electrical overload or scorched pin connectors is explicitly excluded.',
       src: 'NVIDIA Limited Hardware Warranty, Section 4.2',
       st: 'Pending',
-      userImages: [...defaultUserImages],
-      subImg: 'assets/gpu_damaged.jpg',
+      userImages: [],
+      subImg: null,
       at: [62, 38],
       visionTelemetry: {
         anomaly_score: 0.86,
         flagged_region: '12VHPWR Power Connector (Pin 3)',
         severity: 'CRITICAL',
         visual_findings: 'Severe thermal discoloration, scorching, and localized connector nylon melting at Pin 3 terminal with copper pitting.',
-        model_used: 'moondream:latest (Vision LLM)',
+        model_used: 'llama3.2-vision:latest (Vision LLM)',
         at: [62, 38]
       },
       policyGrounding: {
@@ -85,15 +77,15 @@ function getInitialCases() {
       cl: 'High-value enterprise returns require mandatory physical teardown inspection prior to credit release.',
       src: 'Enterprise Support Agreement, Section 8.1',
       st: 'Pending',
-      userImages: [...defaultUserImages],
-      subImg: 'assets/gpu_front.jpg',
+      userImages: [],
+      subImg: null,
       at: [48, 52],
       visionTelemetry: {
         anomaly_score: 0.62,
         flagged_region: 'GPU Core BGA / Power Stages',
         severity: 'MODERATE',
         visual_findings: 'Slight flux residue around power inductors; no overt silicon fractures detected.',
-        model_used: 'moondream:latest (Vision LLM)',
+        model_used: 'llama3.2-vision:latest (Vision LLM)',
         at: [48, 52]
       },
       policyGrounding: {
@@ -118,15 +110,15 @@ function getInitialCases() {
       cl: 'Claims exhibiting serial recycling or photographic reuse require forensic review.',
       src: 'Anti-Fraud Compliance Matrix, Section 3.0',
       st: 'Pending',
-      userImages: [...defaultUserImages],
-      subImg: 'assets/gpu_reference.jpg',
+      userImages: [],
+      subImg: null,
       at: [30, 70],
       visionTelemetry: {
         anomaly_score: 0.82,
         flagged_region: 'PCIe Connector & Shroud Pins',
         severity: 'CRITICAL',
-        visual_findings: 'Perceptual hash collision (pHash 64-bit distance = 0) with RMA-0941. Duplicate image reuse detected.',
-        model_used: 'moondream:latest (Vision LLM)',
+        visual_findings: 'Perceptual hash collision (pHash 64-bit distance = 0) with previous intake. Duplicate image reuse detected.',
+        model_used: 'llama3.2-vision:latest (Vision LLM)',
         at: [30, 70]
       },
       policyGrounding: {
@@ -150,15 +142,15 @@ function getInitialCases() {
       cl: 'Defects in silicon materials or factory soldering under normal use are fully covered.',
       src: 'Manufacturer Hardware Warranty, Section 2.1',
       st: 'Pending',
-      userImages: [...defaultUserImages],
-      subImg: 'assets/gpu_front.jpg',
+      userImages: [],
+      subImg: null,
       at: [48, 52],
       visionTelemetry: {
         anomaly_score: 0.58,
         flagged_region: 'VRAM Bank A0-A2 Traces',
         severity: 'MODERATE',
         visual_findings: 'Memory trace impedance anomaly reported; visual solder joints appear factory nominal.',
-        model_used: 'moondream:latest (Vision LLM)',
+        model_used: 'llama3.2-vision:latest (Vision LLM)',
         at: [48, 52]
       },
       policyGrounding: {
@@ -182,21 +174,15 @@ function getInitialCases() {
       cl: 'Cosmetic wear that does not affect electrical continuity is not a defect.',
       src: 'Direct Return Policy, Section 1.0',
       st: 'Pending',
-      userImages: [
-        'assets/base_vrm.jpg',
-        'assets/base_vrm.jpg',
-        'assets/base_vrm.jpg',
-        'assets/base_vrm.jpg',
-        'assets/base_vrm.jpg'
-      ],
-      subImg: 'assets/base_vrm.jpg',
+      userImages: [],
+      subImg: null,
       at: [35, 65],
       visionTelemetry: {
         anomaly_score: 0.44,
         flagged_region: 'Solid Capacitor Bank C14',
         severity: 'MODERATE',
         visual_findings: 'Minor cosmetic scratch on capacitor aluminum casing; no dielectric rupture or bulging.',
-        model_used: 'moondream:latest (Vision LLM)',
+        model_used: 'llama3.2-vision:latest (Vision LLM)',
         at: [35, 65]
       },
       policyGrounding: {
@@ -206,49 +192,6 @@ function getInitialCases() {
         page: 1,
         explanation: 'Cosmetic surface wear without electrical degradation.'
       }
-    },
-    {
-      id: 'RMA-1028',
-      p: 'GeForce RTX 4060 Dual OC 8GB',
-      v: 289,
-      t: 'T1',
-      r: 14,
-      a: 0.08,
-      conf: 96,
-      st: 'Auto-Approved',
-      isAutoApproved: true,
-      autoApproveReason: 'Autonomous SLA Auto-Approved: Product value ($289.00) falls within Tier 1 (< $300), Risk Score (14/100) is well below the 30 ceiling threshold. Node 3 Vision confirmed clean hardware condition (Anomaly Score: 0.08, Factory Clean), and Node 2 Policy verified full coverage under Direct Return Policy, Section 1.0 with verified pHash/EXIF authenticity.',
-      resolvedReason: 'Autonomous SLA Auto-Approved: Product value ($289.00) falls within Tier 1 (< $300), Risk Score (14/100) is well below the 30 ceiling threshold. Node 3 Vision confirmed clean hardware condition (Anomaly Score: 0.08, Factory Clean), and Node 2 Policy verified full coverage under Direct Return Policy, Section 1.0 with verified pHash/EXIF authenticity.',
-      resolvedOperator: 'AUTONOMOUS-SLA-ROUTER',
-      resolvedTime: '14:22:10',
-      resolvedHash: '0x7a9c81f034e912bc88d1',
-      rn: 'Factory Clean Surface (All 5 Views)',
-      cl: 'Unused products or nominal hardware returns under $300 are eligible for immediate full refund or replacement under Tier 1 SLA.',
-      src: 'Direct Return Policy, Section 1.0',
-      userImages: [
-        'assets/gpu_front.jpg',
-        'assets/gpu_front.jpg',
-        'assets/gpu_front.jpg',
-        'assets/gpu_front.jpg',
-        'assets/gpu_front.jpg'
-      ],
-      subImg: 'assets/gpu_front.jpg',
-      at: [50, 50],
-      visionTelemetry: {
-        anomaly_score: 0.08,
-        flagged_region: 'Factory Clean Surface (All 5 Views)',
-        severity: 'NOMINAL',
-        visual_findings: 'No thermal discoloration, scorched pins, cracks, or mechanical trauma detected. All 5 guided angles are pristine and match golden baseline.',
-        model_used: 'moondream:latest (Vision LLM)',
-        at: [50, 50]
-      },
-      policyGrounding: {
-        verdict: 'APPROVED (Autonomous Tier 1)',
-        cited_clause: 'Unused products or nominal hardware returns under $300 are eligible for immediate full refund or replacement under Tier 1 SLA.',
-        source_document: 'Direct Return Policy',
-        page: 1,
-        explanation: 'Tier 1 low-risk clean unit auto-approved without technician intervention.'
-      }
     }
   ];
 
@@ -257,8 +200,9 @@ function getInitialCases() {
     if (stored) {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Merge stored cases with defaults so newly triaged cases are at the top
-        const merged = [...parsed];
+        // Filter out fake or legacy RMA-1028 entries
+        const cleanStored = parsed.filter(c => c && c.id !== 'RMA-1028');
+        const merged = [...cleanStored];
         defaultCases.forEach(dc => {
           if (!merged.some(m => m.id === dc.id)) {
             merged.push(dc);
@@ -301,36 +245,23 @@ function generateAuditHash() {
   return hash;
 }
 
-// Load Persistent Audit History from localStorage
+// Load Persistent Audit History from localStorage (Only authentic technician & real triage records)
 function loadAuditHistory() {
+  auditLedger.length = 0;
   try {
     const raw = localStorage.getItem('smartrma_audit_history');
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        auditLedger.length = 0;
-        parsed.forEach(item => auditLedger.push(item));
+        // Filter out fake seeded RMA-1028 or test ledger records
+        const cleanHistory = parsed.filter(item => item && item.caseId !== 'RMA-1028' && !item.caseId.startsWith('ORD-AUDIT'));
+        cleanHistory.forEach(item => auditLedger.push(item));
         return;
       }
     }
   } catch (e) {
     console.warn('[Error loading persistent audit history]', e);
   }
-
-  // Initial default audit ledger entry with sample auto-approved case
-  auditLedger.length = 0;
-  auditLedger.push({
-    time: '14:22:10',
-    caseId: 'RMA-1028',
-    product: 'GeForce RTX 4060 Dual OC 8GB',
-    tier: 'T1',
-    decision: 'Auto-Approved',
-    reason: 'Autonomous SLA Auto-Approved: Product value ($289.00) falls within Tier 1 (< $300), Risk Score (14/100) is well below the 30 ceiling threshold. Node 3 Vision confirmed clean hardware condition (Anomaly Score: 0.08, Factory Clean), and Node 2 Policy verified full coverage under Direct Return Policy, Section 1.0 with verified pHash/EXIF authenticity.',
-    hash: '0x7a9c81f034e912bc88d1',
-    operator: 'AUTONOMOUS-SLA-ROUTER',
-    subImg: 'assets/gpu_front.jpg',
-    isAutoApproved: true
-  });
 }
 
 // Update Toolbar Tab Counts
@@ -440,7 +371,7 @@ function renderDetails() {
   const isAutoApproved = c.st === 'Auto-Approved' || c.isAutoApproved;
   const isTechnicianResolved = c.st === 'Approved' || c.st === 'Rejected';
   const isResolved = isAutoApproved || isTechnicianResolved;
-  const customerUnitImg = c.subImg || (c.userImages && c.userImages[0]) || 'assets/gpu_damaged.jpg';
+  const customerUnitImg = c.subImg || (c.userImages && c.userImages.length > 0 ? c.userImages[0] : null);
 
   // Extract Node 3 Vision and Node 2 Policy Telemetry
   const vt = c.visionTelemetry || {
@@ -448,7 +379,7 @@ function renderDetails() {
     flagged_region: c.rn || 'Hardware Incident Zone',
     severity: (c.a >= 0.75) ? 'CRITICAL' : (c.a <= 0.25) ? 'NOMINAL' : 'MODERATE',
     visual_findings: (c.a >= 0.75) ? `Thermal scorch patterns and damaged connector contact detected on ${c.rn || 'hardware'}.` : (c.a <= 0.25) ? `Clean nominal hardware baseline verified; no physical damage observed.` : `Moderate visual variance detected on ${c.rn || 'hardware'}.`,
-    model_used: 'moondream:latest (Vision LLM)',
+    model_used: 'llama3.2-vision:latest (Vision LLM)',
     at: c.at || [50, 50]
   };
 
@@ -519,15 +450,29 @@ function renderDetails() {
     </div>
 
     <!-- Customer Uploaded Hardware Inspection Viewport (No factory reference spec) -->
-    <div class="hardware-inspection-viewport" id="cust-viewport" style="background-image:url(${escapeHtml(customerUnitImg)})">
-      <div class="viewport-label">CUSTOMER UPLOADED VIEW: ${escapeHtml(vt.flagged_region || c.rn || 'Hardware View')}</div>
-      <div class="spectral-overlay" style="--hx:${c.at ? c.at[0] : 50}%;--hy:${c.at ? c.at[1] : 50}%"></div>
-      ${(c.a > 0.3) ? `
-        <div class="defect-crosshair" style="left:${c.at ? c.at[0] : 50}%;top:${c.at ? c.at[1] : 50}%">
-          <div class="crosshair-center"></div>
+    ${customerUnitImg ? `
+      <div class="hardware-inspection-viewport" id="cust-viewport" style="background-image:url(${escapeHtml(customerUnitImg)})">
+        <div class="viewport-label">CUSTOMER UPLOADED VIEW: ${escapeHtml(vt.flagged_region || c.rn || 'Hardware View')}</div>
+        <div class="spectral-overlay" style="--hx:${c.at ? c.at[0] : 50}%;--hy:${c.at ? c.at[1] : 50}%"></div>
+        ${(c.a > 0.3) ? `
+          <div class="defect-crosshair" style="left:${c.at ? c.at[0] : 50}%;top:${c.at ? c.at[1] : 50}%">
+            <div class="crosshair-center"></div>
+          </div>
+        ` : ''}
+      </div>
+    ` : `
+      <div class="hardware-inspection-viewport no-image" id="cust-viewport">
+        <div class="no-image-placeholder">
+          <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          <div style="font-weight:700;margin-top:8px;font-size:0.92rem;color:var(--text-secondary)">No Customer Hardware Photos Uploaded</div>
+          <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">Case submitted without image dossier. Verification evaluated via symptom diagnostics and policy clauses.</div>
         </div>
-      ` : ''}
-    </div>
+      </div>
+    `}
 
     <!-- Customer Uploaded Photos Gallery (5 Guided Views) -->
     ${(c.userImages && c.userImages.length > 0) ? `

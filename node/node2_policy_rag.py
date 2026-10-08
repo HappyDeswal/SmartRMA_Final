@@ -81,6 +81,26 @@ POLICY_DIR = os.path.join(BASE_DIR, "policy") if not BASE_DIR.endswith("policy")
 INDEX_FILE = os.path.join(POLICY_DIR, "policy_index.json")
 OLLAMA_URL = "http://localhost:11434/api/chat"
 
+# Load environment variables from .env file if present
+def load_env_file():
+    env_path = os.path.join(BASE_DIR, ".env")
+    if os.path.exists(env_path):
+        try:
+            with open(env_path, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        k = k.strip()
+                        v = v.strip().strip("'\"")
+                        if k and k not in os.environ:
+                            os.environ[k] = v
+            print("[Node 2] Environment variables loaded from .env")
+        except Exception as e:
+            print(f"[Node 2] Error reading .env file: {e}")
+
+load_env_file()
+
 # Load Indexed Policy Chunks
 POLICY_DATA = {"metadata": {}, "catalog": [], "chunks": []}
 if os.path.exists(INDEX_FILE):
@@ -91,34 +111,38 @@ if os.path.exists(INDEX_FILE):
     except Exception as e:
         print(f"[Node 2] Error reading index file: {e}")
 
-# Preferred local Ollama models in order of priority
+# Preferred local Ollama models in order of priority (fallback when Gemini API unavailable/exhausted)
 MODELS_TO_TRY = ["qwen2.5-coder:14b", "llama3.2-vision:latest", "qwen3.5:35b-a3b"]
 
-SYSTEM_PROMPT = """You are the SmartRMA Intelligent Technical & Hardware Assistant.
-Your tone must ALWAYS be warm, polite, empathetic, conversational, professional, and helpful — like an experienced human hardware support specialist.
+SYSTEM_PROMPT = """You are the SmartRMA Intelligent Technical & Policy Assistant.
+Your tone must ALWAYS be warm, polite, empathetic, conversational, professional, and helpful — like an experienced hardware support specialist.
 
-OPERATING GUIDELINES:
+CRITICAL OPERATIONAL BOUNDARIES & MANDATORY LIMITATIONS:
 
-1. GENERAL KNOWLEDGE AND HARDWARE EXPERTISE:
-   - Provide accurate, comprehensive technical and hardware information in a friendly, human, and accessible tone based on your internal knowledge.
-   - For general technical queries (such as how GPUs/CPUs work, thermal paste, thermal throttling, display flickering, PCIe lanes, troubleshooting, architecture):
-     Answer directly, informatively, and thoroughly based on your general hardware knowledge.
+1. CHAT PURPOSE ONLY (NO IMAGE/FILE PROCESSING):
+   - You are solely an informational conversational assistant for answering questions about official manufacturer warranty policies and general technical/hardware details.
+   - You CANNOT and MUST NOT receive, inspect, or process image uploads, hardware photos, or file attachments in this chat.
+   - If a customer asks to upload photos or asks you to examine an image in chat, politely clarify:
+     "I am an informational text assistant and cannot accept or analyze uploaded photos here. To have your hardware inspected and evaluated, please upload your images in the official SmartRMA Return Intake form on the portal."
 
-2. HUMAN STEP-BY-STEP RETURN & RMA GUIDANCE:
-   - When a user asks about returns, the return process, RMA status, or hardware defects:
-     a) Respond like a friendly human specialist who genuinely wants to help guide them through the process.
-     b) Explain the technical cause and standard industry return eligibility according to your own knowledge (e.g. factory manufacturing defects or failures under normal use are typically eligible, while physical impact, cracked PCB, liquid damage, or burn marks are excluded).
-     c) Guide the user clearly step-by-step through the return process:
-        • Keep proof of purchase (invoice / receipt) and verify serial number matches.
-        • Ensure hardware is free from Customer Induced Damage (physical cracks, burns, liquid corrosion, or broken warranty seals).
-        • Pack safely in an anti-static (ESD) protective bag with original box and accessories.
-        • Obtain an official RMA authorization number before dispatching the shipment.
-     d) Conclude with: "For further information and official claim submission, please contact your provider/manufacturer."
+2. ABSOLUTE PROHIBITION ON RETURN CLAIMS, APPROVALS & OUTCOME GUARANTEES:
+   - You MUST NEVER claim, promise, approve, authorize, or guarantee any return, replacement, refund, or warranty claim outcome.
+   - NEVER state phrases such as "Your return is approved", "You will get a refund", "We will replace your item", or "Your warranty claim is accepted".
+   - You must explicitly maintain that you cannot make binding return determinations.
+   - Clarify that official return authorization requires formal submission via the Return Intake form with authentic hardware photos, followed by automated pipeline analysis and human technician review.
 
-3. SPECIFIC BRAND INQUIRIES (ONLY WHEN USER EXPLICITLY NAMES A BRAND):
-   - When the customer explicitly asks for a specific brand's policy (e.g. Apple, GIGABYTE, Dell, ASUS):
-     Answer based on the official clauses provided for that brand.
-"""
+3. ACCURATE POLICY TERMS & RETURN PROCESS PREPARATION:
+   - Provide accurate manufacturer warranty terms, coverage periods, and exclusions (e.g. Customer Induced Damage / CID, liquid spills, cracked PCBs, burnt pins) based on official indexed policies.
+   - When guiding a user on general return preparation, explain the standard preparation steps:
+     • Retain proof of purchase (invoice / store receipt) with matching serial number.
+     • Verify the hardware is free from physical impact, burns, or liquid corrosion.
+     • Safely pack in an anti-static (ESD) protective bag with original accessories.
+     • Obtain an official RMA authorization number through the Intake Portal before shipping.
+   - Conclude with: "For official claim submission and return authorization, please submit a return request through the SmartRMA Intake Portal or contact your manufacturer."
+
+4. GENERAL HARDWARE & TECHNICAL TROUBLESHOOTING:
+   - Answer general technical questions (e.g., GPU/CPU architectures, thermal paste, artifacting, PCIe lanes, power requirements, troubleshooting steps) informatively, accurately, and politely according to standard engineering knowledge.
+   - Do not mention return checklists or policies for purely technical or conceptual hardware questions unless the user asks about returning."""
 
 # Tokens filtered from user input to prevent prompt injection and delimiter hijacking
 FORBIDDEN_DELIMITERS = [
@@ -148,6 +172,7 @@ class ChatRequest(BaseModel):
     manufacturer: Optional[str] = Field(None, max_length=64)
     model: Optional[str] = Field(None, max_length=64)
     history: Optional[List[ChatMessage]] = Field(default=[], max_length=6)
+    gemini_api_key: Optional[str] = Field(None, max_length=256)
 
 class TriageRequest(BaseModel):
     model_name: str = Field(..., min_length=1, max_length=128)
@@ -243,6 +268,67 @@ def is_warranty_or_rma_query(text: str) -> bool:
     ]
     return any(re.search(rf"\b{term}\b", t) for term in warranty_terms)
 
+def call_gemini_api(user_prompt: str, system_instruction: str, history: Optional[List[Any]] = None, explicit_key: Optional[str] = None) -> tuple[Optional[str], Optional[str]]:
+    key = explicit_key or os.environ.get("GEMINI_API_KEY", "").strip()
+    if not key:
+        return None, None
+
+    gemini_models = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]
+    contents = []
+    if history:
+        for h in history[-6:]:
+            h_role = getattr(h, "role", None) or (h.get("role") if isinstance(h, dict) else "user")
+            h_content = getattr(h, "content", None) or (h.get("content") if isinstance(h, dict) else "")
+            contents.append({
+                "role": "user" if h_role == "user" else "model",
+                "parts": [{"text": str(h_content)[:600]}]
+            })
+    contents.append({
+        "role": "user",
+        "parts": [{"text": user_prompt}]
+    })
+
+    payload = {
+        "contents": contents,
+        "systemInstruction": {
+            "parts": [{"text": system_instruction}]
+        },
+        "generationConfig": {
+            "temperature": 0.3,
+            "maxOutputTokens": 350,
+            "topP": 0.95
+        }
+    }
+
+    for model_name in gemini_models:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={key}"
+        try:
+            req_data = json.dumps(payload).encode("utf-8")
+            req = urllib.request.Request(
+                url,
+                data=req_data,
+                headers={"Content-Type": "application/json"}
+            )
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                if resp.status == 200:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    candidates = data.get("candidates", [])
+                    if candidates and "content" in candidates[0]:
+                        parts = candidates[0]["content"].get("parts", [])
+                        text_chunks = [p.get("text", "") for p in parts if isinstance(p, dict) and "text" in p]
+                        reply_text = "".join(text_chunks).strip()
+                        if reply_text:
+                            return reply_text, f"{model_name} (Google Gemini Cloud)"
+        except urllib.error.HTTPError as http_err:
+            print(f"[Node 2] Gemini API HTTP error ({model_name}): {http_err.code} - {http_err.reason}")
+            # If 429 (quota exhausted/rate limit) or 400/403, proceed to next model or fallback to local Ollama
+            continue
+        except Exception as e:
+            print(f"[Node 2] Gemini API connection error ({model_name}): {e}")
+            continue
+
+    return None, None
+
 def call_ollama(messages: List[Dict[str, str]], preferred_model: Optional[str] = None) -> tuple[str, str]:
     models = [preferred_model] if preferred_model else MODELS_TO_TRY
     for m in models:
@@ -275,17 +361,19 @@ def call_ollama(messages: List[Dict[str, str]], preferred_model: Optional[str] =
 
     # Resilient human fallback response
     return (
-        "Hello! I am glad to guide you through the return process step by step:\n\n"
+        "Hello! I am here to guide you with manufacturer warranty policy details and general technical hardware queries.\n\n"
+        "Key Points to Remember for Return Preparation:\n"
         "1. Check Return Eligibility: Standard warranties cover manufacturing defects and normal hardware failures under standard use. Physical cracks, liquid exposure, or burnt connectors are excluded.\n"
         "2. Keep Proof of Purchase: Have your store receipt or invoice ready with matching serial numbers.\n"
         "3. Safe Packaging: Place the component in an anti-static (ESD) bag with adequate box cushioning.\n"
-        "4. Obtain RMA Authorization: Always request an official RMA number before sending the package.\n\n"
-        "For further information and official claim submission, please contact your provider/manufacturer.",
+        "4. Obtain RMA Authorization: Always request an official RMA number through the Intake Portal before sending the package.\n\n"
+        "Please note that I cannot authorize returns, guarantee outcomes, or process image uploads in chat. For official claim submission and physical verification, please submit a return request via the SmartRMA Intake Portal or contact your manufacturer.",
         "rule_engine_fallback"
     )
 
 @app.get("/health")
 def health():
+    has_gemini = bool(os.environ.get("GEMINI_API_KEY"))
     return {
         "status": "ONLINE",
         "service": "SmartRMA Node 2 - Policy RAG Engine",
@@ -299,7 +387,30 @@ def health():
         "indexed_chunks": len(POLICY_DATA.get("chunks", [])),
         "indexed_documents": len(POLICY_DATA.get("catalog", [])),
         "manufacturers": POLICY_DATA.get("metadata", {}).get("manufacturers", []),
+        "gemini_api_configured": has_gemini,
+        "primary_chat_engine": "Google Gemini API (gemini-1.5-flash)" if has_gemini else "Local Ollama LLM (qwen2.5-coder:14b)",
+        "fallback_chat_engine": "Local Ollama LLM (qwen2.5-coder:14b)",
         "active_models": MODELS_TO_TRY
+    }
+
+class GeminiKeyRequest(BaseModel):
+    api_key: str = Field(..., min_length=1, max_length=256)
+
+@app.post("/api/config/gemini_key")
+def set_gemini_key(req: GeminiKeyRequest):
+    os.environ["GEMINI_API_KEY"] = req.api_key.strip()
+    return {"status": "SUCCESS", "message": "Gemini API key configured successfully."}
+
+@app.get("/api/config/gemini_key")
+def get_gemini_key():
+    key = os.environ.get("GEMINI_API_KEY", "")
+    has_key = bool(key)
+    masked = f"{key[:4]}...{key[-4:]}" if len(key) >= 8 else ("configured" if has_key else "not_configured")
+    return {
+        "configured": has_key,
+        "masked_key": masked if has_key else None,
+        "primary_engine": "Google Gemini API (gemini-1.5-flash)" if has_key else "Local Ollama LLM (qwen2.5-coder:14b)",
+        "fallback_engine": "Local Ollama LLM (qwen2.5-coder:14b)"
     }
 
 @app.get("/api/policies")
@@ -348,27 +459,25 @@ def chat_endpoint(req: ChatRequest):
 
 Instructions:
 - Explain the warranty coverage and terms based on the official {detected_mfg} documentation above.
-- Mention the key points to remember when returning:
-  • Keep proof of purchase (invoice / receipt).
-  • Ensure hardware is free from Customer Induced Damage (CID).
-  • Pack safely in anti-static (ESD) protective packaging.
-  • Obtain an official RMA authorization number before shipping.
-- Conclude by stating: "For further information and official claim submission, please contact your provider/manufacturer."
+- Mention key preparation points for returns (receipt/invoice, no physical CID, anti-static ESD packaging, obtain RMA number through portal).
+- Remember: You are strictly informational. Do not approve, guarantee, or promise any return or refund outcome.
+- Conclude by stating: "For official claim submission and return authorization, please use the SmartRMA Intake Portal or contact your manufacturer."
 - Keep the response well-structured and under 150 words."""
     elif is_warranty_query:
         user_prompt = f"""[CUSTOMER QUESTION]:
 {user_query}
 
 Instructions:
-- The customer is asking about warranty, return eligibility, RMA status, or the return process.
-- Give a warm, conversational, empathetic, and human response that guides the user step by step through the return process:
+- The customer is asking about warranty terms, return eligibility, or the return process.
+- Give a warm, conversational, and helpful response:
   1. Explain defect eligibility under standard industry coverage (normal hardware failures or manufacturing defects are covered, while physical impact, cracked PCB, burns, or liquid damage are excluded).
-  2. Clearly guide the user through the Key Points to Remember in the Return Process:
+  2. Clearly guide the user through the standard Return Preparation Steps:
      • Keep proof of purchase (invoice / receipt) and verify serial numbers match.
      • Ensure hardware is free from Customer Induced Damage (physical cracks, burns, liquid corrosion).
      • Pack safely in an anti-static (ESD) protective bag with original accessories.
-     • Obtain an official RMA authorization number before shipping.
-  3. Conclude with: "For further information and official claim submission, please contact your provider/manufacturer."
+     • Obtain an official RMA authorization number through the Intake Portal before shipping.
+  3. Remember: You cannot approve, promise, or guarantee any return outcome or process images in chat.
+  4. Conclude with: "For official claim submission and return authorization, please use the SmartRMA Intake Portal or contact your manufacturer."
 - Keep the response warm, natural, human-sounding, well-structured, and under 160 words."""
     else:
         user_prompt = f"""[CUSTOMER QUESTION]:
@@ -393,8 +502,22 @@ Instructions:
 
     messages.append({"role": "user", "content": user_prompt})
 
-    # 4. Generate with Ollama
-    reply, used_model = call_ollama(messages, preferred_model=req.model)
+    # 4. Generate response: Try Google Gemini API first; on error, quota end, or missing key -> redirect to local Ollama LLM
+    gemini_reply, gemini_model = call_gemini_api(
+        user_prompt=user_prompt,
+        system_instruction=SYSTEM_PROMPT,
+        history=req.history,
+        explicit_key=req.gemini_api_key
+    )
+
+    if gemini_reply:
+        reply = gemini_reply
+        used_model = gemini_model
+        provider = "google_gemini"
+    else:
+        # Graceful fallback to local Ollama LLM
+        reply, used_model = call_ollama(messages, preferred_model=req.model)
+        provider = "local_ollama" if used_model != "rule_engine_fallback" else "rule_engine_fallback"
     
     # Clean up formatting
     reply = re.sub(r'<think>.*?</think>', '', reply, flags=re.DOTALL).strip()
@@ -418,6 +541,7 @@ Instructions:
         "manufacturer_detected": detected_mfg,
         "grounded": has_grounding,
         "model_used": used_model,
+        "provider": provider,
         "sources": sources
     }
 

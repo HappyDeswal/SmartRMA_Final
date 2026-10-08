@@ -245,6 +245,25 @@ window.handleChatSubmit = async function(e) {
       `;
     }
 
+    // Engine attribution pill (Gemini Cloud vs Local Ollama fallback)
+    if (data.model_used || data.provider) {
+      const isGemini = data.provider === 'google_gemini';
+      htmlContent += `
+        <div style="margin-top:8px;font-size:0.68rem;color:var(--text-muted);display:flex;align-items:center;gap:5px">
+          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${isGemini ? '#10B981' : '#3B82F6'}"></span>
+          <span>Engine: <strong>${escapeHtml(data.model_used || (isGemini ? 'gemini-1.5-flash' : 'qwen2.5-coder:14b'))}</strong></span>
+          ${isGemini ? '<span class="mono brand-pill" style="font-size:0.60rem;background:rgba(16,185,129,0.12);color:#10B981">Gemini Cloud</span>' : '<span class="mono brand-pill" style="font-size:0.60rem;background:rgba(59,130,246,0.12);color:#3B82F6">Local Ollama</span>'}
+        </div>
+      `;
+
+      const statusTextEl = $('#wa-status-text');
+      if (statusTextEl) {
+        statusTextEl.innerHTML = isGemini
+          ? '● Node 2 AI (<span style="color:#10B981">Gemini Cloud Active</span>)'
+          : '● Node 2 AI (<span style="color:#3B82F6">Local Ollama Active</span>)';
+      }
+    }
+
     // Representative fallback prompt
     if (data.reply.toLowerCase().includes('representative will review') || data.reply.toLowerCase().includes('not explicitly detailed')) {
       htmlContent += `
@@ -385,33 +404,34 @@ function generateBotResponse(query) {
       2. <strong>Backplate:</strong> Retention screws, core bracket tension.<br>
       3. <strong>PCIe Fingers:</strong> Gold contact traces and retention lock.<br>
       4. <strong>12VHPWR Socket:</strong> Macro view looking straight into connector pins.<br>
-      5. <strong>Serial Label:</strong> Clear 1D/2D barcode and regulatory text.
+      5. <strong>Serial Label:</strong> Clear 1D/2D barcode and regulatory text.<br><br>
+      ⚠️ <em>Note: Photos cannot be uploaded directly in this chat. Please upload your images via the 5 Guided Photo Slots in the Return Intake form on the left.</em>
     `;
   }
 
   if (/status|order|rma|return|refund|exchange|process|guide|step|help/.test(q)) {
     return `
-      👋 Hello! I'd be glad to help and guide you through the return process step by step:<br><br>
+      👋 Hello! I am glad to guide you through the return process step by step:<br><br>
       <strong>1. Check Return Eligibility & Defect:</strong><br>
-      Standard manufacturer warranties cover genuine manufacturing silicon faults and component failures occurring under normal operational use (such as display artifacting, fan bearing failures, or sudden blackouts). Customer Induced Damage (CID) such as physical impact, cracked PCB, liquid exposure, or burnt connectors is excluded from warranty coverage.<br><br>
+      Standard manufacturer warranties cover genuine manufacturing silicon faults and component failures occurring under normal operational use. Customer Induced Damage (CID) such as physical impact, cracked PCB, liquid exposure, or burnt connectors is excluded from warranty coverage.<br><br>
       <strong>2. Gather Proof of Purchase & Verify Serial Number:</strong><br>
       Ensure you have your original invoice or store receipt ready, and check that the serial number on your hardware matches the proof of purchase.<br><br>
       <strong>3. Safe Hardware Preparation & Packaging:</strong><br>
-      Place the component inside an anti-static (ESD) protective bag. Pack it in the original box with all factory accessories and ample protective cushioning to avoid any shipping transit damage.<br><br>
+      Place the component inside an anti-static (ESD) protective bag with original accessories and protective cushioning.<br><br>
       <strong>4. Request Official RMA Authorization:</strong><br>
-      Obtain an official RMA authorization number and approved return shipping label from your provider before dispatching your package.<br><br>
-      💡 <em>For further information and official claim submission, please contact your provider/manufacturer. Feel free to ask if you have any questions about your specific hardware or symptoms!</em>
+      Submit a formal claim through the SmartRMA Return Intake Portal to obtain an official RMA authorization number before shipping.<br><br>
+      ⚠️ <em>Please note: The chatbot is strictly informational and cannot approve returns, guarantee refund outcomes, or process photo uploads. Official determinations require intake submission and technician review.</em>
     `;
   }
 
   return `
-    👋 Hello! I am here to help you with your hardware diagnostic, return inquiries, and warranty policies.<br><br>
-    If you are looking to return a component or check warranty coverage, here is a quick guide to the process:<br><br>
-    • <strong>Verify Condition:</strong> Ensure the hardware has no physical trauma, burns, or liquid corrosion.<br>
+    👋 Hello! I am here to help answer questions regarding warranty policies and general technical hardware details.<br><br>
+    If you are preparing to return a component or check warranty coverage:<br><br>
+    • <strong>Verify Condition:</strong> Ensure hardware is free from physical trauma, burns, or liquid corrosion.<br>
     • <strong>Documentation:</strong> Keep your purchase receipt or invoice ready with matching serial numbers.<br>
     • <strong>Packaging:</strong> Always pack securely in an anti-static (ESD) bag with adequate cushioning.<br>
-    • <strong>RMA Number:</strong> Secure an official RMA authorization before shipping the unit.<br><br>
-    <em>For further information and official claim submission, please contact your provider/manufacturer. How can I assist you with your hardware today?</em>
+    • <strong>RMA Number:</strong> Secure an official RMA authorization through the portal before shipping.<br><br>
+    <em>Note: I cannot approve returns or process photo uploads in chat. For official claim submission, please use the Intake Form on the left.</em>
   `;
 }
 
@@ -701,7 +721,7 @@ async function handleTriageSubmit(e) {
       flagged_region: (evalResp && evalResp.ok && evalData && evalData.vision_telemetry && evalData.vision_telemetry.flagged_region) ? evalData.vision_telemetry.flagged_region : data.rn,
       severity: (evalResp && evalResp.ok && evalData && evalData.vision_telemetry && evalData.vision_telemetry.severity) ? evalData.vision_telemetry.severity : (data.a >= 0.75 ? 'CRITICAL' : data.a <= 0.25 ? 'NOMINAL' : 'MODERATE'),
       visual_findings: (evalResp && evalResp.ok && evalData && evalData.vision_telemetry && evalData.vision_telemetry.visual_findings) ? evalData.vision_telemetry.visual_findings : (data.a >= 0.75 ? `Severe thermal discoloration and burn patterns detected on ${data.rn}.` : data.a <= 0.25 ? `Clean factory baseline verified across customer-uploaded photos; no thermal or physical damage.` : `Moderate visual variance detected on ${data.rn}.`),
-      model_used: (evalResp && evalResp.ok && evalData && evalData.vision_telemetry && evalData.vision_telemetry.model_used) ? evalData.vision_telemetry.model_used : 'moondream:latest (Vision LLM)',
+      model_used: (evalResp && evalResp.ok && evalData && evalData.vision_telemetry && evalData.vision_telemetry.model_used) ? evalData.vision_telemetry.model_used : 'llama3.2-vision:latest (Vision LLM)',
       at: data.at || [50, 50]
     },
     policyGrounding: {

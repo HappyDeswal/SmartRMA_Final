@@ -2,7 +2,7 @@
 """
 SmartRMA - Node 3: Vision Telemetry & Vision LLM Inspection Engine
 Runs as a microservice on Port 8002.
-Integrates with local Ollama Vision LLMs (moondream:latest) to perform
+Integrates with local Ollama Vision LLMs (llama3.2-vision:latest) to perform
 deep visual hardware inspection on GPU and PCB photographs.
 Extracts empirical visual findings (burns, scorch marks, fractures, clean silicon)
 and transmits the resulting diagnostic text data to Node 2 (Policy RAG) and
@@ -64,8 +64,8 @@ OLLAMA_URL = "http://localhost:11434/api/generate"
 NODE1_URL = "http://127.0.0.1:8000/api/v1/intake"
 NODE2_URL = "http://127.0.0.1:8001/api/triage/evaluate"
 
-# Vision models in order of priority
-VISION_MODELS = ["moondream:latest", "llama3.2-vision:latest"]
+# Vision models in order of priority (llama3.2-vision:latest primary)
+VISION_MODELS = ["llama3.2-vision:latest", "moondream:latest"]
 
 STATS = {
     "total_inspections": 0,
@@ -318,7 +318,7 @@ def health():
 def inspect_endpoint(req: InspectRequest):
     """
     Standard Vision Inspection Endpoint:
-    Analyzes submitted hardware photographs using Vision LLM (moondream:latest),
+    Analyzes submitted hardware photographs using Vision LLM (llama3.2-vision:latest),
     extracts structural/thermal defects, and returns detailed visual telemetry.
     """
     STATS["total_inspections"] += 1
@@ -386,7 +386,7 @@ def inspect_endpoint(req: InspectRequest):
 def analyze_and_route_endpoint(req: AnalyzeAndRouteRequest):
     """
     End-to-End Vision Pipeline:
-    1. Analyzes hardware image with Vision LLM (moondream:latest).
+    1. Analyzes hardware image with Vision LLM (llama3.2-vision:latest).
     2. Transmits the generated visual findings text to Node 2 (Policy RAG) for clause evaluation.
     3. Transmits visual findings + policy determination to Node 1 for deterministic SLA tiering
        and SHA-256 cryptographic audit ledger commitment.
