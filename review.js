@@ -75,6 +75,26 @@ async function syncBackendLedger() {
               casesChanged = true;
             }
           }
+
+          // Ensure any finalized approved or non-approved case is tracked in the decision audit history
+          if (sc.st === 'Approved' || sc.st === 'Rejected' || sc.st === 'Auto-Approved' || sc.resolvedOperator === 'TECH-402') {
+            const auditIdx = auditLedger.findIndex(a => a.caseId === sc.id);
+            if (auditIdx === -1) {
+              auditLedger.unshift({
+                time: sc.resolvedTime || (sc.submittedAt ? new Date(sc.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Saved'),
+                caseId: sc.id,
+                product: sc.p || `${sc.oem || ''} ${sc.modelName || ''}`.trim(),
+                tier: sc.t || 'T2',
+                decision: sc.st,
+                reason: sc.resolvedReason || (sc.st === 'Auto-Approved' ? sc.autoApproveReason : (sc.cl ? `Policy exclusion confirmed: ${sc.cl}` : 'Claim disposition determined')),
+                hash: sc.resolvedHash || sc.ledgerHash || generateAuditHash(),
+                operator: sc.resolvedOperator || (sc.isAutoApproved ? 'AUTONOMOUS-SLA-ROUTER' : 'TECH-402'),
+                subImg: sc.subImg,
+                isAutoApproved: sc.isAutoApproved || sc.st === 'Auto-Approved'
+              });
+              casesChanged = true;
+            }
+          }
         }
       }
     } catch (errCases) {
@@ -83,7 +103,7 @@ async function syncBackendLedger() {
 
     // 2. Sync cryptographic ledger blocks
     try {
-      const resp = await fetch(getGatewayUrl('/api/v1/ledger?limit=50'));
+      const resp = await fetch(getGatewayUrl('/api/v1/ledger?limit=100'));
       if (resp.ok) {
         const data = await resp.json();
         const blocks = data.recent_blocks || [];
@@ -144,11 +164,14 @@ async function syncBackendLedger() {
               product: `Hardware Unit (${block.tier || 'T2'})`,
               tier: block.tier || 'T2',
               decision: block.disposition === 'APPROVE' ? 'Auto-Approved' : 'Rejected',
-              reason: `Autonomous intake disposition: ${block.disposition}. Clause: ${block.cited_clause || 'Warranty policy evaluated'}.`,
+              reason: block.disposition === 'APPROVE'
+                ? `Autonomous intake approval: SLA tier ${block.tier || 'T2'} policy validated under ${block.cited_clause || 'terms'}.`
+                : `Autonomous policy exclusion: Defect on ${block.anomaly_region || 'hardware'} excluded under ${block.cited_clause || 'terms'}.`,
               hash: block.block_hash || generateAuditHash(),
               operator: 'AUTONOMOUS-SLA-ROUTER',
               isAutoApproved: block.disposition === 'APPROVE'
             });
+            casesChanged = true;
           }
         }
       }
@@ -328,22 +351,27 @@ function updateWorkbenchVisibility() {
   }
 }
 
-
 // Update Toolbar Tab Counts
 function updateTabCounts() {
   const pendingCount = CASES.filter(isPendingTechnicianReview).length;
-  const resolvedCount = CASES.filter(c => c.resolvedOperator === 'TECH-402').length;
+  const approvedCount = CASES.filter(c => c.st === 'Approved' || c.st === 'Auto-Approved').length;
+  const rejectedCount = CASES.filter(c => c.st === 'Rejected' || c.st === 'Excluded').length;
+  const resolvedCount = CASES.filter(c => c.resolvedOperator === 'TECH-402' || c.st === 'Approved' || c.st === 'Rejected' || c.st === 'Auto-Approved').length;
   const allCount = CASES.length;
 
   const elPending = $('#tab-pending-count');
+  const elApproved = $('#tab-approved-count');
+  const elRejected = $('#tab-rejected-count');
   const elResolved = $('#tab-resolved-count');
   const elAll = $('#tab-all-count');
   const elQueueCount = $('#queue-count');
 
   if (elPending) elPending.textContent = pendingCount;
+  if (elApproved) elApproved.textContent = approvedCount;
+  if (elRejected) elRejected.textContent = rejectedCount;
   if (elResolved) elResolved.textContent = resolvedCount;
   if (elAll) elAll.textContent = allCount;
-  if (elQueueCount) elQueueCount.textContent = `${pendingCount} PENDING ACTION`;
+  if (elQueueCount) elQueueCount.textContent = `${pendingCount} PENDING ACTION • ${approvedCount + rejectedCount} IN HISTORY`;
 }
 
 // Render Queue Table
@@ -360,19 +388,26 @@ function renderQueue() {
       const match = (c.id && c.id.toLowerCase().includes(q)) ||
                     (c.p && c.p.toLowerCase().includes(q)) ||
                     (c.orderId && String(c.orderId).toLowerCase().includes(q)) ||
-                    (c.serialNumber && String(c.serialNumber).toLowerCase().includes(q));
+                    (c.serialNumber && String(c.serialNumber).toLowerCase().includes(q)) ||
+                    (c.st && c.st.toLowerCase().includes(q));
       if (!match) return false;
     }
     if (currentFilter === 'pending') return isPendingTechnicianReview(c);
-    if (currentFilter === 'resolved') return c.resolvedOperator === 'TECH-402';
+    if (currentFilter === 'approved') return c.st === 'Approved' || c.st === 'Auto-Approved';
+    if (currentFilter === 'rejected') return c.st === 'Rejected' || c.st === 'Excluded';
+    if (currentFilter === 'resolved') return c.resolvedOperator === 'TECH-402' || c.st === 'Approved' || c.st === 'Rejected' || c.st === 'Auto-Approved';
     return true; // 'all'
   });
 
   if (filtered.length === 0) {
     const emptyMsg = currentFilter === 'pending'
       ? 'No pending cases requiring technician review.'
+      : currentFilter === 'approved'
+      ? 'No approved cases in history yet.'
+      : currentFilter === 'rejected'
+      ? 'No non-approved / rejected cases in history yet.'
       : currentFilter === 'resolved'
-      ? 'No cases have been resolved yet.'
+      ? 'No resolved cases in history yet.'
       : 'No cases found.';
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:36px 14px;color:var(--text-muted)">${emptyMsg}</td></tr>`;
     return;
@@ -931,25 +966,49 @@ function executeOverride(decision) {
   showToast(`Case ${c.id} finalized as ${finalStatus.toUpperCase()} (Saved to Audit History)`, finalStatus === 'Approved' ? 'success' : 'error');
 }
 
+let currentAuditFilter = 'all';
+
 // Render Decision History with interactive click-to-inspect feature
 function renderAuditLog() {
   const logEl = $('#log');
   if (!logEl) return;
 
+  const approvedAudits = auditLedger.filter(item => item.decision === 'Approved' || item.decision === 'Auto-Approved');
+  const rejectedAudits = auditLedger.filter(item => item.decision === 'Rejected' || item.decision === 'Excluded');
+
+  const elAll = $('#audit-all-count');
+  const elApp = $('#audit-approved-count');
+  const elRej = $('#audit-rejected-count');
   const historyBadge = $('#history-badge');
+
+  if (elAll) elAll.textContent = auditLedger.length;
+  if (elApp) elApp.textContent = approvedAudits.length;
+  if (elRej) elRej.textContent = rejectedAudits.length;
+
   if (historyBadge) {
     historyBadge.textContent = auditLedger.length === 0
       ? '0 DECISIONS LOGGED'
-      : `${auditLedger.length} AUDITED DECISION${auditLedger.length > 1 ? 'S' : ''}`;
+      : `${auditLedger.length} AUDITED DECISION${auditLedger.length > 1 ? 'S' : ''} (${approvedAudits.length} Approved, ${rejectedAudits.length} Non-Approved)`;
   }
 
-  if (auditLedger.length === 0) {
-    logEl.innerHTML = `<div class="mu" style="font-size:0.85rem;padding:16px 4px">No decisions recorded yet. Decisions will appear here once finalized.</div>`;
+  const filteredAudits = auditLedger.filter(item => {
+    if (currentAuditFilter === 'approved') return item.decision === 'Approved' || item.decision === 'Auto-Approved';
+    if (currentAuditFilter === 'rejected') return item.decision === 'Rejected' || item.decision === 'Excluded';
+    return true;
+  });
+
+  if (filteredAudits.length === 0) {
+    const emptyMsg = currentAuditFilter === 'approved'
+      ? 'No approved cases in decision history yet.'
+      : currentAuditFilter === 'rejected'
+      ? 'No non-approved / rejected cases in decision history yet.'
+      : 'No decisions recorded yet. Decisions will appear here once finalized.';
+    logEl.innerHTML = `<div class="mu" style="font-size:0.85rem;padding:16px 4px">${emptyMsg}</div>`;
     updateWorkbenchVisibility();
     return;
   }
 
-  logEl.innerHTML = auditLedger.map(item => `
+  logEl.innerHTML = filteredAudits.map(item => `
     <div class="audit-item interactive-audit-card" data-case-id="${escapeHtml(item.caseId)}" tabindex="0" title="Click to inspect complete case dossier and customer-uploaded photos">
       <div style="display:flex;flex-direction:column;gap:3px">
         <span class="audit-time">${escapeHtml(item.time)}</span>
@@ -989,8 +1048,10 @@ function renderAuditLog() {
 
       if (targetIndex !== -1) {
         activeIndex = targetIndex;
-        // If current filter is pending and this case is resolved, switch tab to all or resolved
-        if (currentFilter === 'pending') {
+        // If current filter excludes this case, switch tab to all
+        if (currentFilter === 'pending' || 
+            (CASES[targetIndex] && (CASES[targetIndex].st === 'Approved' || CASES[targetIndex].st === 'Auto-Approved') && currentFilter === 'rejected') || 
+            (CASES[targetIndex] && (CASES[targetIndex].st === 'Rejected' || CASES[targetIndex].st === 'Excluded') && currentFilter === 'approved')) {
           currentFilter = 'all';
           $$('.q-tab').forEach(t => {
             t.classList.toggle('active', t.dataset.filter === 'all');
@@ -1110,6 +1171,15 @@ document.addEventListener('DOMContentLoaded', () => {
       tab.classList.add('active');
       currentFilter = tab.dataset.filter;
       renderQueue();
+    };
+  });
+
+  $$('.audit-filter-btn').forEach(btn => {
+    btn.onclick = () => {
+      $$('.audit-filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentAuditFilter = btn.dataset.filter;
+      renderAuditLog();
     };
   });
 

@@ -829,22 +829,25 @@ async function handleTriageSubmit(e) {
     }
   };
 
-  // If auto-approved, immediately record into persistent audit history
-  if (dec === 'Approve') {
+  // Record both approved and non-approved determinations into persistent audit history
+  if (dec === 'Approve' || dec === 'Reject') {
     try {
       let auditHistory = JSON.parse(localStorage.getItem('smartrma_audit_history') || '[]');
       auditHistory = auditHistory.filter(item => item.caseId !== triagedCase.id);
+      const decReason = dec === 'Approve'
+        ? autoApproveReason
+        : `Autonomous Policy Exclusion: Defect identified on ${triagedCase.rn}. Warranty return rejected under ${citedSource}: "${citedClause}".`;
       auditHistory.unshift({
         time: timestamp,
         caseId: triagedCase.id,
         product: triagedCase.p,
         tier: triagedCase.t,
-        decision: 'Auto-Approved',
-        reason: autoApproveReason,
+        decision: dec === 'Approve' ? 'Auto-Approved' : 'Rejected',
+        reason: decReason,
         hash: ledgerHash,
         operator: 'AUTONOMOUS-SLA-ROUTER',
         subImg: triagedCase.subImg,
-        isAutoApproved: true
+        isAutoApproved: dec === 'Approve'
       });
       localStorage.setItem('smartrma_audit_history', JSON.stringify(auditHistory));
     } catch (auditErr) {

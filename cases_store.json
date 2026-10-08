@@ -167,7 +167,7 @@
     "rn": "12VHPWR Power Socket (Pins 3 & 4)",
     "cl": "Ambiguous Defect / Manual Inspection Required",
     "src": "nvidia_hardware_warranty_policy.md",
-    "st": "Pending",
+    "st": "Approved",
     "subImg": "",
     "userImages": [],
     "at": [
@@ -178,9 +178,9 @@
     "ledgerHash": "ac66a24d31445b9c97485ac089ddc87d16507b07215bf8037f411b43628eafbd",
     "submittedAt": "2026-10-08T16:26:13.679403+00:00",
     "isAutoApproved": false,
-    "resolvedOperator": null,
-    "resolvedReason": null,
-    "resolvedTime": null,
+    "resolvedOperator": "TECH-402",
+    "resolvedReason": "Lead technician verified factory solder fault; approved replacement.",
+    "resolvedTime": "2026-10-08T16:35:50.879252+00:00",
     "resolvedHash": null,
     "visionTelemetry": {
       "anomaly_score": 0.88,
@@ -217,7 +217,7 @@
     "rn": "12VHPWR Power Socket (Pins 3 & 4)",
     "cl": "Ambiguous Defect / Manual Inspection Required",
     "src": "nvidia_hardware_warranty_policy.md",
-    "st": "Pending",
+    "st": "Rejected",
     "subImg": "",
     "userImages": [],
     "at": [
@@ -228,9 +228,9 @@
     "ledgerHash": "46d6ef7f3c69e95f0f854b10fb5db3f5bac15f600dc1320abce5852c6a0eda25",
     "submittedAt": "2026-10-08T16:26:11.890843+00:00",
     "isAutoApproved": false,
-    "resolvedOperator": null,
-    "resolvedReason": null,
-    "resolvedTime": null,
+    "resolvedOperator": "TECH-402",
+    "resolvedReason": "Lead technician verified external cable surge scorch; policy exclusion.",
+    "resolvedTime": "2026-10-08T16:35:50.887262+00:00",
     "resolvedHash": null,
     "visionTelemetry": {
       "anomaly_score": 0.88,

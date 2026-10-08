@@ -352,8 +352,8 @@ def get_stats():
     }
 
 @app.get("/api/v1/ledger")
-def get_ledger(limit: int = 15):
-    limit = max(1, min(100, limit))
+def get_ledger(limit: int = 100):
+    limit = max(1, min(500, limit))
     with LEDGER_LOCK:
         if os.path.exists(LEDGER_FILE):
             try:
@@ -408,8 +408,8 @@ def save_case(case_data: Dict[str, Any] = Body(...)):
         # Deduplicate and prepend
         existing = [c for c in existing if c.get("id") != cid and (not oid or c.get("orderId") != oid)]
         existing.insert(0, case_data)
-        if len(existing) > 50:
-            existing = existing[:50]
+        if len(existing) > 500:
+            existing = existing[:500]
             
         with open(CASES_FILE, "w", encoding="utf-8") as f:
             json.dump(existing, f, indent=2)
@@ -726,8 +726,8 @@ def process_intake(req: IntakeRequest):
             oid = full_case_record["orderId"]
             existing_cases = [c for c in existing_cases if c.get("id") != cid and (not oid or c.get("orderId") != oid)]
             existing_cases.insert(0, full_case_record)
-            if len(existing_cases) > 50:
-                existing_cases = existing_cases[:50]
+            if len(existing_cases) > 500:
+                existing_cases = existing_cases[:500]
             with open(CASES_FILE, "w", encoding="utf-8") as f:
                 json.dump(existing_cases, f, indent=2)
     except Exception as e:

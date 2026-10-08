@@ -112,5 +112,37 @@
     "fraud_flags": [],
     "prev_hash": "563d6dddf3201fa1850779bdc98e694171099aa3df35334aff7ebf3596aea0a5",
     "block_hash": "a6b333b5197ee68df58bc996dce587dc260c55fc1e78f545573ee60798a497ca"
+  },
+  {
+    "timestamp": "2026-10-08T16:35:50.879252+00:00",
+    "case_id": "RMA-76773",
+    "product_value": 550,
+    "tier": "T2",
+    "disposition": "APPROVE",
+    "risk_score": 20,
+    "anomaly_score": 0.1,
+    "anomaly_region": "Hardware Unit",
+    "cited_clause": "Technician Adjudication (TECH-402): Lead technician verified factory solder fault; approved replacement.",
+    "source_doc": "Technician Workbench",
+    "page": 1,
+    "fraud_flags": [],
+    "prev_hash": "a6b333b5197ee68df58bc996dce587dc260c55fc1e78f545573ee60798a497ca",
+    "block_hash": "bc2394915f1038fcacf91f46725cb1fecc8afa62394a65b8c1faec5734ef1f88"
+  },
+  {
+    "timestamp": "2026-10-08T16:35:50.887262+00:00",
+    "case_id": "RMA-76771",
+    "product_value": 470,
+    "tier": "T2",
+    "disposition": "REJECT",
+    "risk_score": 20,
+    "anomaly_score": 0.1,
+    "anomaly_region": "Hardware Unit",
+    "cited_clause": "Technician Adjudication (TECH-402): Lead technician verified external cable surge scorch; policy exclusion.",
+    "source_doc": "Technician Workbench",
+    "page": 1,
+    "fraud_flags": [],
+    "prev_hash": "bc2394915f1038fcacf91f46725cb1fecc8afa62394a65b8c1faec5734ef1f88",
+    "block_hash": "acb6cb002902f5e3e851d9f13b58bd4e3c0edc930fdf2c78cc3dc4429b380c4a"
   }
 ]

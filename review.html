@@ -127,7 +127,9 @@
         <div class="queue-toolbar">
           <div class="queue-tabs">
             <button class="q-tab active" data-filter="pending">Pending (<span id="tab-pending-count">0</span>)</button>
-            <button class="q-tab" data-filter="resolved">History / Resolved (<span id="tab-resolved-count">0</span>)</button>
+            <button class="q-tab" data-filter="approved" style="color:var(--success-text)">Approved (<span id="tab-approved-count">0</span>)</button>
+            <button class="q-tab" data-filter="rejected" style="color:var(--danger-text)">Non-Approved (<span id="tab-rejected-count">0</span>)</button>
+            <button class="q-tab" data-filter="resolved">All History (<span id="tab-resolved-count">0</span>)</button>
             <button class="q-tab" data-filter="all">All Cases (<span id="tab-all-count">0</span>)</button>
           </div>
           <div class="search-box">
@@ -179,7 +181,14 @@
             <h2>Decision History &amp; Compliance Audit Ledger</h2>
           </div>
         </div>
-        <span class="mono brand-pill" id="history-badge">0 DECISIONS LOGGED</span>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div class="queue-tabs" style="margin:0;padding:2px">
+            <button class="audit-filter-btn active" data-filter="all">All History (<span id="audit-all-count">0</span>)</button>
+            <button class="audit-filter-btn" data-filter="approved" style="color:var(--success-text)">Approved (<span id="audit-approved-count">0</span>)</button>
+            <button class="audit-filter-btn" data-filter="rejected" style="color:var(--danger-text)">Non-Approved (<span id="audit-rejected-count">0</span>)</button>
+          </div>
+          <span class="mono brand-pill" id="history-badge">0 DECISIONS LOGGED</span>
+        </div>
       </div>
       <div id="log" class="audit-log-feed">
         <div class="mu" style="font-size:0.85rem">No decisions recorded yet. Decisions will appear here once finalized.</div>
