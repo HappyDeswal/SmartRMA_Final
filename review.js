@@ -1,5 +1,10 @@
 // SmartRMA Technician Review & Hardware Comparator Workbench
 
+function getGatewayUrl(path) {
+  const host = (window.location && window.location.hostname) ? window.location.hostname : '127.0.0.1';
+  return `http://${host}:8000${path}`;
+}
+
 const SLOT_NAMES = [
   'Front Shroud & Fans',
   'Backplate & Retention',
@@ -38,79 +43,117 @@ function isAuthenticAudit(item) {
   return true;
 }
 
-// Background sync against Node 1 backend ledger (guarantees intake cases are never lost)
+// Background sync against Node 1 backend ledger & cases store (guarantees intake cases are never lost)
 async function syncBackendLedger() {
   try {
-    const resp = await fetch('http://127.0.0.1:8000/api/v1/ledger?limit=50');
-    if (!resp.ok) return;
-    const data = await resp.json();
-    const blocks = data.recent_blocks || [];
     let casesChanged = false;
 
-    for (const block of blocks) {
-      if (!block || !block.case_id) continue;
-      if (FAKE_CASE_IDS.has(block.case_id)) continue;
-
-      let existing = CASES.find(c => c.id === block.case_id || (block.order_id && c.orderId === block.order_id));
-      if (!existing) {
-        const newCase = {
-          id: block.case_id,
-          orderId: block.order_id || block.case_id,
-          serialNumber: block.serial_number || 'N/A',
-          oem: 'Hardware OEM',
-          modelName: 'Hardware Component',
-          p: `Hardware Unit (${block.tier || 'T2'})`,
-          v: block.product_value || 1200,
-          t: block.tier || 'T2',
-          r: block.risk_score !== undefined ? block.risk_score : 35,
-          a: block.anomaly_score !== undefined ? block.anomaly_score : 0.2,
-          conf: 95,
-          escalationReason: block.disposition === 'ESCALATE' ? 'Flagged for Lead Technician adjudication' : `Intake disposition: ${block.disposition}`,
-          rn: block.anomaly_region || 'Hardware Component',
-          cl: block.cited_clause || 'Manufacturer Standard Warranty Terms',
-          src: block.source_doc || 'Warranty Policy Document',
-          st: block.disposition === 'APPROVE' ? 'Auto-Approved' : block.disposition === 'REJECT' ? 'Rejected' : 'Pending',
-          subImg: '',
-          userImages: [],
-          at: [50, 50],
-          symptom: 'Reported hardware defect at RMA intake.',
-          ledgerHash: block.block_hash || '',
-          submittedAt: block.timestamp || new Date().toISOString(),
-          resolvedOperator: null,
-          visionTelemetry: {
-            anomaly_score: block.anomaly_score !== undefined ? block.anomaly_score : 0.2,
-            flagged_region: block.anomaly_region || 'Hardware Component',
-            severity: (block.anomaly_score >= 0.7) ? 'CRITICAL' : (block.anomaly_score <= 0.3) ? 'NOMINAL' : 'MODERATE',
-            visual_findings: `Anomaly score ${block.anomaly_score} recorded at intake ledger.`,
-            model_used: 'llama3.2-vision:latest',
-            at: [50, 50]
-          },
-          policyGrounding: {
-            verdict: block.disposition === 'REJECT' ? 'REJECTED (EXCLUSION)' : 'APPROVED (COVERED)',
-            cited_clause: block.cited_clause || 'Standard warranty terms apply.',
-            source_document: block.source_doc || 'Warranty Document',
-            page: block.page || 1,
-            explanation: 'Benchmarked against intake criteria.'
+    // 1. Sync full case dossiers from Node 1 backend store
+    try {
+      const casesResp = await fetch(getGatewayUrl('/api/v1/cases'));
+      if (casesResp.ok) {
+        const casesData = await casesResp.json();
+        const serverCases = casesData.cases || [];
+        for (const sc of serverCases) {
+          if (!sc || !sc.id || FAKE_CASE_IDS.has(sc.id)) continue;
+          const idx = CASES.findIndex(c => c.id === sc.id || (sc.orderId && c.orderId === sc.orderId));
+          if (idx === -1) {
+            CASES.unshift(sc);
+            casesChanged = true;
+          } else {
+            if (sc.userImages && sc.userImages.length > 0 && (!CASES[idx].userImages || CASES[idx].userImages.length === 0)) {
+              CASES[idx].userImages = sc.userImages;
+              CASES[idx].subImg = sc.subImg || sc.userImages[0];
+              casesChanged = true;
+            }
+            if (sc.resolvedOperator && CASES[idx].resolvedOperator !== 'TECH-402') {
+              CASES[idx].st = sc.st;
+              CASES[idx].resolvedOperator = sc.resolvedOperator;
+              CASES[idx].resolvedReason = sc.resolvedReason;
+              CASES[idx].resolvedTime = sc.resolvedTime;
+              CASES[idx].resolvedHash = sc.resolvedHash;
+              casesChanged = true;
+            }
           }
-        };
-        CASES.unshift(newCase);
-        casesChanged = true;
+        }
       }
+    } catch (errCases) {
+      console.warn('[Sync Backend Cases Error]', errCases);
+    }
 
-      let existingAudit = auditLedger.find(a => a.caseId === block.case_id || a.hash === block.block_hash);
-      if (!existingAudit && block.disposition && block.disposition !== 'ESCALATE') {
-        auditLedger.unshift({
-          time: block.timestamp ? new Date(block.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Intake',
-          caseId: block.case_id,
-          product: `Hardware Unit (${block.tier || 'T2'})`,
-          tier: block.tier || 'T2',
-          decision: block.disposition === 'APPROVE' ? 'Auto-Approved' : 'Rejected',
-          reason: `Autonomous intake disposition: ${block.disposition}. Clause: ${block.cited_clause || 'Warranty policy evaluated'}.`,
-          hash: block.block_hash || generateAuditHash(),
-          operator: 'AUTONOMOUS-SLA-ROUTER',
-          isAutoApproved: block.disposition === 'APPROVE'
-        });
+    // 2. Sync cryptographic ledger blocks
+    try {
+      const resp = await fetch(getGatewayUrl('/api/v1/ledger?limit=50'));
+      if (resp.ok) {
+        const data = await resp.json();
+        const blocks = data.recent_blocks || [];
+        for (const block of blocks) {
+          if (!block || !block.case_id || FAKE_CASE_IDS.has(block.case_id)) continue;
+
+          let existing = CASES.find(c => c.id === block.case_id || (block.order_id && c.orderId === block.order_id));
+          if (!existing) {
+            const newCase = {
+              id: block.case_id,
+              orderId: block.order_id || block.case_id,
+              serialNumber: block.serial_number || 'N/A',
+              oem: 'Hardware OEM',
+              modelName: 'Hardware Component',
+              p: `Hardware Unit (${block.tier || 'T2'})`,
+              v: block.product_value || 1200,
+              t: block.tier || 'T2',
+              r: block.risk_score !== undefined ? block.risk_score : 35,
+              a: block.anomaly_score !== undefined ? block.anomaly_score : 0.2,
+              conf: 95,
+              escalationReason: block.disposition === 'ESCALATE' ? 'Flagged for Lead Technician adjudication' : `Intake disposition: ${block.disposition}`,
+              rn: block.anomaly_region || 'Hardware Component',
+              cl: block.cited_clause || 'Manufacturer Standard Warranty Terms',
+              src: block.source_doc || 'Warranty Policy Document',
+              st: block.disposition === 'APPROVE' ? 'Auto-Approved' : block.disposition === 'REJECT' ? 'Rejected' : 'Pending',
+              subImg: '',
+              userImages: [],
+              at: [50, 50],
+              symptom: 'Reported hardware defect at RMA intake.',
+              ledgerHash: block.block_hash || '',
+              submittedAt: block.timestamp || new Date().toISOString(),
+              resolvedOperator: null,
+              visionTelemetry: {
+                anomaly_score: block.anomaly_score !== undefined ? block.anomaly_score : 0.2,
+                flagged_region: block.anomaly_region || 'Hardware Component',
+                severity: (block.anomaly_score >= 0.7) ? 'CRITICAL' : (block.anomaly_score <= 0.3) ? 'NOMINAL' : 'MODERATE',
+                visual_findings: `Anomaly score ${block.anomaly_score} recorded at intake ledger.`,
+                model_used: 'llama3.2-vision:latest',
+                at: [50, 50]
+              },
+              policyGrounding: {
+                verdict: block.disposition === 'REJECT' ? 'REJECTED (EXCLUSION)' : 'APPROVED (COVERED)',
+                cited_clause: block.cited_clause || 'Standard warranty terms apply.',
+                source_document: block.source_doc || 'Warranty Document',
+                page: block.page || 1,
+                explanation: 'Benchmarked against intake criteria.'
+              }
+            };
+            CASES.unshift(newCase);
+            casesChanged = true;
+          }
+
+          let existingAudit = auditLedger.find(a => a.caseId === block.case_id || a.hash === block.block_hash);
+          if (!existingAudit && block.disposition && block.disposition !== 'ESCALATE') {
+            auditLedger.unshift({
+              time: block.timestamp ? new Date(block.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Intake',
+              caseId: block.case_id,
+              product: `Hardware Unit (${block.tier || 'T2'})`,
+              tier: block.tier || 'T2',
+              decision: block.disposition === 'APPROVE' ? 'Auto-Approved' : 'Rejected',
+              reason: `Autonomous intake disposition: ${block.disposition}. Clause: ${block.cited_clause || 'Warranty policy evaluated'}.`,
+              hash: block.block_hash || generateAuditHash(),
+              operator: 'AUTONOMOUS-SLA-ROUTER',
+              isAutoApproved: block.disposition === 'APPROVE'
+            });
+          }
+        }
       }
+    } catch (errLedger) {
+      console.warn('[Sync Backend Ledger Error]', errLedger);
     }
 
     if (casesChanged) {
@@ -125,7 +168,7 @@ async function syncBackendLedger() {
       renderAuditLog();
     }
   } catch (e) {
-    console.warn('[Sync Backend Ledger Error]', e);
+    console.warn('[Sync Backend Error]', e);
   }
 }
 
@@ -137,13 +180,79 @@ function getInitialCases() {
       if (Array.isArray(parsed) && parsed.length > 0) {
         // Strip out all fake, mock, or synthetic cases
         const authenticCases = parsed.filter(isAuthenticCase);
-        localStorage.setItem('smartrma_cases', JSON.stringify(authenticCases));
-        return authenticCases;
+        if (authenticCases.length > 0) {
+          localStorage.setItem('smartrma_cases', JSON.stringify(authenticCases));
+          return authenticCases;
+        }
       }
     }
   } catch (e) {
     console.warn('[Error loading stored cases]', e);
   }
+
+  // Also check if an active draft exists in sessionStorage
+  try {
+    const draftStr = sessionStorage.getItem('smartrma_current_draft');
+    if (draftStr) {
+      const draft = JSON.parse(draftStr);
+      const userImagesList = (draft.images || []).filter(Boolean);
+      if (draft.orderId || draft.serialNumber || userImagesList.length > 0) {
+        const draftId = (draft.orderId ? `RMA-${draft.orderId.replace(/[^a-zA-Z0-9]/g, '')}` : '') || `RMA-${Math.floor(10000 + Math.random() * 90000)}`;
+        const t = (draft.productValue < 300) ? 'T1' : (draft.productValue <= 1000) ? 'T2' : (draft.productValue <= 2500) ? 'T3' : 'T4';
+        const primaryImg = (draft.images && draft.images[3]) || (draft.images && draft.images[0]) || (userImagesList[0] || '');
+        const draftCase = {
+          id: draftId,
+          orderId: draft.orderId || draftId,
+          serialNumber: draft.serialNumber || 'SN-INTAKE-PENDING',
+          oem: draft.manufacturer || 'Hardware OEM',
+          modelName: draft.modelName || 'Hardware Component',
+          p: `${draft.manufacturer || 'Hardware'} ${draft.modelName || 'Component'}`.trim(),
+          v: draft.productValue || 1200,
+          t: t,
+          r: 35,
+          a: 0.25,
+          conf: 92,
+          escalationReason: 'RMA Intake Test Case — Awaiting Lead Technician Inspection & Sign-off',
+          rn: 'Primary Hardware Inspection Bay',
+          cl: 'Manufacturer Standard Hardware Limited Warranty Terms',
+          src: `${draft.manufacturer || 'OEM'} Limited Hardware Warranty`,
+          st: 'Pending',
+          subImg: primaryImg,
+          userImages: userImagesList,
+          at: [50, 50],
+          symptom: draft.symptom || 'Customer hardware claim uploaded for physical inspection.',
+          ledgerHash: 'sha256:intake_pending',
+          submittedAt: new Date().toISOString(),
+          isAutoApproved: false,
+          autoApproveReason: null,
+          resolvedReason: null,
+          resolvedOperator: null,
+          resolvedTime: null,
+          resolvedHash: null,
+          visionTelemetry: {
+            anomaly_score: 0.25,
+            flagged_region: 'Customer Uploaded Views',
+            severity: 'NOMINAL',
+            visual_findings: `${userImagesList.length} customer inspection view(s) uploaded. Ready for technician verification.`,
+            model_used: 'llama3.2-vision:latest',
+            at: [50, 50]
+          },
+          policyGrounding: {
+            verdict: 'PENDING_TECHNICIAN_REVIEW',
+            cited_clause: 'Standard warranty terms apply under normal operating conditions.',
+            source_document: `${draft.manufacturer || 'OEM'} Warranty Policy Document`,
+            page: 1,
+            explanation: 'Intake test case queued for technician verification.'
+          }
+        };
+        try {
+          localStorage.setItem('smartrma_cases', JSON.stringify([draftCase]));
+        } catch (e) {}
+        return [draftCase];
+      }
+    }
+  } catch(e) {}
+
   return [];
 }
 
@@ -347,7 +456,8 @@ function renderDetails() {
   }
 
   const isTechnicianResolved = c.resolvedOperator === 'TECH-402';
-  const isAutoApprovedIntake = c.st === 'Auto-Approved' || c.isAutoApproved;
+  const isAutoApproved = c.st === 'Auto-Approved' || !!c.isAutoApproved;
+  const isAutoApprovedIntake = isAutoApproved;
   const isResolved = isTechnicianResolved;
   const customerUnitImg = c.subImg || (c.userImages && c.userImages.length > 0 ? c.userImages[0] : null);
 
@@ -795,6 +905,24 @@ function executeOverride(decision) {
     console.warn('[LocalStorage save error]', storageErr);
   }
 
+  // Persist decision to Node 1 backend
+  try {
+    fetch(getGatewayUrl(`/api/v1/cases/${encodeURIComponent(c.id)}/decision`), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        decision: finalStatus,
+        reason: reason,
+        operator: 'TECH-402',
+        value: c.v,
+        tier: c.t,
+        risk: c.r,
+        anomaly: c.a,
+        region: c.rn || 'Hardware Unit'
+      })
+    }).catch(err => console.warn('[Failed to sync decision to Node 1]', err));
+  } catch (e) {}
+
   renderAuditLog();
   renderQueue();
   renderDetails();
@@ -909,12 +1037,12 @@ document.addEventListener('keydown', e => {
   } else if (e.key === 'a' || e.key === 'A') {
     e.preventDefault();
     const c = CASES[activeIndex];
-    if (c && c.st === 'Pending') executeOverride('Approve');
+    if (c && c.resolvedOperator !== 'TECH-402') executeOverride('Approve');
     else if (c) showToast(`Case ${c.id} is already finalized`, 'info');
   } else if (e.key === 'r' || e.key === 'R') {
     e.preventDefault();
     const c = CASES[activeIndex];
-    if (c && c.st === 'Pending') executeOverride('Reject');
+    if (c && c.resolvedOperator !== 'TECH-402') executeOverride('Reject');
     else if (c) showToast(`Case ${c.id} is already finalized`, 'info');
   }
 });
@@ -925,6 +1053,7 @@ async function purgeAllAudits() {
     localStorage.removeItem('smartrma_cases');
     localStorage.removeItem('smartrma_audit_history');
     localStorage.removeItem('smartrma_active_case_id');
+    sessionStorage.removeItem('smartrma_current_draft');
   } catch (e) {
     console.warn('[LocalStorage purge error]', e);
   }
@@ -934,7 +1063,8 @@ async function purgeAllAudits() {
   activeIndex = 0;
 
   try {
-    await fetch('http://127.0.0.1:8000/api/v1/ledger/clear', { method: 'POST' });
+    await fetch(getGatewayUrl('/api/v1/cases/clear'), { method: 'POST' });
+    await fetch(getGatewayUrl('/api/v1/ledger/clear'), { method: 'POST' });
   } catch (e) {}
 
   updateWorkbenchVisibility();

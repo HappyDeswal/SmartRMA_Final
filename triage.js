@@ -10,6 +10,103 @@ const SLOTS_CONFIG = [
 
 const ph = [null, null, null, null, null];
 
+function getGatewayUrl(path) {
+  const host = (window.location && window.location.hostname) ? window.location.hostname : '127.0.0.1';
+  return `http://${host}:8000${path}`;
+}
+
+function saveCurrentIntakeDraft() {
+  const oid = ($('#oid') ? $('#oid').value.trim() : '') || '';
+  const ser = ($('#ser') ? $('#ser').value.trim() : '') || '';
+  const val = ($('#val') ? +$('#val').value : 0) || 0;
+  const oem = ($('#mfg-select') ? $('#mfg-select').value.trim() : '') || '';
+  const modelLine = ($('#model-line') ? $('#model-line').value.trim() : '') || '';
+  const rsn = ($('#rsn') ? $('#rsn').value.trim() : '') || '';
+  const userImagesList = ph.filter(Boolean);
+
+  const draft = {
+    orderId: oid,
+    serialNumber: ser,
+    productValue: val,
+    manufacturer: oem,
+    modelName: modelLine,
+    symptom: rsn,
+    images: ph
+  };
+  try {
+    sessionStorage.setItem('smartrma_current_draft', JSON.stringify(draft));
+  } catch(e) {}
+
+  if (oid || ser || userImagesList.length > 0 || rsn || val > 0) {
+    const caseId = (oid ? `RMA-${oid.replace(/[^a-zA-Z0-9]/g, '')}` : '') || `RMA-${Math.floor(10000 + Math.random() * 90000)}`;
+    const t = getTier(val || 1200);
+    const primaryImg = ph[3] || ph[0] || (userImagesList.length > 0 ? userImagesList[0] : '');
+
+    const pendingCase = {
+      id: caseId,
+      orderId: oid || caseId,
+      serialNumber: ser || 'SN-INTAKE-PENDING',
+      oem: oem || 'Hardware OEM',
+      modelName: modelLine || 'Hardware Component',
+      p: `${oem || 'Hardware'} ${modelLine || 'Component'}`.trim(),
+      v: val || 1200,
+      t: t,
+      r: 35,
+      a: 0.25,
+      conf: 92,
+      escalationReason: 'RMA Intake Uploaded — Awaiting Lead Technician Inspection & Sign-off',
+      rn: 'Primary Hardware Inspection Bay',
+      cl: 'Manufacturer Standard Hardware Limited Warranty Terms',
+      src: `${oem || 'OEM'} Limited Hardware Warranty`,
+      st: 'Pending',
+      subImg: primaryImg,
+      userImages: userImagesList,
+      at: [50, 50],
+      symptom: rsn || 'Customer hardware claim uploaded for physical inspection.',
+      ledgerHash: 'sha256:intake_pending',
+      submittedAt: new Date().toISOString(),
+      isAutoApproved: false,
+      autoApproveReason: null,
+      resolvedReason: null,
+      resolvedOperator: null,
+      resolvedTime: null,
+      resolvedHash: null,
+      visionTelemetry: {
+        anomaly_score: 0.25,
+        flagged_region: 'Customer Uploaded Views',
+        severity: 'NOMINAL',
+        visual_findings: `${userImagesList.length} customer inspection view(s) uploaded. Ready for technician verification.`,
+        model_used: 'llama3.2-vision:latest',
+        at: [50, 50]
+      },
+      policyGrounding: {
+        verdict: 'PENDING_TECHNICIAN_REVIEW',
+        cited_clause: 'Standard warranty terms apply under normal operating conditions.',
+        source_document: `${oem || 'OEM'} Warranty Policy Document`,
+        page: 1,
+        explanation: 'Intake test case queued for technician verification.'
+      }
+    };
+
+    try {
+      let savedCases = JSON.parse(localStorage.getItem('smartrma_cases') || '[]');
+      savedCases = savedCases.filter(c => c.id !== pendingCase.id && c.orderId !== pendingCase.orderId);
+      savedCases.unshift(pendingCase);
+      if (savedCases.length > 20) savedCases = savedCases.slice(0, 20);
+      localStorage.setItem('smartrma_cases', JSON.stringify(savedCases));
+      localStorage.setItem('smartrma_active_case_id', pendingCase.id);
+    } catch(e) {}
+
+    try {
+      fetch(getGatewayUrl('/api/v1/cases'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pendingCase)
+      }).catch(() => {});
+    } catch(e) {}
+  }
+}
+
 function compressImage(file, maxWidth = 640, quality = 0.72) {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -61,6 +158,7 @@ function initSlots() {
         if (compressed) {
           markSlot(+inp.dataset.i, compressed);
           showToast(`View ${+inp.dataset.i + 1} uploaded & verified!`, 'success');
+          saveCurrentIntakeDraft();
         }
       }
     };
@@ -488,19 +586,20 @@ async function handleTriageSubmit(e) {
     return;
   }
 
-  if (ph.filter(Boolean).length < 5) {
-    if (errEl) errEl.textContent = 'All 5 guided hardware views must be verified before running triage.';
-    showToast('Upload all 5 inspection angles', 'warning');
+  if (ph.filter(Boolean).length === 0) {
+    if (errEl) errEl.textContent = 'Please upload at least 1 inspection photo before running triage.';
+    showToast('Upload at least 1 inspection angle', 'warning');
     return;
   }
 
   if (errEl) errEl.textContent = '';
+  saveCurrentIntakeDraft();
 
   // Trigger scanning laser animation on photo slots
   $$('#slots .slot').forEach(s => s.classList.add('scanning'));
 
   // 1. Post user triage request into WhatsApp Chat
-  appendUserMessage(`📤 *Submitted RMA Triage Request:*\n• Order: ${oid}\n• S/N: ${ser}\n• OEM: ${oem}\n• Model Line: ${modelLine}\n• Value: $${val.toLocaleString()} (${getTier(val)})\n• Defect: "${rsn}"\n• 5 Guided diagnostic photos uploaded`);
+  appendUserMessage(`📤 *Submitted RMA Triage Request:*\n• Order: ${oid}\n• S/N: ${ser}\n• OEM: ${oem}\n• Model Line: ${modelLine}\n• Value: $${val.toLocaleString()} (${getTier(val)})\n• Defect: "${rsn}"\n• ${ph.filter(Boolean).length} diagnostic photos uploaded`);
   scrollToChatBottom();
 
   // 2. Show bot typing status
@@ -546,7 +645,7 @@ async function handleTriageSubmit(e) {
   let evalData = null;
 
   try {
-    evalResp = await fetch('http://localhost:8000/api/v1/intake', {
+    evalResp = await fetch(getGatewayUrl('/api/v1/intake'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -784,6 +883,16 @@ async function handleTriageSubmit(e) {
   } catch (storageErr) {
     console.warn('[LocalStorage save error]', storageErr);
   }
+
+  // Persist completed triage case to Node 1 backend store
+  try {
+    fetch(getGatewayUrl('/api/v1/cases'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(triagedCase)
+    }).catch(err => console.warn('[Backend case sync error]', err));
+  } catch (e) {}
+
   showToast(`Triage Complete: ${finalStatus.toUpperCase()}`, dec === 'Approve' ? 'success' : dec === 'Reject' ? 'error' : 'warning');
 }
 
@@ -793,10 +902,28 @@ document.addEventListener('DOMContentLoaded', () => {
   updateTierDisplay();
 
   const valInput = $('#val');
-  if (valInput) valInput.oninput = updateTierDisplay;
+  if (valInput) valInput.oninput = () => {
+    updateTierDisplay();
+    saveCurrentIntakeDraft();
+  };
 
   const form = $('#f');
-  if (form) form.onsubmit = handleTriageSubmit;
+  if (form) {
+    form.onsubmit = handleTriageSubmit;
+    form.addEventListener('input', () => saveCurrentIntakeDraft());
+    form.addEventListener('change', () => saveCurrentIntakeDraft());
+  }
+
+  const navReview = $('#nav-review');
+  if (navReview) {
+    navReview.addEventListener('click', () => {
+      saveCurrentIntakeDraft();
+    });
+  }
+
+  window.addEventListener('beforeunload', () => {
+    saveCurrentIntakeDraft();
+  });
 
   const resetBtn = $('#btn-reset');
   if (resetBtn) {
@@ -806,6 +933,7 @@ document.addEventListener('DOMContentLoaded', () => {
       initSlots();
       updatePhotoCount();
       updateTierDisplay();
+      sessionStorage.removeItem('smartrma_current_draft');
       const errEl = $('#err');
       if (errEl) errEl.textContent = '';
       showToast('Form cleared - Ready for user hardware input', 'info');

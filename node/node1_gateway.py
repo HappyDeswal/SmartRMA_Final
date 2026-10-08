@@ -30,7 +30,7 @@ from typing import List, Dict, Any, Optional
 import warnings
 from PIL import Image, ExifTags
 import imagehash
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Body
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel, Field
@@ -64,10 +64,12 @@ app.add_middleware(
 NODE_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.dirname(NODE_DIR)
 LEDGER_FILE = os.path.join(BASE_DIR, "audit_ledger.json")
+CASES_FILE = os.path.join(BASE_DIR, "cases_store.json")
 NODE2_URL = "http://127.0.0.1:8001/api/triage/evaluate"
 NODE3_URL = "http://127.0.0.1:8002/api/v1/inspect"
 
 LEDGER_LOCK = threading.Lock()
+CASES_LOCK = threading.Lock()
 
 # In-memory pHash database of processed images to detect serial recycling & duplicate returns
 KNOWN_PHASH_DB = {}
@@ -375,6 +377,97 @@ def clear_ledger():
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to clear ledger: {e}")
 
+@app.get("/api/v1/cases")
+def get_cases():
+    with CASES_LOCK:
+        if os.path.exists(CASES_FILE):
+            try:
+                with open(CASES_FILE, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if isinstance(data, list):
+                        return {"count": len(data), "cases": data}
+            except Exception:
+                pass
+    return {"count": 0, "cases": []}
+
+@app.post("/api/v1/cases")
+def save_case(case_data: Dict[str, Any] = Body(...)):
+    with CASES_LOCK:
+        existing = []
+        if os.path.exists(CASES_FILE):
+            try:
+                with open(CASES_FILE, "r", encoding="utf-8") as f:
+                    existing = json.load(f)
+                    if not isinstance(existing, list):
+                        existing = []
+            except Exception:
+                existing = []
+        
+        cid = case_data.get("id")
+        oid = case_data.get("orderId")
+        # Deduplicate and prepend
+        existing = [c for c in existing if c.get("id") != cid and (not oid or c.get("orderId") != oid)]
+        existing.insert(0, case_data)
+        if len(existing) > 50:
+            existing = existing[:50]
+            
+        with open(CASES_FILE, "w", encoding="utf-8") as f:
+            json.dump(existing, f, indent=2)
+            
+        return {"status": "SUCCESS", "case_id": cid}
+
+@app.post("/api/v1/cases/clear")
+def clear_cases():
+    with CASES_LOCK:
+        if os.path.exists(CASES_FILE):
+            try:
+                with open(CASES_FILE, "w", encoding="utf-8") as f:
+                    json.dump([], f)
+            except Exception:
+                pass
+    return {"status": "SUCCESS", "message": "All cases cleared"}
+
+@app.post("/api/v1/cases/{case_id}/decision")
+def record_case_decision(case_id: str, payload: Dict[str, Any] = Body(...)):
+    decision = payload.get("decision", "Approved")
+    reason = payload.get("reason", "Technician reviewed and confirmed.")
+    operator = payload.get("operator", "TECH-402")
+    timestamp = datetime.now(timezone.utc).isoformat()
+    
+    with CASES_LOCK:
+        if os.path.exists(CASES_FILE):
+            try:
+                with open(CASES_FILE, "r", encoding="utf-8") as f:
+                    existing = json.load(f)
+                    for c in existing:
+                        if c.get("id") == case_id:
+                            c["st"] = decision
+                            c["resolvedOperator"] = operator
+                            c["resolvedReason"] = reason
+                            c["resolvedTime"] = timestamp
+                with open(CASES_FILE, "w", encoding="utf-8") as f:
+                    json.dump(existing, f, indent=2)
+            except Exception as e:
+                print(f"[Error updating case decision]: {e}")
+                
+    # Also log to cryptographic audit ledger block
+    audit_entry = {
+        "timestamp": timestamp,
+        "case_id": case_id,
+        "product_value": payload.get("value", 1000.0),
+        "tier": payload.get("tier", "T2"),
+        "disposition": "APPROVE" if decision == "Approved" else "REJECT",
+        "risk_score": payload.get("risk", 20),
+        "anomaly_score": payload.get("anomaly", 0.1),
+        "anomaly_region": payload.get("region", "Hardware Unit"),
+        "cited_clause": f"Technician Adjudication ({operator}): {reason}",
+        "source_doc": "Technician Workbench",
+        "page": 1,
+        "fraud_flags": []
+    }
+    block_hash = record_audit_ledger(audit_entry)
+    return {"status": "SUCCESS", "case_id": case_id, "decision": decision, "block_hash": block_hash}
+
 
 @app.get("/api/v1/ledger/verify")
 def verify_ledger():
@@ -571,6 +664,74 @@ def process_intake(req: IntakeRequest):
     }
 
     block_hash = record_audit_ledger(ledger_entry)
+
+    # Persist case record to cases_store.json so technician review workbench displays it immediately
+    try:
+        user_imgs = [img.image_b64 for img in req.images if img.image_b64] or [img.url for img in req.images if img.url]
+        full_case_record = {
+            "id": ledger_entry["case_id"],
+            "orderId": req.order_id,
+            "serialNumber": req.serial_number,
+            "oem": req.manufacturer,
+            "modelName": req.model_name,
+            "p": f"{req.manufacturer} {req.model_name}".strip(),
+            "v": req.product_value,
+            "t": t,
+            "r": risk_score,
+            "a": anomaly_score,
+            "conf": int(round(confidence * 100)),
+            "escalationReason": f"Tier {t} SLA Intake Evaluation: {disposition}",
+            "rn": anomaly_region,
+            "cl": node2_result.get("cited_clause", "Standard Terms"),
+            "src": node2_result.get("source_doc", "Warranty Agreement"),
+            "st": "Auto-Approved" if disposition == "APPROVE" else "Rejected" if disposition == "REJECT" else "Pending",
+            "subImg": user_imgs[0] if user_imgs else "",
+            "userImages": user_imgs,
+            "at": [50, 50],
+            "symptom": req.symptom_description,
+            "ledgerHash": block_hash,
+            "submittedAt": ledger_entry["timestamp"],
+            "isAutoApproved": disposition == "APPROVE",
+            "resolvedOperator": None,
+            "resolvedReason": None,
+            "resolvedTime": None,
+            "resolvedHash": None,
+            "visionTelemetry": {
+                "anomaly_score": anomaly_score,
+                "flagged_region": anomaly_region,
+                "severity": vision_res.get("severity", "NORMAL"),
+                "visual_findings": vision_res.get("visual_findings_text", ""),
+                "model_used": vision_res.get("model_used", "vision_llm"),
+                "at": [50, 50]
+            },
+            "policyGrounding": {
+                "verdict": node2_result.get("determination"),
+                "cited_clause": node2_result.get("cited_clause"),
+                "source_document": node2_result.get("source_doc"),
+                "page": node2_result.get("page", 1),
+                "explanation": node2_result.get("notes")
+            }
+        }
+        with CASES_LOCK:
+            existing_cases = []
+            if os.path.exists(CASES_FILE):
+                try:
+                    with open(CASES_FILE, "r", encoding="utf-8") as f:
+                        existing_cases = json.load(f)
+                        if not isinstance(existing_cases, list):
+                            existing_cases = []
+                except Exception:
+                    existing_cases = []
+            cid = full_case_record["id"]
+            oid = full_case_record["orderId"]
+            existing_cases = [c for c in existing_cases if c.get("id") != cid and (not oid or c.get("orderId") != oid)]
+            existing_cases.insert(0, full_case_record)
+            if len(existing_cases) > 50:
+                existing_cases = existing_cases[:50]
+            with open(CASES_FILE, "w", encoding="utf-8") as f:
+                json.dump(existing_cases, f, indent=2)
+    except Exception as e:
+        print(f"[Node 1] Error persisting intake case to cases_store.json: {e}")
 
     return {
         "case_id": ledger_entry["case_id"],
