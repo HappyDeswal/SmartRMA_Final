@@ -10,7 +10,7 @@ const SLOTS_CONFIG = [
 
 const ph = [null, null, null, null, null];
 
-function compressImage(file, maxWidth = 1000, quality = 0.85) {
+function compressImage(file, maxWidth = 640, quality = 0.72) {
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -642,10 +642,16 @@ async function handleTriageSubmit(e) {
           <button type="button" class="wa-action-btn" onclick="showToast('RMA Packing Slip Generated! Auto-approved case committed to audit ledger.', 'success')">
             📄 Download Return Packing Slip
           </button>
+          <a href="review.html" class="wa-action-btn" style="text-decoration:none;margin-top:6px;background:var(--accent);color:#fff">
+            👨‍🔧 Open in Technician Review Workbench &rarr;
+          </a>
         ` : dec === 'Reject' ? `
           <button type="button" class="wa-action-btn" onclick="showToast('Formal exclusion notice exported to customer portal.', 'info')">
             📄 View Formal Policy Exclusion Notice
           </button>
+          <a href="review.html" class="wa-action-btn" style="text-decoration:none;margin-top:6px;background:var(--accent);color:#fff">
+            👨‍🔧 Review / Override in Technician Workbench &rarr;
+          </a>
         ` : `
           <a href="review.html" class="wa-action-btn" style="text-decoration:none">
             👨‍🔧 Escalate to L2 Technician Review &rarr;
@@ -703,10 +709,10 @@ async function handleTriageSubmit(e) {
     submittedAt: new Date().toISOString(),
     isAutoApproved: dec === 'Approve',
     autoApproveReason: dec === 'Approve' ? autoApproveReason : null,
-    resolvedReason: dec === 'Approve' ? autoApproveReason : null,
-    resolvedOperator: dec === 'Approve' ? 'AUTONOMOUS-SLA-ROUTER' : null,
-    resolvedTime: dec === 'Approve' ? timestamp : null,
-    resolvedHash: dec === 'Approve' ? ledgerHash : null,
+    resolvedReason: null,
+    resolvedOperator: null,
+    resolvedTime: null,
+    resolvedHash: null,
     visionTelemetry: {
       anomaly_score: anomalyScore,
       flagged_region: (evalResp && evalResp.ok && evalData && evalData.vision_telemetry && evalData.vision_telemetry.flagged_region) ? evalData.vision_telemetry.flagged_region : data.rn,
@@ -751,7 +757,29 @@ async function handleTriageSubmit(e) {
     let savedCases = JSON.parse(localStorage.getItem('smartrma_cases') || '[]');
     savedCases = savedCases.filter(item => item.id !== triagedCase.id && item.orderId !== triagedCase.orderId);
     savedCases.unshift(triagedCase);
-    localStorage.setItem('smartrma_cases', JSON.stringify(savedCases));
+    if (savedCases.length > 20) savedCases = savedCases.slice(0, 20);
+
+    try {
+      localStorage.setItem('smartrma_cases', JSON.stringify(savedCases));
+    } catch (quotaErr) {
+      console.warn('[LocalStorage QuotaExceeded] Trimming older case payloads:', quotaErr);
+      try {
+        const trimmed = savedCases.slice(0, 8).map((c, i) => {
+          if (i === 0) return c;
+          return {
+            ...c,
+            userImages: (c.userImages && c.userImages.length > 0) ? [c.userImages[0]] : []
+          };
+        });
+        localStorage.setItem('smartrma_cases', JSON.stringify(trimmed));
+      } catch (e2) {
+        const minimal = savedCases.slice(0, 5).map((c, i) => {
+          if (i === 0) return c;
+          return { ...c, userImages: [], subImg: '' };
+        });
+        localStorage.setItem('smartrma_cases', JSON.stringify(minimal));
+      }
+    }
     localStorage.setItem('smartrma_active_case_id', triagedCase.id);
   } catch (storageErr) {
     console.warn('[LocalStorage save error]', storageErr);
