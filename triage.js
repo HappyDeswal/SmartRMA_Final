@@ -250,25 +250,6 @@ window.handleChatSubmit = async function(e) {
       `;
     }
 
-    // Engine attribution pill (Cloud Engine vs Local Ollama fallback)
-    if (data.model_used || data.provider) {
-      const isCloud = data.provider === 'cloud_llm' || Boolean(data.provider && data.provider.includes('cloud'));
-      const cleanModelName = data.model_used || (isCloud ? 'High-Performance Cloud AI' : 'Local Ollama (Qwen 14B)');
-      htmlContent += `
-        <div style="margin-top:8px;font-size:0.68rem;color:var(--text-muted);display:flex;align-items:center;gap:5px">
-          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${isCloud ? '#10B981' : '#3B82F6'}"></span>
-          <span>Engine: <strong>${escapeHtml(cleanModelName)}</strong></span>
-          ${isCloud ? '<span class="mono brand-pill" style="font-size:0.60rem;background:rgba(16,185,129,0.12);color:#10B981">Cloud AI</span>' : '<span class="mono brand-pill" style="font-size:0.60rem;background:rgba(59,130,246,0.12);color:#3B82F6">Local Engine</span>'}
-        </div>
-      `;
-
-      const statusTextEl = $('#wa-status-text');
-      if (statusTextEl) {
-        statusTextEl.innerHTML = isCloud
-          ? '● Node 2 AI (<span style="color:#10B981">Cloud Engine Active</span>)'
-          : '● Node 2 AI (<span style="color:#3B82F6">Local Engine Active</span>)';
-      }
-    }
 
     // Representative fallback prompt
     if (data.reply.toLowerCase().includes('representative will review') || data.reply.toLowerCase().includes('not explicitly detailed')) {
@@ -355,7 +336,7 @@ function showBotTyping(show) {
       scrollToChatBottom();
     }
   } else {
-    if (status) status.textContent = 'Official Business Account • online';
+    if (status) status.innerHTML = 'Official Support Channel &bull; <span style="color:#00A884;font-weight:600" id="wa-status-text">● Online</span>';
     if (existing) existing.remove();
   }
 }
