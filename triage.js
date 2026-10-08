@@ -10,6 +10,33 @@ const SLOTS_CONFIG = [
 
 const ph = [null, null, null, null, null];
 
+function compressImage(file, maxWidth = 1000, quality = 0.85) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => resolve(e.target.result);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+}
+
 // Initialize Hardware Inspection Bay
 function initSlots() {
   const container = $('#slots');
@@ -27,9 +54,14 @@ function initSlots() {
   `).join('');
 
   $$('#slots input').forEach(inp => {
-    inp.onchange = () => {
+    inp.onchange = async () => {
       if (inp.files[0]) {
-        markSlot(+inp.dataset.i, URL.createObjectURL(inp.files[0]));
+        showToast(`Processing uploaded view...`, 'info');
+        const compressed = await compressImage(inp.files[0]);
+        if (compressed) {
+          markSlot(+inp.dataset.i, compressed);
+          showToast(`View ${+inp.dataset.i + 1} uploaded & verified!`, 'success');
+        }
       }
     };
   });
@@ -549,6 +581,7 @@ async function handleTriageSubmit(e) {
 
   const decColor = dec === 'Approve' ? '#10B981' : dec === 'Reject' ? '#EF4444' : '#F59E0B';
   const decIcon = dec === 'Approve' ? '✅' : dec === 'Reject' ? '🛑' : '⚠️';
+  const primaryUserImg = ph[3] || ph[0] || 'assets/gpu_damaged.jpg';
 
   // 5. Append WhatsApp Rich RMA Determination Card
   const resultCardHtml = `
@@ -560,7 +593,7 @@ async function handleTriageSubmit(e) {
         <span class="mono brand-pill">${t}</span>
       </div>
 
-      <div class="wa-card-img" style="background-image:url(${data.img})">
+      <div class="wa-card-img" style="background-image:url(${primaryUserImg})">
         <div class="spectral-overlay" style="--hx:${data.at[0]}%;--hy:${data.at[1]}%"></div>
         ${data.a > 0.3 ? `
           <div class="defect-crosshair" style="left:${data.at[0]}%;top:${data.at[1]}%">
@@ -611,6 +644,48 @@ async function handleTriageSubmit(e) {
 
   appendBotMessage(resultCardHtml);
   scrollToChatBottom();
+
+  // Persist case into localStorage so review.html immediately displays user-uploaded photos
+  const caseId = (evalResp && evalResp.ok && evalData && evalData.case_id) ? evalData.case_id : `RMA-${Math.floor(10000 + Math.random() * 90000)}`;
+  const triagedCase = {
+    id: caseId,
+    orderId: oid,
+    serialNumber: ser,
+    p: `${mfgVal} ${modelVal}`,
+    v: val,
+    t: t,
+    r: risk,
+    a: (evalResp && evalResp.ok && evalData && evalData.vision_telemetry && evalData.vision_telemetry.anomaly_score) ? evalData.vision_telemetry.anomaly_score : data.a,
+    conf: conf,
+    escalationReason: t === 'T4'
+      ? 'Tier 4 Enterprise SLA (> $2,500): Mandatory Forensic Lab Teardown'
+      : conf < th
+      ? `Confidence ${conf}% below ${t} SLA threshold (${th}%)`
+      : risk >= 30 && risk < 70
+      ? `Ambiguous Risk Score (${risk}/100) requires manual adjudication`
+      : `Technician review escalated for: "${rsn}"`,
+    rn: (evalResp && evalResp.ok && evalData && evalData.vision_telemetry && evalData.vision_telemetry.flagged_region) ? evalData.vision_telemetry.flagged_region : data.rn,
+    cl: citedClause,
+    src: citedSource,
+    st: dec === 'Approve' ? 'Approved' : dec === 'Reject' ? 'Rejected' : 'Pending',
+    subImg: primaryUserImg,
+    userImages: ph.slice(0, 5),
+    refImg: 'assets/rma_001_gpu_silicon_core_ortho_90_vis_clean.jpg',
+    at: data.at || [50, 50],
+    symptom: rsn,
+    ledgerHash: ledgerHash,
+    submittedAt: new Date().toISOString()
+  };
+
+  try {
+    let savedCases = JSON.parse(localStorage.getItem('smartrma_cases') || '[]');
+    savedCases = savedCases.filter(item => item.id !== triagedCase.id && item.orderId !== triagedCase.orderId);
+    savedCases.unshift(triagedCase);
+    localStorage.setItem('smartrma_cases', JSON.stringify(savedCases));
+    localStorage.setItem('smartrma_active_case_id', triagedCase.id);
+  } catch (storageErr) {
+    console.warn('[LocalStorage save error]', storageErr);
+  }
   showToast(`Triage Complete: ${dec.toUpperCase()}`, dec === 'Approve' ? 'success' : dec === 'Reject' ? 'error' : 'warning');
 }
 

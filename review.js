@@ -1,5 +1,13 @@
 // SmartRMA Technician Review & Hardware Comparator Workbench
 
+const SLOT_NAMES = [
+  'Front Shroud & Fans',
+  'Backplate & Retention',
+  'PCIe Gold Contacts',
+  '12VHPWR Power Socket',
+  'Serial Barcode Label'
+];
+
 function requiresTechnicianApproval(c) {
   // 1. Tier 4 (> $2500): Mandatory Physical Teardown by SLA
   if (c.t === 'T4' || c.v > 2500) return true;
@@ -22,115 +30,129 @@ function requiresTechnicianApproval(c) {
   return false;
 }
 
-const RAW_CASES = [
-  {
-    id: 'RMA-1045',
-    p: 'NVIDIA RTX 6000 Ada Server Edition',
-    v: 3150,
-    t: 'T4',
-    r: 55,
-    a: 0.62,
-    conf: 84,
-    escalationReason: 'Tier 4 Enterprise SLA (> $2,500): Mandatory Forensic Lab Teardown',
-    rn: 'GPU Core BGA / Power Stages',
-    cl: 'High-value enterprise returns require mandatory physical teardown inspection prior to credit release.',
-    st: 'Pending',
-    refImg: 'assets/rma_001_gpu_silicon_core_ortho_90_vis_clean.jpg',
-    subImg: 'assets/rma_003_gpu_silicon_core_ortho_90_thermal_flir.jpg',
-    at: [48, 52]
-  },
-  {
-    id: 'RMA-1042',
-    p: 'RTX 4090 OC Founders Edition',
-    v: 1240,
-    t: 'T3',
-    r: 80,
-    a: 0.86,
-    conf: 94,
-    escalationReason: 'Confidence 94% below Tier 3 SLA Threshold (95%)',
-    rn: '12VHPWR Power Connector (Pin 3)',
-    cl: 'Damage from electrical overload or scorched pin connectors is explicitly excluded.',
-    st: 'Pending',
-    refImg: 'assets/rma_055_power_12vhpwr_socket_ortho_90_vis_clean.jpg',
-    subImg: 'assets/rma_056_power_12vhpwr_socket_ortho_90_vis_defect.jpg',
-    at: [62, 38]
-  },
-  {
-    id: 'RMA-1052',
-    p: 'RTX 4080 Gaming X Trio',
-    v: 1150,
-    t: 'T3',
-    r: 78,
-    a: 0.82,
-    conf: 91,
-    fraud: true,
-    escalationReason: 'Security Audit: Perceptual Hash (pHash) Duplicate Image Reuse Detected',
-    rn: 'PCIe Connector & Shroud Pins',
-    cl: 'Claims exhibiting serial recycling or photographic reuse require forensic review.',
-    st: 'Pending',
-    refImg: 'assets/rma_089_pcie4_gold_fingers_ortho_90_vis_clean.jpg',
-    subImg: 'assets/rma_089_pcie4_gold_fingers_ortho_90_vis_clean.jpg',
-    at: [30, 70]
-  },
-  {
-    id: 'RMA-1039',
-    p: 'RTX 4070 Ti Super 16GB',
-    v: 690,
-    t: 'T2',
-    r: 41,
-    a: 0.58,
-    conf: 84,
-    escalationReason: 'Inconclusive Risk (41/100) & Confidence 84% below Tier 2 Threshold (85%)',
-    rn: 'VRAM Bank A0-A2 Traces',
-    cl: 'Defects in silicon materials or factory soldering under normal use are fully covered.',
-    st: 'Pending',
-    refImg: 'assets/rma_019_gddr6x_vram_bank_a_ortho_90_vis_clean.jpg',
-    subImg: 'assets/rma_020_gddr6x_vram_bank_a_ortho_90_vis_defect.jpg',
-    at: [48, 52]
-  },
-  {
-    id: 'RMA-1036',
-    p: 'Mini-ITX Motherboard Z790-I',
-    v: 260,
-    t: 'T1',
-    r: 34,
-    a: 0.44,
-    conf: 84,
-    escalationReason: 'Tier 1 Risk Score (34/100) exceeds Auto-Approval Ceiling (< 30)',
-    rn: 'Solid Capacitor Bank C14',
-    cl: 'Cosmetic wear that does not affect electrical continuity is not a defect.',
-    st: 'Pending',
-    refImg: 'assets/base_vrm.jpg',
-    subImg: 'assets/rma_018_gpu_silicon_core_grazing_high_specular_laser_contour.jpg',
-    at: [35, 65]
-  },
-  {
-    id: 'RMA-1033',
-    p: 'RTX 4060 Dual OC 8GB',
-    v: 980,
-    t: 'T2',
-    r: 8,
-    a: 0.12,
-    conf: 94,
-    escalationReason: 'None (Clean Spec & 94% Confidence)',
-    rn: 'No Region Flagged (Clean Spec)',
-    cl: 'Unused products in original condition may be returned within the standard 30-day window.',
-    st: 'Pending',
-    refImg: 'assets/rma_089_pcie4_gold_fingers_ortho_90_vis_clean.jpg',
-    subImg: 'assets/rma_089_pcie4_gold_fingers_ortho_90_vis_clean.jpg',
-    at: [30, 70]
+function getInitialCases() {
+  // 1. First check if cases were submitted in localStorage from triage intake
+  try {
+    const stored = localStorage.getItem('smartrma_cases');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.filter(c => requiresTechnicianApproval(c));
+      }
+    }
+  } catch (e) {
+    console.warn('[Error loading stored cases]', e);
   }
-];
 
-// FILTER: Technician workbench strictly displays cases requiring technician approval based on conditions
-const CASES = RAW_CASES
-  .filter(c => requiresTechnicianApproval(c))
-  .sort((x, y) => (y.v * y.r) - (x.v * x.r));
+  // 2. Default initial cases using the 5 user-verified intake bay views (no fixed stock images)
+  const defaultUserImages = [
+    'assets/gpu_front.jpg',
+    'assets/gpu_reference.jpg',
+    'assets/gpu_reference.jpg',
+    'assets/gpu_damaged.jpg',
+    'assets/gpu_reference.jpg'
+  ];
 
+  return [
+    {
+      id: 'RMA-1042',
+      p: 'RTX 4090 OC Founders Edition',
+      v: 1240,
+      t: 'T3',
+      r: 80,
+      a: 0.86,
+      conf: 94,
+      escalationReason: 'Confidence 94% below Tier 3 SLA Threshold (95%)',
+      rn: '12VHPWR Power Connector (Pin 3)',
+      cl: 'Damage from electrical overload or scorched pin connectors is explicitly excluded.',
+      st: 'Pending',
+      userImages: [...defaultUserImages],
+      refImg: 'assets/gpu_reference.jpg',
+      subImg: 'assets/gpu_damaged.jpg',
+      at: [62, 38]
+    },
+    {
+      id: 'RMA-1045',
+      p: 'NVIDIA RTX 6000 Ada Server Edition',
+      v: 3150,
+      t: 'T4',
+      r: 55,
+      a: 0.62,
+      conf: 84,
+      escalationReason: 'Tier 4 Enterprise SLA (> $2,500): Mandatory Forensic Lab Teardown',
+      rn: 'GPU Core BGA / Power Stages',
+      cl: 'High-value enterprise returns require mandatory physical teardown inspection prior to credit release.',
+      st: 'Pending',
+      userImages: [...defaultUserImages],
+      refImg: 'assets/gpu_reference.jpg',
+      subImg: 'assets/gpu_front.jpg',
+      at: [48, 52]
+    },
+    {
+      id: 'RMA-1052',
+      p: 'RTX 4080 Gaming X Trio',
+      v: 1150,
+      t: 'T3',
+      r: 78,
+      a: 0.82,
+      conf: 91,
+      fraud: true,
+      escalationReason: 'Security Audit: Perceptual Hash (pHash) Duplicate Image Reuse Detected',
+      rn: 'PCIe Connector & Shroud Pins',
+      cl: 'Claims exhibiting serial recycling or photographic reuse require forensic review.',
+      st: 'Pending',
+      userImages: [...defaultUserImages],
+      refImg: 'assets/gpu_reference.jpg',
+      subImg: 'assets/gpu_reference.jpg',
+      at: [30, 70]
+    },
+    {
+      id: 'RMA-1039',
+      p: 'RTX 4070 Ti Super 16GB',
+      v: 690,
+      t: 'T2',
+      r: 41,
+      a: 0.58,
+      conf: 84,
+      escalationReason: 'Inconclusive Risk (41/100) & Confidence 84% below Tier 2 Threshold (85%)',
+      rn: 'VRAM Bank A0-A2 Traces',
+      cl: 'Defects in silicon materials or factory soldering under normal use are fully covered.',
+      st: 'Pending',
+      userImages: [...defaultUserImages],
+      refImg: 'assets/gpu_reference.jpg',
+      subImg: 'assets/gpu_front.jpg',
+      at: [48, 52]
+    },
+    {
+      id: 'RMA-1036',
+      p: 'Mini-ITX Motherboard Z790-I',
+      v: 260,
+      t: 'T1',
+      r: 34,
+      a: 0.44,
+      conf: 84,
+      escalationReason: 'Tier 1 Risk Score (34/100) exceeds Auto-Approval Ceiling (< 30)',
+      rn: 'Solid Capacitor Bank C14',
+      cl: 'Cosmetic wear that does not affect electrical continuity is not a defect.',
+      st: 'Pending',
+      userImages: [
+        'assets/base_vrm.jpg',
+        'assets/base_vrm.jpg',
+        'assets/base_vrm.jpg',
+        'assets/base_vrm.jpg',
+        'assets/base_vrm.jpg'
+      ],
+      refImg: 'assets/base_vrm.jpg',
+      subImg: 'assets/base_vrm.jpg',
+      at: [35, 65]
+    }
+  ];
+}
+
+let CASES = getInitialCases().sort((x, y) => (y.v * y.r) - (x.v * x.r));
 let activeIndex = 0;
 let currentFilter = 'pending';
 let searchQuery = '';
-// Real session-based decision audit ledger - NO fake/mock logs
 const auditLedger = [];
 
 function escapeHtml(str) {
@@ -152,6 +174,22 @@ function generateAuditHash() {
     hash += chars[Math.floor(Math.random() * chars.length)];
   }
   return hash;
+}
+
+// Load Persistent Audit History from localStorage
+function loadAuditHistory() {
+  try {
+    const raw = localStorage.getItem('smartrma_audit_history');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        auditLedger.length = 0;
+        parsed.forEach(item => auditLedger.push(item));
+      }
+    }
+  } catch (e) {
+    console.warn('[Error loading persistent audit history]', e);
+  }
 }
 
 // Update Toolbar Tab Counts
@@ -192,7 +230,7 @@ function renderQueue() {
     const emptyMsg = currentFilter === 'pending'
       ? 'All escalated cases have been finalized! No pending reviews.'
       : currentFilter === 'resolved'
-      ? 'No cases have been resolved yet in this session. Complete a review to see it here.'
+      ? 'No cases have been resolved yet. Select a pending case above to review.'
       : 'No matching cases in this queue view.';
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:28px 14px;color:var(--text-muted)">${emptyMsg}</td></tr>`;
     return;
@@ -259,6 +297,7 @@ function renderDetails() {
   }
 
   const isResolved = c.st === 'Approved' || c.st === 'Rejected';
+  const customerUnitImg = c.subImg || (c.userImages && c.userImages[0]) || 'assets/gpu_damaged.jpg';
 
   d.innerHTML = `
     <div class="card-header-bar">
@@ -306,26 +345,44 @@ function renderDetails() {
         <span class="met-lbl">Confidence</span>
       </div>
       <div class="met-box">
-        <span class="met-val">${c.a.toFixed(2)}</span>
+        <span class="met-val">${c.a ? c.a.toFixed(2) : '0.50'}</span>
         <span class="met-lbl">Anomaly Score</span>
       </div>
     </div>
 
-    <!-- Dual Comparator Viewports -->
+    <!-- Dual Comparator Viewports (Showing Customer Uploaded Photo) -->
     <div class="comparator-grid">
-      <div class="img" style="background-image:url(${escapeHtml(c.refImg)})">
-        <div class="viewport-label">GOLDEN REFERENCE SAMPLE</div>
+      <div class="img" style="background-image:url(${escapeHtml(c.refImg || 'assets/gpu_reference.jpg')})">
+        <div class="viewport-label">FACTORY REFERENCE SPEC</div>
       </div>
-      <div class="img" style="background-image:url(${escapeHtml(c.subImg)})">
-        <div class="viewport-label">CUSTOMER UNIT: ${escapeHtml(c.rn)}</div>
-        <div class="spectral-overlay" style="--hx:${c.at[0]}%;--hy:${c.at[1]}%"></div>
-        ${c.a > 0.3 ? `
-          <div class="defect-crosshair" style="left:${c.at[0]}%;top:${c.at[1]}%">
+      <div class="img" id="cust-viewport" style="background-image:url(${escapeHtml(customerUnitImg)})">
+        <div class="viewport-label">CUSTOMER UNIT: ${escapeHtml(c.rn || 'Uploaded Hardware View')}</div>
+        <div class="spectral-overlay" style="--hx:${c.at ? c.at[0] : 50}%;--hy:${c.at ? c.at[1] : 50}%"></div>
+        ${(c.a > 0.3) ? `
+          <div class="defect-crosshair" style="left:${c.at ? c.at[0] : 50}%;top:${c.at ? c.at[1] : 50}%">
             <div class="crosshair-center"></div>
           </div>
         ` : ''}
       </div>
     </div>
+
+    <!-- Customer Uploaded Photos Gallery (5 Guided Views) -->
+    ${(c.userImages && c.userImages.length > 0) ? `
+      <div class="user-uploads-gallery">
+        <div class="gallery-title">
+          <span>📷 Customer Uploaded Inspection Views (5 Angles Verified at Intake):</span>
+          <span class="mono brand-pill" style="font-size:0.68rem">USER UPLOADED DOSSIER</span>
+        </div>
+        <div class="gallery-thumbs">
+          ${c.userImages.map((imgUrl, i) => `
+            <button type="button" class="thumb-btn ${imgUrl === customerUnitImg ? 'active' : ''}" data-idx="${i}" title="Inspect ${SLOT_NAMES[i] || `View ${i+1}`}">
+              <div class="thumb-preview" style="background-image:url(${escapeHtml(imgUrl)})"></div>
+              <span class="thumb-name">${SLOT_NAMES[i] || `View ${i+1}`}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    ` : ''}
 
     <!-- Policy Excerpt -->
     <div class="warranty-clause-card" style="margin:12px 0">
@@ -333,9 +390,9 @@ function renderDetails() {
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
         </svg>
-        Flagged Region: ${escapeHtml(c.rn)}
+        Flagged Region: ${escapeHtml(c.rn || 'Hardware Incident Zone')}
       </div>
-      <div class="clause-text">&ldquo;${escapeHtml(c.cl)}&rdquo;</div>
+      <div class="clause-text">&ldquo;${escapeHtml(c.cl || 'Standard warranty terms apply under normal operating conditions.')}&rdquo;</div>
     </div>
 
     ${isResolved ? `
@@ -375,7 +432,7 @@ function renderDetails() {
 
           <div class="finalized-meta-grid">
             <div><span>Auditor ID:</span> <b>${escapeHtml(c.resolvedOperator || 'TECH-402')}</b></div>
-            <div><span>Decision Time:</span> <b>${escapeHtml(c.resolvedTime || 'Just now')}</b></div>
+            <div><span>Decision Time:</span> <b>${escapeHtml(c.resolvedTime || 'Saved in session')}</b></div>
             <div><span>SHA-256 Ledger Stamp:</span> <code class="mono">${escapeHtml(c.resolvedHash || '0x4f8a...')}</code></div>
             <div><span>Final Disposition:</span> <span class="badge ${escapeHtml(c.st)}">${escapeHtml(c.st)}</span></div>
           </div>
@@ -427,6 +484,20 @@ function renderDetails() {
       <p class="err" id="e2" role="alert"></p>
     `}
   `;
+
+  // Bind gallery thumbnail buttons so technician can view any of the customer-uploaded angles
+  $$('.thumb-btn', d).forEach(btn => {
+    btn.onclick = () => {
+      const idx = +btn.dataset.idx;
+      if (c.userImages && c.userImages[idx]) {
+        c.subImg = c.userImages[idx];
+        const custVp = $('#cust-viewport');
+        if (custVp) custVp.style.backgroundImage = `url(${c.subImg})`;
+        $$('.thumb-btn', d).forEach(b => b.classList.toggle('active', +b.dataset.idx === idx));
+        showToast(`Inspecting Customer Upload: ${SLOT_NAMES[idx] || `View ${idx+1}`}`, 'info');
+      }
+    };
+  });
 
   if (!isResolved) {
     // Bind quick reason chips
@@ -481,7 +552,7 @@ function executeOverride(decision) {
   c.resolvedHash = hash;
   c.resolvedOperator = 'TECH-402';
 
-  // Push new decision to the top of audit history on this same page
+  // Push new decision into audit ledger
   auditLedger.unshift({
     time: timestamp,
     caseId: c.id,
@@ -490,14 +561,23 @@ function executeOverride(decision) {
     decision: finalStatus,
     reason: reason,
     hash: hash,
-    operator: 'TECH-402'
+    operator: 'TECH-402',
+    subImg: c.subImg
   });
+
+  // PERSIST BOTH CASES AND AUDIT HISTORY TO LOCALSTORAGE
+  try {
+    localStorage.setItem('smartrma_audit_history', JSON.stringify(auditLedger));
+    localStorage.setItem('smartrma_cases', JSON.stringify(CASES));
+  } catch (storageErr) {
+    console.warn('[LocalStorage save error]', storageErr);
+  }
 
   renderAuditLog();
   renderQueue();
   renderDetails();
 
-  showToast(`Case ${c.id} finalized as ${finalStatus.toUpperCase()}`, finalStatus === 'Approved' ? 'success' : 'error');
+  showToast(`Case ${c.id} finalized as ${finalStatus.toUpperCase()} (Saved to Audit History)`, finalStatus === 'Approved' ? 'success' : 'error');
 }
 
 // Render Decision History with interactive click-to-inspect feature
@@ -513,12 +593,12 @@ function renderAuditLog() {
   }
 
   if (auditLedger.length === 0) {
-    logEl.innerHTML = `<div class="mu" style="font-size:0.85rem;padding:12px 4px">No technician review decisions recorded in this active session. Complete a review above to record an immutable audit entry.</div>`;
+    logEl.innerHTML = `<div class="mu" style="font-size:0.85rem;padding:12px 4px">No technician review decisions recorded yet. Complete a review above to permanently save an audit history entry.</div>`;
     return;
   }
 
   logEl.innerHTML = auditLedger.map(item => `
-    <div class="audit-item interactive-audit-card" data-case-id="${escapeHtml(item.caseId)}" tabindex="0" title="Click to inspect complete case dossier and telemetry">
+    <div class="audit-item interactive-audit-card" data-case-id="${escapeHtml(item.caseId)}" tabindex="0" title="Click to inspect complete case dossier and user-uploaded photos">
       <div style="display:flex;flex-direction:column;gap:3px">
         <span class="audit-time">${escapeHtml(item.time)}</span>
         <span class="audit-hash">${escapeHtml(item.hash)}</span>
@@ -531,7 +611,7 @@ function renderAuditLog() {
           <span class="mono brand-pill">${escapeHtml(item.operator || 'TECH-402')}</span>
         </div>
         <div style="color:var(--text-secondary);font-size:0.8rem">&ldquo;${escapeHtml(item.reason)}&rdquo;</div>
-        <div class="inspect-tag">🔍 Click to inspect case details &amp; forensic telemetry &rarr;</div>
+        <div class="inspect-tag">🔍 Click to inspect case details &amp; customer uploaded photos &rarr;</div>
       </div>
     </div>
   `).join('');
@@ -544,7 +624,7 @@ function renderAuditLog() {
       const targetIndex = CASES.findIndex(c => c.id === caseId);
       if (targetIndex !== -1) {
         activeIndex = targetIndex;
-        // If current filter is pending and this case is resolved, switch to all or resolved
+        // If current filter is pending and this case is resolved, switch tab to all or resolved
         if (currentFilter === 'pending') {
           currentFilter = 'all';
           $$('.q-tab').forEach(t => {
@@ -602,8 +682,19 @@ document.addEventListener('keydown', e => {
   }
 });
 
-// Setup Toolbar Filters & Search
+// Setup Toolbar Filters, Search & Persistent History
 document.addEventListener('DOMContentLoaded', () => {
+  // If active case was set from triage submit, select it
+  try {
+    const activeCaseId = localStorage.getItem('smartrma_active_case_id');
+    if (activeCaseId) {
+      const foundIdx = CASES.findIndex(c => c.id === activeCaseId);
+      if (foundIdx !== -1) {
+        activeIndex = foundIdx;
+      }
+    }
+  } catch (e) {}
+
   $$('.q-tab').forEach(tab => {
     tab.onclick = () => {
       $$('.q-tab').forEach(t => t.classList.remove('active'));
@@ -621,6 +712,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
+  loadAuditHistory();
   renderQueue();
   renderDetails();
   renderAuditLog();

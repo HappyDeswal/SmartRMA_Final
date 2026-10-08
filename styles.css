@@ -1378,6 +1378,85 @@ tr.sel {
   font-weight: 600;
 }
 
+/* Customer Uploaded Photo Views Gallery in Comparator */
+.user-uploads-gallery {
+  margin: 14px 0 16px;
+  padding: 12px 14px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.gallery-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.gallery-thumbs {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 600px) {
+  .gallery-thumbs {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.thumb-btn {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 5px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.18s ease;
+  outline: none;
+}
+
+.thumb-btn:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.thumb-btn.active {
+  border-color: var(--accent);
+  background: rgba(0, 168, 132, 0.1);
+  box-shadow: 0 0 0 1.5px var(--accent);
+}
+
+.thumb-preview {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background-size: cover;
+  background-position: center;
+  border-radius: 4px;
+  background-color: #0b0f19;
+}
+
+.thumb-name {
+  font-size: 0.70rem;
+  font-family: var(--font-sans);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  font-weight: 600;
+}
+
 /* Architecture SVG Diagram Enhancements */
 .dg {
   display: block;
