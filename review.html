@@ -56,6 +56,13 @@
           <span class="status-dot"></span>
           <span>Lead Tech #402 Signed In</span>
         </div>
+        <button id="btn-purge-audits" class="btn r" style="font-size:0.75rem;padding:6px 12px;display:none;align-items:center;gap:6px" type="button" title="Purge all audit records and clear review workbench">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+          <span>Delete All Audits</span>
+        </button>
         <button id="theme-toggle" class="icon-btn" type="button" aria-label="Toggle theme">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="5"/>
@@ -79,7 +86,31 @@
       <p class="sub">High-value and escalated cases prioritized by value &times; risk score. Interactive inspection of customer-uploaded photos with mandatory cryptographic audit trail.</p>
     </div>
 
-    <div class="g2">
+    <!-- Clean Empty State: Displayed when there are no cases or audits to show -->
+    <div id="empty-workbench" class="empty-workbench-view" style="display:none">
+      <div class="empty-workbench-card">
+        <div class="empty-icon-box">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="4" width="18" height="16" rx="3"/>
+            <line x1="8" y1="10" x2="16" y2="10"/>
+            <line x1="8" y1="14" x2="12" y2="14"/>
+          </svg>
+        </div>
+        <h2>No Cases or Audits to Display</h2>
+        <p>The technician review queue is currently empty. Real cases submitted through the RMA Triage bay will appear here automatically for inspection and decisioning.</p>
+        <div class="empty-actions">
+          <a href="index.html" class="btn g" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+            <span>Open RMA Triage Bay</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="g2" id="workbench-grid">
       <!-- Left Column: Operations Queue -->
       <div class="card tw">
         <div class="card-header-bar">
@@ -98,15 +129,15 @@
               <h2>Escalation Queue</h2>
             </div>
           </div>
-          <span class="mono brand-pill" id="queue-count">5 ACTIVE CASES</span>
+          <span class="mono brand-pill" id="queue-count">0 PENDING ACTION</span>
         </div>
 
         <!-- Queue Toolbar -->
         <div class="queue-toolbar">
           <div class="queue-tabs">
-            <button class="q-tab active" data-filter="pending">Pending (<span id="tab-pending-count">5</span>)</button>
+            <button class="q-tab active" data-filter="pending">Pending (<span id="tab-pending-count">0</span>)</button>
             <button class="q-tab" data-filter="resolved">History / Resolved (<span id="tab-resolved-count">0</span>)</button>
-            <button class="q-tab" data-filter="all">All Cases (<span id="tab-all-count">5</span>)</button>
+            <button class="q-tab" data-filter="all">All Cases (<span id="tab-all-count">0</span>)</button>
           </div>
           <div class="search-box">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -144,7 +175,7 @@
     </div>
 
     <!-- Immutable Audit Ledger & History on Same Page -->
-    <div class="card" style="margin-top:24px">
+    <div class="card" id="audit-ledger-card" style="margin-top:24px">
       <div class="card-header-bar">
         <div class="card-title-group">
           <div class="card-title-icon" style="background:var(--info-subtle);color:var(--info-text)">
@@ -157,10 +188,10 @@
             <h2>Decision History &amp; Compliance Audit Ledger</h2>
           </div>
         </div>
-        <span class="mono brand-pill" id="history-badge">LIVE LEDGER</span>
+        <span class="mono brand-pill" id="history-badge">0 DECISIONS LOGGED</span>
       </div>
       <div id="log" class="audit-log-feed">
-        <div class="mu" style="font-size:0.85rem">No technician overrides recorded in this active session.</div>
+        <div class="mu" style="font-size:0.85rem">No decisions recorded yet. Decisions will appear here once finalized.</div>
       </div>
     </div>
   </main>

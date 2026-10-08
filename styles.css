@@ -2450,3 +2450,59 @@ tr.sel {
   stroke: #38BDF8 !important;
 }
 
+/* Clean Empty Workbench View */
+.empty-workbench-view {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 440px;
+  padding: 40px 20px;
+  margin: 20px 0;
+}
+
+.empty-workbench-card {
+  max-width: 580px;
+  width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: 56px 36px;
+  text-align: center;
+  box-shadow: var(--shadow-md);
+}
+
+.empty-icon-box {
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background: var(--bg-hover);
+  border: 1px solid var(--border-subtle);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  margin-bottom: 22px;
+}
+
+.empty-workbench-card h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.empty-workbench-card p {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  margin-bottom: 28px;
+}
+
+.empty-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+

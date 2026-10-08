@@ -30,192 +30,54 @@ function requiresTechnicianApproval(c) {
   return false;
 }
 
-function getInitialCases() {
-  const defaultCases = [
-    {
-      id: 'RMA-1042',
-      p: 'RTX 4090 OC Founders Edition',
-      v: 1240,
-      t: 'T3',
-      r: 80,
-      a: 0.86,
-      conf: 94,
-      escalationReason: 'Confidence 94% below Tier 3 SLA Threshold (95%)',
-      rn: '12VHPWR Power Connector (Pin 3)',
-      cl: 'Damage from electrical overload or scorched pin connectors is explicitly excluded.',
-      src: 'NVIDIA Limited Hardware Warranty, Section 4.2',
-      st: 'Pending',
-      userImages: [],
-      subImg: null,
-      at: [62, 38],
-      visionTelemetry: {
-        anomaly_score: 0.86,
-        flagged_region: '12VHPWR Power Connector (Pin 3)',
-        severity: 'CRITICAL',
-        visual_findings: 'Severe thermal discoloration, scorching, and localized connector nylon melting at Pin 3 terminal with copper pitting.',
-        model_used: 'llama3.2-vision:latest (Vision LLM)',
-        at: [62, 38]
-      },
-      policyGrounding: {
-        verdict: 'REJECTED (CID Exclusion)',
-        cited_clause: 'Damage resulting from electrical overload, improper seating, or scorched pin connectors is explicitly excluded.',
-        source_document: 'NVIDIA Limited Hardware Warranty',
-        page: 14,
-        explanation: 'Customer induced electrical overload defect excluded under Section 4.2.'
-      }
-    },
-    {
-      id: 'RMA-1045',
-      p: 'NVIDIA RTX 6000 Ada Server Edition',
-      v: 3150,
-      t: 'T4',
-      r: 55,
-      a: 0.62,
-      conf: 84,
-      escalationReason: 'Tier 4 Enterprise SLA (> $2,500): Mandatory Forensic Lab Teardown',
-      rn: 'GPU Core BGA / Power Stages',
-      cl: 'High-value enterprise returns require mandatory physical teardown inspection prior to credit release.',
-      src: 'Enterprise Support Agreement, Section 8.1',
-      st: 'Pending',
-      userImages: [],
-      subImg: null,
-      at: [48, 52],
-      visionTelemetry: {
-        anomaly_score: 0.62,
-        flagged_region: 'GPU Core BGA / Power Stages',
-        severity: 'MODERATE',
-        visual_findings: 'Slight flux residue around power inductors; no overt silicon fractures detected.',
-        model_used: 'llama3.2-vision:latest (Vision LLM)',
-        at: [48, 52]
-      },
-      policyGrounding: {
-        verdict: 'ESCALATE (Tier 4 Mandate)',
-        cited_clause: 'High-value enterprise returns require mandatory physical teardown inspection prior to credit release.',
-        source_document: 'Enterprise Support Agreement',
-        page: 8,
-        explanation: 'Mandatory ISO-compliant cleanroom laboratory teardown required before warranty claim release.'
-      }
-    },
-    {
-      id: 'RMA-1052',
-      p: 'RTX 4080 Gaming X Trio',
-      v: 1150,
-      t: 'T3',
-      r: 78,
-      a: 0.82,
-      conf: 91,
-      fraud: true,
-      escalationReason: 'Security Audit: Perceptual Hash (pHash) Duplicate Image Reuse Detected',
-      rn: 'PCIe Connector & Shroud Pins',
-      cl: 'Claims exhibiting serial recycling or photographic reuse require forensic review.',
-      src: 'Anti-Fraud Compliance Matrix, Section 3.0',
-      st: 'Pending',
-      userImages: [],
-      subImg: null,
-      at: [30, 70],
-      visionTelemetry: {
-        anomaly_score: 0.82,
-        flagged_region: 'PCIe Connector & Shroud Pins',
-        severity: 'CRITICAL',
-        visual_findings: 'Perceptual hash collision (pHash 64-bit distance = 0) with previous intake. Duplicate image reuse detected.',
-        model_used: 'llama3.2-vision:latest (Vision LLM)',
-        at: [30, 70]
-      },
-      policyGrounding: {
-        verdict: 'REJECTED (Fraud Policy)',
-        cited_clause: 'Claims exhibiting serial recycling or photographic reuse require forensic review and claim revocation.',
-        source_document: 'Anti-Fraud Compliance Matrix',
-        page: 3,
-        explanation: 'Serial recycling and image reuse violate terms of service.'
-      }
-    },
-    {
-      id: 'RMA-1039',
-      p: 'RTX 4070 Ti Super 16GB',
-      v: 690,
-      t: 'T2',
-      r: 41,
-      a: 0.58,
-      conf: 84,
-      escalationReason: 'Inconclusive Risk (41/100) & Confidence 84% below Tier 2 Threshold (85%)',
-      rn: 'VRAM Bank A0-A2 Traces',
-      cl: 'Defects in silicon materials or factory soldering under normal use are fully covered.',
-      src: 'Manufacturer Hardware Warranty, Section 2.1',
-      st: 'Pending',
-      userImages: [],
-      subImg: null,
-      at: [48, 52],
-      visionTelemetry: {
-        anomaly_score: 0.58,
-        flagged_region: 'VRAM Bank A0-A2 Traces',
-        severity: 'MODERATE',
-        visual_findings: 'Memory trace impedance anomaly reported; visual solder joints appear factory nominal.',
-        model_used: 'llama3.2-vision:latest (Vision LLM)',
-        at: [48, 52]
-      },
-      policyGrounding: {
-        verdict: 'APPROVED (Covered Defect)',
-        cited_clause: 'Defects in silicon materials or factory soldering under normal use are fully covered.',
-        source_document: 'Manufacturer Hardware Warranty',
-        page: 5,
-        explanation: 'Internal silicon solder/memory controller failure covered under standard warranty.'
-      }
-    },
-    {
-      id: 'RMA-1036',
-      p: 'Mini-ITX Motherboard Z790-I',
-      v: 260,
-      t: 'T1',
-      r: 34,
-      a: 0.44,
-      conf: 84,
-      escalationReason: 'Tier 1 Risk Score (34/100) exceeds Auto-Approval Ceiling (< 30)',
-      rn: 'Solid Capacitor Bank C14',
-      cl: 'Cosmetic wear that does not affect electrical continuity is not a defect.',
-      src: 'Direct Return Policy, Section 1.0',
-      st: 'Pending',
-      userImages: [],
-      subImg: null,
-      at: [35, 65],
-      visionTelemetry: {
-        anomaly_score: 0.44,
-        flagged_region: 'Solid Capacitor Bank C14',
-        severity: 'MODERATE',
-        visual_findings: 'Minor cosmetic scratch on capacitor aluminum casing; no dielectric rupture or bulging.',
-        model_used: 'llama3.2-vision:latest (Vision LLM)',
-        at: [35, 65]
-      },
-      policyGrounding: {
-        verdict: 'APPROVED (Cosmetic Servicing)',
-        cited_clause: 'Cosmetic wear that does not affect electrical continuity is not a defect, eligible for standard servicing.',
-        source_document: 'Direct Return Policy',
-        page: 1,
-        explanation: 'Cosmetic surface wear without electrical degradation.'
-      }
-    }
-  ];
+const FAKE_CASE_IDS = new Set([
+  'RMA-1042', 'RMA-1045', 'RMA-1052', 'RMA-1039', 'RMA-1036', 'RMA-1028', 'RMA-78758'
+]);
 
+function isAuthenticCase(c) {
+  if (!c || typeof c !== 'object') return false;
+  if (FAKE_CASE_IDS.has(c.id)) return false;
+  const idStr = String(c.id || '');
+  if (idStr.startsWith('RMA-10') || idStr.startsWith('RMA-78') || idStr.startsWith('ORD-AUDIT') || idStr.startsWith('ORD-CONCUR') || idStr.startsWith('MOCK') || idStr.startsWith('TEST')) {
+    return false;
+  }
+  // Authentic cases must have been submitted with user-uploaded images and submitted timestamp
+  if (!c.userImages || !Array.isArray(c.userImages) || c.userImages.length === 0) {
+    return false;
+  }
+  return true;
+}
+
+function isAuthenticAudit(item) {
+  if (!item || typeof item !== 'object') return false;
+  if (FAKE_CASE_IDS.has(item.caseId)) return false;
+  const idStr = String(item.caseId || '');
+  if (idStr.startsWith('RMA-10') || idStr.startsWith('RMA-78') || idStr.startsWith('ORD-AUDIT') || idStr.startsWith('ORD-CONCUR') || idStr.startsWith('MOCK') || idStr.startsWith('TEST')) {
+    return false;
+  }
+  const reasonStr = String(item.reason || '');
+  if (reasonStr.includes('ROG Astral RTX') || reasonStr.includes('Dominator Platinum') || reasonStr.includes('Socket pin distortion') || reasonStr.includes('PCIe retention clip')) {
+    return false;
+  }
+  return true;
+}
+
+function getInitialCases() {
   try {
     const stored = localStorage.getItem('smartrma_cases');
     if (stored) {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Filter out fake or legacy RMA-1028 entries
-        const cleanStored = parsed.filter(c => c && c.id !== 'RMA-1028');
-        const merged = [...cleanStored];
-        defaultCases.forEach(dc => {
-          if (!merged.some(m => m.id === dc.id)) {
-            merged.push(dc);
-          }
-        });
-        return merged;
+        // Strip out all fake, mock, or synthetic cases
+        const authenticCases = parsed.filter(isAuthenticCase);
+        localStorage.setItem('smartrma_cases', JSON.stringify(authenticCases));
+        return authenticCases;
       }
     }
   } catch (e) {
     console.warn('[Error loading stored cases]', e);
   }
-
-  return defaultCases;
+  return [];
 }
 
 let CASES = getInitialCases().sort((x, y) => (y.v * y.r) - (x.v * x.r));
@@ -245,7 +107,7 @@ function generateAuditHash() {
   return hash;
 }
 
-// Load Persistent Audit History from localStorage (Only authentic technician & real triage records)
+// Load Persistent Audit History from localStorage (Only authentic records)
 function loadAuditHistory() {
   auditLedger.length = 0;
   try {
@@ -253,8 +115,9 @@ function loadAuditHistory() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Filter out fake seeded RMA-1028 or test ledger records
-        const cleanHistory = parsed.filter(item => item && item.caseId !== 'RMA-1028' && !item.caseId.startsWith('ORD-AUDIT'));
+        // Filter out all fake, mock, or test ledger records
+        const cleanHistory = parsed.filter(isAuthenticAudit);
+        localStorage.setItem('smartrma_audit_history', JSON.stringify(cleanHistory));
         cleanHistory.forEach(item => auditLedger.push(item));
         return;
       }
@@ -264,9 +127,35 @@ function loadAuditHistory() {
   }
 }
 
+// Manage dynamic visibility of Workbench vs Empty State
+function updateWorkbenchVisibility() {
+  const emptyView = $('#empty-workbench');
+  const workbenchGrid = $('#workbench-grid');
+  const ledgerCard = $('#audit-ledger-card');
+  const purgeBtn = $('#btn-purge-audits');
+
+  const hasCases = CASES.length > 0;
+  const hasAudits = auditLedger.length > 0;
+
+  if (!hasCases && !hasAudits) {
+    // If there is nothing to show in technician tab, hide everything and show clean empty state
+    if (emptyView) emptyView.style.display = 'flex';
+    if (workbenchGrid) workbenchGrid.style.display = 'none';
+    if (ledgerCard) ledgerCard.style.display = 'none';
+    if (purgeBtn) purgeBtn.style.display = 'none';
+  } else {
+    // Something to show: display active workbench
+    if (emptyView) emptyView.style.display = 'none';
+    if (workbenchGrid) workbenchGrid.style.display = hasCases ? 'grid' : 'none';
+    if (ledgerCard) ledgerCard.style.display = 'block';
+    if (purgeBtn) purgeBtn.style.display = 'inline-flex';
+  }
+}
+
+
 // Update Toolbar Tab Counts
 function updateTabCounts() {
-  const pendingCount = CASES.filter(c => c.st === 'Pending').length;
+  const pendingCount = CASES.filter(c => c.st === 'Pending' && requiresTechnicianApproval(c)).length;
   const resolvedCount = CASES.filter(c => c.st === 'Approved' || c.st === 'Rejected' || c.st === 'Auto-Approved').length;
   const allCount = CASES.length;
 
@@ -287,24 +176,25 @@ function renderQueue() {
   if (!tbody) return;
 
   updateTabCounts();
+  updateWorkbenchVisibility();
 
   const filtered = CASES.filter(c => {
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       if (!c.id.toLowerCase().includes(q) && !c.p.toLowerCase().includes(q)) return false;
     }
-    if (currentFilter === 'pending') return c.st === 'Pending';
+    if (currentFilter === 'pending') return c.st === 'Pending' && requiresTechnicianApproval(c);
     if (currentFilter === 'resolved') return c.st === 'Approved' || c.st === 'Rejected' || c.st === 'Auto-Approved';
     return true; // 'all'
   });
 
   if (filtered.length === 0) {
     const emptyMsg = currentFilter === 'pending'
-      ? 'All escalated cases have been finalized! No pending reviews.'
+      ? 'No pending cases requiring technician review.'
       : currentFilter === 'resolved'
-      ? 'No cases have been resolved yet. Select a pending case above to review.'
-      : 'No matching cases in this queue view.';
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:28px 14px;color:var(--text-muted)">${emptyMsg}</td></tr>`;
+      ? 'No cases have been resolved yet.'
+      : 'No cases found.';
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:36px 14px;color:var(--text-muted)">${emptyMsg}</td></tr>`;
     return;
   }
 
@@ -363,8 +253,12 @@ function renderDetails() {
   if (!d) return;
 
   const c = CASES[activeIndex];
+
   if (!c) {
-    d.innerHTML = `<div style="padding:32px;text-align:center;color:var(--text-muted)">Select a case from the queue to inspect.</div>`;
+    d.innerHTML = `<div style="padding:60px 24px;text-align:center;color:var(--text-muted)">
+      <div style="font-size:1.05rem;font-weight:600;margin-bottom:8px;color:var(--text-secondary)">No Case Selected</div>
+      <div style="font-size:0.84rem">There are no cases in the review queue. Real claims submitted from the RMA Triage bay will appear here.</div>
+    </div>`;
     return;
   }
 
@@ -798,6 +692,7 @@ function executeOverride(decision) {
   renderAuditLog();
   renderQueue();
   renderDetails();
+  updateWorkbenchVisibility();
 
   showToast(`Case ${c.id} finalized as ${finalStatus.toUpperCase()} (Saved to Audit History)`, finalStatus === 'Approved' ? 'success' : 'error');
 }
@@ -815,7 +710,8 @@ function renderAuditLog() {
   }
 
   if (auditLedger.length === 0) {
-    logEl.innerHTML = `<div class="mu" style="font-size:0.85rem;padding:12px 4px">No decisions recorded yet. Complete a review above or auto-approve a case to save an audit history entry.</div>`;
+    logEl.innerHTML = `<div class="mu" style="font-size:0.85rem;padding:16px 4px">No decisions recorded yet. Decisions will appear here once finalized.</div>`;
+    updateWorkbenchVisibility();
     return;
   }
 
@@ -917,8 +813,50 @@ document.addEventListener('keydown', e => {
   }
 });
 
+// Complete Purge of All Audits & Cases
+async function purgeAllAudits() {
+  try {
+    localStorage.removeItem('smartrma_cases');
+    localStorage.removeItem('smartrma_audit_history');
+    localStorage.removeItem('smartrma_active_case_id');
+  } catch (e) {
+    console.warn('[LocalStorage purge error]', e);
+  }
+
+  CASES = [];
+  auditLedger.length = 0;
+  activeIndex = 0;
+
+  try {
+    await fetch('http://127.0.0.1:8000/api/v1/ledger/clear', { method: 'POST' });
+  } catch (e) {}
+
+  updateWorkbenchVisibility();
+  renderQueue();
+  renderDetails();
+  renderAuditLog();
+  showToast('All audits and case records deleted. Technician workbench reset.', 'info');
+}
+window.purgeAllAudits = purgeAllAudits;
+
 // Setup Toolbar Filters, Search & Persistent History
 document.addEventListener('DOMContentLoaded', () => {
+  // If user requested purge via query parameter (?purge=1 or ?reset=1)
+  if (window.location.search.includes('purge') || window.location.search.includes('reset')) {
+    purgeAllAudits();
+    return;
+  }
+
+  // Bind Purge All Audits button
+  const purgeBtn = $('#btn-purge-audits');
+  if (purgeBtn) {
+    purgeBtn.onclick = () => {
+      if (confirm('Are you sure you want to delete all audit records and clear the workbench?')) {
+        purgeAllAudits();
+      }
+    };
+  }
+
   // If active case was set from triage submit, select it
   try {
     const activeCaseId = localStorage.getItem('smartrma_active_case_id');
@@ -948,7 +886,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   loadAuditHistory();
+  updateWorkbenchVisibility();
   renderQueue();
   renderDetails();
   renderAuditLog();
+  updateWorkbenchVisibility();
 });
+

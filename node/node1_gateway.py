@@ -363,6 +363,18 @@ def get_ledger(limit: int = 15):
                 raise HTTPException(status_code=500, detail="Internal ledger storage error.")
     return {"count": 0, "recent_blocks": []}
 
+@app.post("/api/v1/ledger/clear")
+@app.delete("/api/v1/ledger")
+def clear_ledger():
+    with LEDGER_LOCK:
+        try:
+            with open(LEDGER_FILE, "w", encoding="utf-8") as f:
+                json.dump([], f)
+            return {"status": "SUCCESS", "message": "Audit ledger cleared successfully."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to clear ledger: {e}")
+
+
 @app.get("/api/v1/ledger/verify")
 def verify_ledger():
     """
