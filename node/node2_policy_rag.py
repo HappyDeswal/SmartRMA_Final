@@ -567,8 +567,13 @@ def triage_evaluate(req: TriageRequest):
     query = f"{req.manufacturer} {req.model_name} {req.defect_type} {req.symptoms} {req.inspection_notes}"
     relevant_chunks = search_policy_chunks(query, target_mfg=req.manufacturer, top_k=3)
     
-    # Defect pattern check for immediate CID exclusions
-    cid_terms = ["crack", "burnt", "burn mark", "liquid", "water", "corrosion", "bent pin", "scratched pcb", "unauthorized modification", "melted", "tamper"]
+    # Defect pattern check for immediate CID & Warranty Void exclusions
+    cid_terms = [
+        "crack", "burnt", "burn mark", "liquid", "water", "corrosion", "bent pin", "scratched pcb", 
+        "unauthorized modification", "melted", "tamper", "warranty sticker", "void sticker", 
+        "lifted sticker", "peeled sticker", "missing serial", "barcode missing", "peeled serial",
+        "label removed", "broken seal", "scuff"
+    ]
     is_cid = False
     ql = query.lower()
     for term in cid_terms:
@@ -580,8 +585,15 @@ def triage_evaluate(req: TriageRequest):
     if is_cid:
         status = "REJECTED"
         risk = 92
-        clause = "Physical / Liquid Damage Exclusion (Customer Induced Damage - CID)"
-        notes = "Physical fracture, overvoltage burnout, or liquid contact detected. Standard manufacturer limited warranties explicitly exclude external physical trauma."
+        if any(w in ql for w in ["sticker", "seal", "serial", "barcode", "tamper"]):
+            clause = "Warranty Void / Tampered Serial Number or Security Seal Policy Exclusion"
+            notes = "Warranty void seal has been breached/lifted or serial number identifier is missing/defaced. Standard manufacturer policy voids warranty coverage immediately."
+        elif "scuff" in ql:
+            clause = "Cosmetic Imperfection & Enclosure Wear Exclusion"
+            notes = "Cosmetic surface wear, scuffs, or minor handling marks do not constitute functional manufacturing defects under limited hardware warranty."
+        else:
+            clause = "Physical / Liquid Damage Exclusion (Customer Induced Damage - CID)"
+            notes = "Physical fracture, overvoltage burnout, or liquid contact detected. Standard manufacturer limited warranties explicitly exclude external physical trauma."
     elif any(term in query.lower() for term in ["artifact", "code 43", "black screen", "fan rattle", "coil whine", "no display", "reboot under load", "crash", "freeze", "blank screen", "dead"]):
         status = "APPROVED"
         risk = 14

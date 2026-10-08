@@ -500,10 +500,11 @@ def process_intake(req: IntakeRequest):
             })
 
     # 2. Defect Classification & Node 2 Policy Evaluation
+    is_tamper_or_seal = any(k in symptoms_lower for k in ["sticker", "seal", "serial", "barcode", "tamper", "peeled", "scuff"])
     is_burn_or_damage = any(k in symptoms_lower for k in ["burn", "melt", "scorch", "crack", "broken", "bent", "water", "spill", "liquid", "smoke"])
     is_silicon_failure = any(k in symptoms_lower for k in ["artifact", "code 43", "black screen", "crash", "blank", "glitch", "fan rattle", "coil whine", "dead"])
 
-    defect_type = "damage" if is_burn_or_damage else "artifacts" if is_silicon_failure else "other"
+    defect_type = "damage" if (is_burn_or_damage or is_tamper_or_seal) else "artifacts" if is_silicon_failure else "other"
     node2_result = call_node2_policy(req.manufacturer, req.model_name, req.serial_number, defect_type, req.symptom_description)
 
     # 3. Vision Anomaly Synthesized Score (Node 3 Vision LLM Bridge)

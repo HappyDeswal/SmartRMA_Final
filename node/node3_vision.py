@@ -202,8 +202,20 @@ def extract_vision_telemetry(vision_text: str, slot_name: str, symptoms: str) ->
 
     has_burn_in_text = any(k in vt_lower for k in burn_keywords) and not (negated_damage and not any(k in vt_lower for k in ["burnt", "melt", "scorch", "corrosion"]))
     has_burn_in_sym = any(k in sym_lower for k in ["burn", "melt", "scorch", "smoke", "spill", "corrosion", "crack", "bent"])
-
     is_burnt = has_burn_in_text or has_burn_in_sym
+
+    # 1b. Warranty Tamper, Missing Identifier & Minor Surface Issue patterns
+    tamper_keywords = [
+        "void sticker", "warranty sticker", "warranty seal", "lifted sticker", "peeled sticker", 
+        "tamper", "tampered", "missing serial", "barcode missing", "peeled serial", "label removed",
+        "adhesive residue", "broken seal", "unauthorized disassembly"
+    ]
+    has_tamper_in_text = any(k in vt_lower for k in tamper_keywords)
+    has_tamper_in_sym = any(k in sym_lower for k in ["warranty sticker", "void sticker", "peeled sticker", "lifted sticker", "missing serial", "barcode removed", "seal broken", "tampered", "missing label"])
+    is_tamper = (has_tamper_in_text or has_tamper_in_sym) and not is_burnt
+
+    minor_cosmetic_keywords = ["hairline scuff", "scuff", "surface mark", "insertion mark", "thermal paste", "paste smear", "paste smudge", "friction track", "dust speck"]
+    has_minor_cosmetic = any(k in vt_lower for k in minor_cosmetic_keywords) or any(k in sym_lower for k in ["scuff", "paste", "insertion mark", "thermal paste"])
 
     # 2. Silicon component failure patterns (capacitors, traces, vram, artifacts)
     silicon_keywords = ["capacitor", "resistor", "chip", "transistor", "circuit board", "traces", "vram", "artifact", "solder", "wear", "swelling", "discolor"]
@@ -211,7 +223,7 @@ def extract_vision_telemetry(vision_text: str, slot_name: str, symptoms: str) ->
 
     # 3. Clean condition patterns
     clean_keywords = ["good condition", "no visible signs of damage", "working order", "clean", "intact", "normal", "pristine", "factory fresh"]
-    is_clean = (any(k in vt_lower for k in clean_keywords) or negated_damage) and not is_burnt
+    is_clean = (any(k in vt_lower for k in clean_keywords) or negated_damage) and not (is_burnt or is_tamper)
 
     if is_burnt:
         anomaly_score = 0.88
@@ -221,6 +233,22 @@ def extract_vision_telemetry(vision_text: str, slot_name: str, symptoms: str) ->
         flagged_region = "12VHPWR Power Socket (Pins 3 & 4)" if "power" in slot_name.lower() or "socket" in slot_name.lower() or "burnt" in vt_lower else f"{slot_name} - Burn/Thermal Defect"
         coords = {"center_x_pct": 62, "center_y_pct": 38, "bounding_box": [58, 34, 66, 42]}
         action = "REJECT_CID_EXCLUSION_OR_L2_TEARDOWN"
+    elif is_tamper:
+        anomaly_score = 0.85
+        severity = "CRITICAL"
+        defect_type = "damage"
+        confidence = 0.95
+        flagged_region = "Warranty Void Seal / Serial Identifier Label"
+        coords = {"center_x_pct": 52, "center_y_pct": 46, "bounding_box": [48, 42, 56, 50]}
+        action = "REJECT_WARRANTY_VOID_TAMPER_POLICY"
+    elif is_minor_cosmetic and not is_clean:
+        anomaly_score = 0.72
+        severity = "MODERATE"
+        defect_type = "damage"
+        confidence = 0.89
+        flagged_region = "Enclosure Shroud / Substrate Edge (Minor Handling Wear)"
+        coords = {"center_x_pct": 50, "center_y_pct": 48, "bounding_box": [45, 44, 55, 52]}
+        action = "REJECT_COSMETIC_EXCLUSION_OR_L2_BENCH"
     elif is_clean:
         anomaly_score = 0.12
         severity = "CLEAN"
