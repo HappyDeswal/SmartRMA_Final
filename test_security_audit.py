@@ -234,7 +234,7 @@ def submit_sample_case(i):
         data=json.dumps(payload).encode(),
         headers={"Content-Type": "application/json"}
     )
-    with urllib.request.urlopen(req, timeout=25) as resp:
+    with urllib.request.urlopen(req, timeout=50) as resp:
         return json.loads(resp.read().decode())
 
 with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:

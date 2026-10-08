@@ -5,23 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Technician Review Workbench | SmartRMA</title>
   <meta name="description" content="Operations workbench for technician inspection, golden sample comparator, and audit-compliant RMA overrides.">
+  <link rel="icon" type="image/png" href="assets/smartrma_icon.png">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <header>
     <div class="bar">
-      <a class="brand-wrapper" href="index.html">
-        <div class="brand-logo-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <rect x="4" y="4" width="16" height="16" rx="3"/>
-            <path d="M9 9h6v6H9z"/>
-            <path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 15h3M1 9h3M1 15h3"/>
-          </svg>
-        </div>
-        <div class="brand-text">
-          <span class="brand-title">SmartRMA</span>
-          <span class="brand-subtitle">Hardware Triage &amp; Telemetry</span>
-        </div>
+      <a class="brand-wrapper" href="index.html" title="SmartRMA Client Web Interface">
+        <img src="assets/smartrma_logo.png" alt="SmartRMA Client Web Interface" class="brand-logo-img">
         <span class="brand-pill">v2.4 Pro</span>
       </a>
 
@@ -195,6 +186,19 @@
       </div>
     </div>
   </main>
+
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="assets/smartrma_logo.png" alt="SmartRMA Logo" class="footer-logo">
+        <p>Enterprise Autonomous Hardware Triage, Vision Telemetry &amp; Cryptographic RMA Ledger.</p>
+      </div>
+      <div class="footer-meta">
+        <span class="mono">SmartRMA Client Web Interface &bull; Technician Workbench v2.4</span>
+        <span class="mono" style="color:var(--text-muted)">SHA-256 Tamper-Evident Ledger Integrity Active</span>
+      </div>
+    </div>
+  </footer>
 
   <script src="common.js"></script>
   <script src="review.js"></script>
