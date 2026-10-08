@@ -343,6 +343,25 @@ function renderDetails() {
       </div>
     </div>
 
+    <!-- Hardware Incident Dossier (User Entered Metadata) -->
+    <div class="incident-dossier-card" style="margin:12px 0 16px;padding:14px;background:var(--bg-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-md)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span style="font-weight:700;font-size:0.82rem;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em">Customer Hardware Incident Dossier</span>
+        <span class="mono brand-pill">${escapeHtml(c.orderId || c.id)}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:8px;font-size:0.82rem">
+        <div><span style="color:var(--text-muted)">Order Reference:</span> <b class="mono" style="color:var(--text-primary)">${escapeHtml(c.orderId || c.id)}</b></div>
+        <div><span style="color:var(--text-muted)">Serial Barcode / Unit ID:</span> <b class="mono" style="color:var(--text-primary)">${escapeHtml(c.serialNumber || 'N/A')}</b></div>
+        <div><span style="color:var(--text-muted)">Manufacturer / OEM:</span> <b style="color:var(--text-primary)">${escapeHtml(c.oem || 'OEM')}</b></div>
+        <div><span style="color:var(--text-muted)">Hardware Model Line:</span> <b style="color:var(--text-primary)">${escapeHtml(c.modelName || c.p)}</b></div>
+        <div><span style="color:var(--text-muted)">Declared Value:</span> <b class="mono" style="color:var(--text-primary)">$${c.v ? c.v.toLocaleString() : '0'}</b></div>
+      </div>
+      <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border-subtle);font-size:0.82rem">
+        <span style="color:var(--text-muted)">User Return Description:</span>
+        <div style="margin-top:3px;font-style:italic;color:var(--text-primary);line-height:1.45">&ldquo;${escapeHtml(c.symptom || 'No return description entered.')}&rdquo;</div>
+      </div>
+    </div>
+
     <!-- Customer Uploaded Hardware Inspection Viewport (No factory reference spec) -->
     ${customerUnitImg ? `
       <div class="hardware-inspection-viewport" id="cust-viewport" style="background-image:url(${escapeHtml(customerUnitImg)})">

@@ -1,11 +1,11 @@
 // SmartRMA Triage Engine with WhatsApp-Style Chatbot Assistant
 
 const SLOTS_CONFIG = [
-  { name: 'Front Shroud & Fans', icon: '🔲', defaultImg: 'assets/gpu_front.jpg' },
-  { name: 'Backplate & Retention', icon: '🛡️', defaultImg: 'assets/gpu_reference.jpg' },
-  { name: 'PCIe Gold Contacts', icon: '⚡', defaultImg: 'assets/gpu_reference.jpg' },
-  { name: '12VHPWR Power Socket', icon: '🔌', defaultImg: 'assets/gpu_damaged.jpg' },
-  { name: 'Serial Barcode Label', icon: '🏷️', defaultImg: 'assets/gpu_reference.jpg' }
+  { name: 'Front Shroud & Fans', icon: '🔲' },
+  { name: 'Backplate & Retention', icon: '🛡️' },
+  { name: 'PCIe Gold Contacts', icon: '⚡' },
+  { name: '12VHPWR Power Socket', icon: '🔌' },
+  { name: 'Serial Barcode Label', icon: '🏷️' }
 ];
 
 const ph = [null, null, null, null, null];
@@ -106,11 +106,16 @@ const TIERS = {
 const getTier = val => val < 300 ? 'T1' : val <= 1000 ? 'T2' : val <= 2500 ? 'T3' : 'T4';
 
 function updateTierDisplay() {
-  const val = +$('#val').value;
-  const t = getTier(val);
+  const valInput = $('#val');
+  const val = valInput ? +valInput.value : 0;
   const tpEl = $('#tp');
   if (tpEl) {
-    tpEl.textContent = val > 0 ? `Tier ${t} (${TIERS[t].r}): ${TIERS[t].rule}` : '';
+    if (val > 0) {
+      const t = getTier(val);
+      tpEl.textContent = `Tier ${t} (${TIERS[t].r}): ${TIERS[t].rule}`;
+    } else {
+      tpEl.textContent = 'Enter declared value to compute SLA tier policy';
+    }
   }
 }
 
@@ -492,11 +497,13 @@ async function handleTriageSubmit(e) {
   const oid = $('#oid').value.trim();
   const ser = $('#ser').value.trim();
   const val = +$('#val').value;
+  const oem = $('#mfg-select') ? $('#mfg-select').value.trim() : '';
+  const modelLine = $('#model-line') ? $('#model-line').value.trim() : '';
   const rsn = $('#rsn').value.trim();
 
-  if (!oid || !ser || !(val > 0) || !rsn) {
-    if (errEl) errEl.textContent = 'Please complete all required fields with valid values.';
-    showToast('Missing required return fields', 'error');
+  if (!oid || !ser || !(val > 0) || !oem || !modelLine || !rsn) {
+    if (errEl) errEl.textContent = 'Please complete all required fields: Order Reference, Serial Barcode, Declared Value, OEM, Hardware Model Line, and Return Description.';
+    showToast('Missing required incident details', 'error');
     return;
   }
 
@@ -512,7 +519,7 @@ async function handleTriageSubmit(e) {
   $$('#slots .slot').forEach(s => s.classList.add('scanning'));
 
   // 1. Post user triage request into WhatsApp Chat
-  appendUserMessage(`📤 *Submitted RMA Triage Request:*\n• Order: ${oid}\n• S/N: ${ser}\n• Value: $${val.toLocaleString()} (${getTier(val)})\n• Defect: "${rsn}"\n• 5 Guided diagnostic photos uploaded`);
+  appendUserMessage(`📤 *Submitted RMA Triage Request:*\n• Order: ${oid}\n• S/N: ${ser}\n• OEM: ${oem}\n• Model Line: ${modelLine}\n• Value: $${val.toLocaleString()} (${getTier(val)})\n• Defect: "${rsn}"\n• 5 Guided diagnostic photos uploaded`);
   scrollToChatBottom();
 
   // 2. Show bot typing status
@@ -552,8 +559,8 @@ async function handleTriageSubmit(e) {
   let citedSource = data.src;
   let ledgerHash = "sha256:genesis_block";
   let securityAuditMsg = "EXIF & pHash Verified";
-  const mfgVal = $('#mfg-select') ? $('#mfg-select').value : 'NVIDIA';
-  const modelVal = $('#model-line') ? $('#model-line').value : 'Graphics Hardware';
+  const mfgVal = oem;
+  const modelVal = modelLine;
   let evalResp = null;
   let evalData = null;
 
@@ -688,7 +695,9 @@ async function handleTriageSubmit(e) {
     id: caseId,
     orderId: oid,
     serialNumber: ser,
-    p: `${mfgVal} ${modelVal}`,
+    oem: oem,
+    modelName: modelLine,
+    p: `${oem} ${modelLine}`,
     v: val,
     t: t,
     r: risk,
@@ -780,16 +789,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const form = $('#f');
   if (form) form.onsubmit = handleTriageSubmit;
 
-  const samplePhotosBtn = $('#btn-sample-photos');
-  if (samplePhotosBtn) {
-    samplePhotosBtn.onclick = () => {
-      SLOTS_CONFIG.forEach((cfg, i) => {
-        markSlot(i, cfg.defaultImg);
-      });
-      showToast('Loaded 5 sample inspection angles for testing', 'info');
-    };
-  }
-
   const resetBtn = $('#btn-reset');
   if (resetBtn) {
     resetBtn.onclick = () => {
@@ -798,7 +797,9 @@ document.addEventListener('DOMContentLoaded', () => {
       initSlots();
       updatePhotoCount();
       updateTierDisplay();
-      showToast('Form reset', 'info');
+      const errEl = $('#err');
+      if (errEl) errEl.textContent = '';
+      showToast('Form cleared - Ready for user hardware input', 'info');
     };
   }
 

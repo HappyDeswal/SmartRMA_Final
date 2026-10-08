@@ -102,48 +102,53 @@
 
         <div class="row">
           <label class="f">
-            Order Reference
-            <input id="oid" required placeholder="ORD-48213" value="ORD-48213">
+            Order Reference *
+            <input id="oid" required placeholder="e.g. ORD-98214" autocomplete="off">
           </label>
           <label class="f">
-            Serial Barcode / Unit ID
-            <input id="ser" required placeholder="GPU-7F3A91" value="GPU-7F3A91" class="mono">
+            Serial Barcode / Unit ID *
+            <input id="ser" required placeholder="e.g. SN-883491" class="mono" autocomplete="off">
           </label>
         </div>
 
         <div class="row">
           <label class="f">
-            Declared Order Value (USD)
-            <input id="val" type="number" min="1" required placeholder="1240" value="1240" class="mono">
-            <small id="tp" class="mu mono" style="display:block;margin-top:4px"></small>
+            Declared Order Value (USD) *
+            <input id="val" type="number" min="1" step="1" required placeholder="e.g. 750" class="mono">
+            <small id="tp" class="mu mono" style="display:block;margin-top:4px">Enter declared value to compute SLA tier policy</small>
           </label>
           <label class="f">
-            Manufacturer / OEM
-            <select id="mfg-select" style="background:var(--bg-subtle);color:var(--text-primary);border:1px solid var(--border-color);border-radius:6px;padding:9px 12px;font-size:0.88rem;outline:none">
-              <option value="NVIDIA" selected>NVIDIA (Founders Edition)</option>
+            Manufacturer / OEM *
+            <select id="mfg-select" required style="background:var(--bg-subtle);color:var(--text-primary);border:1px solid var(--border-color);border-radius:6px;padding:9px 12px;font-size:0.88rem;outline:none">
+              <option value="" disabled selected>Select Manufacturer / OEM...</option>
+              <option value="NVIDIA">NVIDIA</option>
               <option value="GIGABYTE">GIGABYTE / AORUS</option>
-              <option value="Apple">Apple (Mac / MacBook)</option>
-              <option value="Dell">Dell / Alienware</option>
-              <option value="Acer">Acer / Predator</option>
               <option value="ASUS">ASUS (ROG / TUF)</option>
+              <option value="MSI">MSI (Gaming / Ventus)</option>
               <option value="EVGA">EVGA</option>
-              <option value="Lenovo">Lenovo (ThinkPad)</option>
-              <option value="HP">HP (OMEN)</option>
-              <option value="Intel">Intel (Xeon / Core)</option>
+              <option value="AMD">AMD (Radeon / Ryzen)</option>
+              <option value="Apple">Apple (Mac / Silicon)</option>
+              <option value="Dell">Dell / Alienware</option>
+              <option value="Lenovo">Lenovo (ThinkPad / Legion)</option>
+              <option value="HP">HP (OMEN / Victus)</option>
+              <option value="Acer">Acer (Predator / Nitro)</option>
+              <option value="Intel">Intel (Arc / Core / Xeon)</option>
+              <option value="Corsair">Corsair</option>
+              <option value="Other OEM">Other OEM / Custom</option>
             </select>
           </label>
         </div>
 
         <div class="row">
           <label class="f" style="grid-column:1 / -1">
-            Hardware Model Line &amp; Component Details
-            <input id="model-line" value="RTX 4090 OC Founders Edition" style="background:var(--bg-subtle)">
+            Hardware Model Line &amp; Component Details *
+            <input id="model-line" required placeholder="e.g. GeForce RTX 4080 Super Gaming OC / ROG Strix Z790" autocomplete="off" style="background:var(--bg-subtle)">
           </label>
         </div>
 
         <label class="f">
-          Return Symptom Description
-          <textarea id="rsn" required rows="2" maxlength="300" placeholder="Describe the hardware failure, power anomaly, or return reason...">Burnt 12VHPWR power connector after system shut off during load</textarea>
+          Return Symptom Description *
+          <textarea id="rsn" required rows="3" maxlength="400" placeholder="Describe the hardware defect, failure symptoms, power anomaly, or reason for return..."></textarea>
         </label>
 
         <!-- Guided Hardware Photo Bay -->
