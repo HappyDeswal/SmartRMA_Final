@@ -852,11 +852,20 @@ label.f small.mu {
   text-transform: uppercase;
 }
 
-.badge.Approve {
+.badge.Approve,
+.badge.Approved {
   background: var(--success-subtle);
   border: 1px solid var(--success-border);
   color: var(--success-text);
   box-shadow: 0 0 16px rgba(16, 185, 129, 0.25);
+}
+
+.badge.Auto-Approved,
+.badge.auto-approved {
+  background: rgba(0, 168, 132, 0.15);
+  border: 1px solid rgba(0, 168, 132, 0.45);
+  color: #00A884;
+  box-shadow: 0 0 16px rgba(0, 168, 132, 0.25);
 }
 
 .badge.Escalate {
@@ -866,7 +875,8 @@ label.f small.mu {
   box-shadow: 0 0 16px rgba(245, 158, 11, 0.25);
 }
 
-.badge.Reject {
+.badge.Reject,
+.badge.Rejected {
   background: var(--danger-subtle);
   border: 1px solid var(--danger-border);
   color: var(--danger-text);
@@ -1333,6 +1343,11 @@ tr.sel {
   background: rgba(16, 185, 129, 0.05);
 }
 
+.resolution-finalized-card.auto-approved {
+  border-color: rgba(0, 168, 132, 0.45);
+  background: rgba(0, 168, 132, 0.05);
+}
+
 .resolution-finalized-card.rejected {
   border-color: rgba(239, 68, 68, 0.45);
   background: rgba(239, 68, 68, 0.05);
@@ -1471,6 +1486,144 @@ tr.sel {
   text-overflow: ellipsis;
   max-width: 100%;
   font-weight: 600;
+}
+
+/* Multi-Node AI Telemetry Grid (Node 3 Vision + Node 2 Policy) */
+.nodes-telemetry-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 14px 0;
+}
+
+@media (max-width: 768px) {
+  .nodes-telemetry-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.node-telemetry-box {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  transition: all 0.2s ease;
+}
+
+.node-telemetry-box.node3-box {
+  border-top: 3px solid #38BDF8;
+}
+
+.node-telemetry-box.node2-box {
+  border-top: 3px solid #A855F7;
+}
+
+.node-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.node-box-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.node-status-pill {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  text-transform: uppercase;
+}
+
+.node-status-pill.critical {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--danger-text);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.node-status-pill.nominal {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success-text);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.node-status-pill.warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--warning-text);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.node-box-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--text-primary);
+}
+
+.node-telemetry-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed var(--border-subtle);
+}
+
+.node-k {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+}
+
+.node-v {
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  text-align: right;
+}
+
+.node-findings-quote {
+  margin-top: 4px;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.node-findings-quote strong {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--text-primary);
+}
+
+.node-findings-quote p {
+  margin: 0;
+  font-style: italic;
+}
+
+.synthesis-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  margin: 10px 0 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  font-size: 0.80rem;
+  color: var(--text-primary);
 }
 
 /* Architecture SVG Diagram Enhancements */

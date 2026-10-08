@@ -31,20 +31,6 @@ function requiresTechnicianApproval(c) {
 }
 
 function getInitialCases() {
-  // 1. First check if cases were submitted in localStorage from triage intake
-  try {
-    const stored = localStorage.getItem('smartrma_cases');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed.filter(c => requiresTechnicianApproval(c));
-      }
-    }
-  } catch (e) {
-    console.warn('[Error loading stored cases]', e);
-  }
-
-  // 2. Default initial cases using the 5 user-verified intake bay views (no fixed stock images)
   const defaultUserImages = [
     'assets/gpu_front.jpg',
     'assets/gpu_reference.jpg',
@@ -53,7 +39,7 @@ function getInitialCases() {
     'assets/gpu_reference.jpg'
   ];
 
-  return [
+  const defaultCases = [
     {
       id: 'RMA-1042',
       p: 'RTX 4090 OC Founders Edition',
@@ -65,10 +51,26 @@ function getInitialCases() {
       escalationReason: 'Confidence 94% below Tier 3 SLA Threshold (95%)',
       rn: '12VHPWR Power Connector (Pin 3)',
       cl: 'Damage from electrical overload or scorched pin connectors is explicitly excluded.',
+      src: 'NVIDIA Limited Hardware Warranty, Section 4.2',
       st: 'Pending',
       userImages: [...defaultUserImages],
       subImg: 'assets/gpu_damaged.jpg',
-      at: [62, 38]
+      at: [62, 38],
+      visionTelemetry: {
+        anomaly_score: 0.86,
+        flagged_region: '12VHPWR Power Connector (Pin 3)',
+        severity: 'CRITICAL',
+        visual_findings: 'Severe thermal discoloration, scorching, and localized connector nylon melting at Pin 3 terminal with copper pitting.',
+        model_used: 'moondream:latest (Vision LLM)',
+        at: [62, 38]
+      },
+      policyGrounding: {
+        verdict: 'REJECTED (CID Exclusion)',
+        cited_clause: 'Damage resulting from electrical overload, improper seating, or scorched pin connectors is explicitly excluded.',
+        source_document: 'NVIDIA Limited Hardware Warranty',
+        page: 14,
+        explanation: 'Customer induced electrical overload defect excluded under Section 4.2.'
+      }
     },
     {
       id: 'RMA-1045',
@@ -81,10 +83,26 @@ function getInitialCases() {
       escalationReason: 'Tier 4 Enterprise SLA (> $2,500): Mandatory Forensic Lab Teardown',
       rn: 'GPU Core BGA / Power Stages',
       cl: 'High-value enterprise returns require mandatory physical teardown inspection prior to credit release.',
+      src: 'Enterprise Support Agreement, Section 8.1',
       st: 'Pending',
       userImages: [...defaultUserImages],
       subImg: 'assets/gpu_front.jpg',
-      at: [48, 52]
+      at: [48, 52],
+      visionTelemetry: {
+        anomaly_score: 0.62,
+        flagged_region: 'GPU Core BGA / Power Stages',
+        severity: 'MODERATE',
+        visual_findings: 'Slight flux residue around power inductors; no overt silicon fractures detected.',
+        model_used: 'moondream:latest (Vision LLM)',
+        at: [48, 52]
+      },
+      policyGrounding: {
+        verdict: 'ESCALATE (Tier 4 Mandate)',
+        cited_clause: 'High-value enterprise returns require mandatory physical teardown inspection prior to credit release.',
+        source_document: 'Enterprise Support Agreement',
+        page: 8,
+        explanation: 'Mandatory ISO-compliant cleanroom laboratory teardown required before warranty claim release.'
+      }
     },
     {
       id: 'RMA-1052',
@@ -98,10 +116,26 @@ function getInitialCases() {
       escalationReason: 'Security Audit: Perceptual Hash (pHash) Duplicate Image Reuse Detected',
       rn: 'PCIe Connector & Shroud Pins',
       cl: 'Claims exhibiting serial recycling or photographic reuse require forensic review.',
+      src: 'Anti-Fraud Compliance Matrix, Section 3.0',
       st: 'Pending',
       userImages: [...defaultUserImages],
       subImg: 'assets/gpu_reference.jpg',
-      at: [30, 70]
+      at: [30, 70],
+      visionTelemetry: {
+        anomaly_score: 0.82,
+        flagged_region: 'PCIe Connector & Shroud Pins',
+        severity: 'CRITICAL',
+        visual_findings: 'Perceptual hash collision (pHash 64-bit distance = 0) with RMA-0941. Duplicate image reuse detected.',
+        model_used: 'moondream:latest (Vision LLM)',
+        at: [30, 70]
+      },
+      policyGrounding: {
+        verdict: 'REJECTED (Fraud Policy)',
+        cited_clause: 'Claims exhibiting serial recycling or photographic reuse require forensic review and claim revocation.',
+        source_document: 'Anti-Fraud Compliance Matrix',
+        page: 3,
+        explanation: 'Serial recycling and image reuse violate terms of service.'
+      }
     },
     {
       id: 'RMA-1039',
@@ -114,10 +148,26 @@ function getInitialCases() {
       escalationReason: 'Inconclusive Risk (41/100) & Confidence 84% below Tier 2 Threshold (85%)',
       rn: 'VRAM Bank A0-A2 Traces',
       cl: 'Defects in silicon materials or factory soldering under normal use are fully covered.',
+      src: 'Manufacturer Hardware Warranty, Section 2.1',
       st: 'Pending',
       userImages: [...defaultUserImages],
       subImg: 'assets/gpu_front.jpg',
-      at: [48, 52]
+      at: [48, 52],
+      visionTelemetry: {
+        anomaly_score: 0.58,
+        flagged_region: 'VRAM Bank A0-A2 Traces',
+        severity: 'MODERATE',
+        visual_findings: 'Memory trace impedance anomaly reported; visual solder joints appear factory nominal.',
+        model_used: 'moondream:latest (Vision LLM)',
+        at: [48, 52]
+      },
+      policyGrounding: {
+        verdict: 'APPROVED (Covered Defect)',
+        cited_clause: 'Defects in silicon materials or factory soldering under normal use are fully covered.',
+        source_document: 'Manufacturer Hardware Warranty',
+        page: 5,
+        explanation: 'Internal silicon solder/memory controller failure covered under standard warranty.'
+      }
     },
     {
       id: 'RMA-1036',
@@ -130,6 +180,7 @@ function getInitialCases() {
       escalationReason: 'Tier 1 Risk Score (34/100) exceeds Auto-Approval Ceiling (< 30)',
       rn: 'Solid Capacitor Bank C14',
       cl: 'Cosmetic wear that does not affect electrical continuity is not a defect.',
+      src: 'Direct Return Policy, Section 1.0',
       st: 'Pending',
       userImages: [
         'assets/base_vrm.jpg',
@@ -139,9 +190,88 @@ function getInitialCases() {
         'assets/base_vrm.jpg'
       ],
       subImg: 'assets/base_vrm.jpg',
-      at: [35, 65]
+      at: [35, 65],
+      visionTelemetry: {
+        anomaly_score: 0.44,
+        flagged_region: 'Solid Capacitor Bank C14',
+        severity: 'MODERATE',
+        visual_findings: 'Minor cosmetic scratch on capacitor aluminum casing; no dielectric rupture or bulging.',
+        model_used: 'moondream:latest (Vision LLM)',
+        at: [35, 65]
+      },
+      policyGrounding: {
+        verdict: 'APPROVED (Cosmetic Servicing)',
+        cited_clause: 'Cosmetic wear that does not affect electrical continuity is not a defect, eligible for standard servicing.',
+        source_document: 'Direct Return Policy',
+        page: 1,
+        explanation: 'Cosmetic surface wear without electrical degradation.'
+      }
+    },
+    {
+      id: 'RMA-1028',
+      p: 'GeForce RTX 4060 Dual OC 8GB',
+      v: 289,
+      t: 'T1',
+      r: 14,
+      a: 0.08,
+      conf: 96,
+      st: 'Auto-Approved',
+      isAutoApproved: true,
+      autoApproveReason: 'Autonomous SLA Auto-Approved: Product value ($289.00) falls within Tier 1 (< $300), Risk Score (14/100) is well below the 30 ceiling threshold. Node 3 Vision confirmed clean hardware condition (Anomaly Score: 0.08, Factory Clean), and Node 2 Policy verified full coverage under Direct Return Policy, Section 1.0 with verified pHash/EXIF authenticity.',
+      resolvedReason: 'Autonomous SLA Auto-Approved: Product value ($289.00) falls within Tier 1 (< $300), Risk Score (14/100) is well below the 30 ceiling threshold. Node 3 Vision confirmed clean hardware condition (Anomaly Score: 0.08, Factory Clean), and Node 2 Policy verified full coverage under Direct Return Policy, Section 1.0 with verified pHash/EXIF authenticity.',
+      resolvedOperator: 'AUTONOMOUS-SLA-ROUTER',
+      resolvedTime: '14:22:10',
+      resolvedHash: '0x7a9c81f034e912bc88d1',
+      rn: 'Factory Clean Surface (All 5 Views)',
+      cl: 'Unused products or nominal hardware returns under $300 are eligible for immediate full refund or replacement under Tier 1 SLA.',
+      src: 'Direct Return Policy, Section 1.0',
+      userImages: [
+        'assets/gpu_front.jpg',
+        'assets/gpu_front.jpg',
+        'assets/gpu_front.jpg',
+        'assets/gpu_front.jpg',
+        'assets/gpu_front.jpg'
+      ],
+      subImg: 'assets/gpu_front.jpg',
+      at: [50, 50],
+      visionTelemetry: {
+        anomaly_score: 0.08,
+        flagged_region: 'Factory Clean Surface (All 5 Views)',
+        severity: 'NOMINAL',
+        visual_findings: 'No thermal discoloration, scorched pins, cracks, or mechanical trauma detected. All 5 guided angles are pristine and match golden baseline.',
+        model_used: 'moondream:latest (Vision LLM)',
+        at: [50, 50]
+      },
+      policyGrounding: {
+        verdict: 'APPROVED (Autonomous Tier 1)',
+        cited_clause: 'Unused products or nominal hardware returns under $300 are eligible for immediate full refund or replacement under Tier 1 SLA.',
+        source_document: 'Direct Return Policy',
+        page: 1,
+        explanation: 'Tier 1 low-risk clean unit auto-approved without technician intervention.'
+      }
     }
   ];
+
+  try {
+    const stored = localStorage.getItem('smartrma_cases');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Merge stored cases with defaults so newly triaged cases are at the top
+        const merged = [...parsed];
+        defaultCases.forEach(dc => {
+          if (!merged.some(m => m.id === dc.id)) {
+            merged.push(dc);
+          }
+        });
+        return merged;
+      }
+    }
+  } catch (e) {
+    console.warn('[Error loading stored cases]', e);
+  }
+
+  return defaultCases;
 }
 
 let CASES = getInitialCases().sort((x, y) => (y.v * y.r) - (x.v * x.r));
@@ -177,20 +307,36 @@ function loadAuditHistory() {
     const raw = localStorage.getItem('smartrma_audit_history');
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) {
+      if (Array.isArray(parsed) && parsed.length > 0) {
         auditLedger.length = 0;
         parsed.forEach(item => auditLedger.push(item));
+        return;
       }
     }
   } catch (e) {
     console.warn('[Error loading persistent audit history]', e);
   }
+
+  // Initial default audit ledger entry with sample auto-approved case
+  auditLedger.length = 0;
+  auditLedger.push({
+    time: '14:22:10',
+    caseId: 'RMA-1028',
+    product: 'GeForce RTX 4060 Dual OC 8GB',
+    tier: 'T1',
+    decision: 'Auto-Approved',
+    reason: 'Autonomous SLA Auto-Approved: Product value ($289.00) falls within Tier 1 (< $300), Risk Score (14/100) is well below the 30 ceiling threshold. Node 3 Vision confirmed clean hardware condition (Anomaly Score: 0.08, Factory Clean), and Node 2 Policy verified full coverage under Direct Return Policy, Section 1.0 with verified pHash/EXIF authenticity.',
+    hash: '0x7a9c81f034e912bc88d1',
+    operator: 'AUTONOMOUS-SLA-ROUTER',
+    subImg: 'assets/gpu_front.jpg',
+    isAutoApproved: true
+  });
 }
 
 // Update Toolbar Tab Counts
 function updateTabCounts() {
   const pendingCount = CASES.filter(c => c.st === 'Pending').length;
-  const resolvedCount = CASES.filter(c => c.st === 'Approved' || c.st === 'Rejected').length;
+  const resolvedCount = CASES.filter(c => c.st === 'Approved' || c.st === 'Rejected' || c.st === 'Auto-Approved').length;
   const allCount = CASES.length;
 
   const elPending = $('#tab-pending-count');
@@ -217,7 +363,7 @@ function renderQueue() {
       if (!c.id.toLowerCase().includes(q) && !c.p.toLowerCase().includes(q)) return false;
     }
     if (currentFilter === 'pending') return c.st === 'Pending';
-    if (currentFilter === 'resolved') return c.st === 'Approved' || c.st === 'Rejected';
+    if (currentFilter === 'resolved') return c.st === 'Approved' || c.st === 'Rejected' || c.st === 'Auto-Approved';
     return true; // 'all'
   });
 
@@ -291,8 +437,28 @@ function renderDetails() {
     return;
   }
 
-  const isResolved = c.st === 'Approved' || c.st === 'Rejected';
+  const isAutoApproved = c.st === 'Auto-Approved' || c.isAutoApproved;
+  const isTechnicianResolved = c.st === 'Approved' || c.st === 'Rejected';
+  const isResolved = isAutoApproved || isTechnicianResolved;
   const customerUnitImg = c.subImg || (c.userImages && c.userImages[0]) || 'assets/gpu_damaged.jpg';
+
+  // Extract Node 3 Vision and Node 2 Policy Telemetry
+  const vt = c.visionTelemetry || {
+    anomaly_score: c.a !== undefined ? c.a : 0.5,
+    flagged_region: c.rn || 'Hardware Incident Zone',
+    severity: (c.a >= 0.75) ? 'CRITICAL' : (c.a <= 0.25) ? 'NOMINAL' : 'MODERATE',
+    visual_findings: (c.a >= 0.75) ? `Thermal scorch patterns and damaged connector contact detected on ${c.rn || 'hardware'}.` : (c.a <= 0.25) ? `Clean nominal hardware baseline verified; no physical damage observed.` : `Moderate visual variance detected on ${c.rn || 'hardware'}.`,
+    model_used: 'moondream:latest (Vision LLM)',
+    at: c.at || [50, 50]
+  };
+
+  const pg = c.policyGrounding || {
+    verdict: (c.cl && (c.cl.includes('excluded') || c.cl.includes('not a defect'))) ? 'REJECTED (EXCLUSION)' : 'APPROVED (COVERED)',
+    cited_clause: c.cl || 'Standard warranty terms apply under normal operating conditions.',
+    source_document: c.src || 'OEM Limited Hardware Warranty',
+    page: 1,
+    explanation: 'OEM warranty terms benchmarked against reported symptoms and visual telemetry.'
+  };
 
   d.innerHTML = `
     <div class="card-header-bar">
@@ -311,14 +477,21 @@ function renderDetails() {
       <span class="badge ${escapeHtml(c.st)}">${escapeHtml(c.st)}</span>
     </div>
 
-    <!-- Escalation Trigger Notice -->
-    <div class="escalation-trigger-banner">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polygon points="12 2 2 22 22 22 12 2"/>
-        <line x1="12" y1="9" x2="12" y2="13"/>
-        <line x1="12" y1="17" x2="12.01" y2="17"/>
-      </svg>
-      <span><strong>Escalation Trigger:</strong> ${escapeHtml(c.escalationReason || 'Technician manual adjudication required by SLA')}</span>
+    <!-- Escalation / Auto-Approval Notice -->
+    <div class="${isAutoApproved ? 'synthesis-banner' : 'escalation-trigger-banner'}" style="margin-bottom:12px">
+      ${isAutoApproved ? `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00A884" stroke-width="2.5">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+        <span><strong>Autonomous SLA Status:</strong> Cleared automatically under Tier rules with verified clean visual &amp; policy telemetry</span>
+      ` : `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="12 2 2 22 22 22 12 2"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <span><strong>Escalation Trigger:</strong> ${escapeHtml(c.escalationReason || 'Technician manual adjudication required by SLA')}</span>
+      `}
     </div>
 
     <!-- Case Metrics Bar -->
@@ -347,7 +520,7 @@ function renderDetails() {
 
     <!-- Customer Uploaded Hardware Inspection Viewport (No factory reference spec) -->
     <div class="hardware-inspection-viewport" id="cust-viewport" style="background-image:url(${escapeHtml(customerUnitImg)})">
-      <div class="viewport-label">CUSTOMER UPLOADED VIEW: ${escapeHtml(c.rn || 'Uploaded Hardware Angle')}</div>
+      <div class="viewport-label">CUSTOMER UPLOADED VIEW: ${escapeHtml(vt.flagged_region || c.rn || 'Hardware View')}</div>
       <div class="spectral-overlay" style="--hx:${c.at ? c.at[0] : 50}%;--hy:${c.at ? c.at[1] : 50}%"></div>
       ${(c.a > 0.3) ? `
         <div class="defect-crosshair" style="left:${c.at ? c.at[0] : 50}%;top:${c.at ? c.at[1] : 50}%">
@@ -360,7 +533,7 @@ function renderDetails() {
     ${(c.userImages && c.userImages.length > 0) ? `
       <div class="user-uploads-gallery">
         <div class="gallery-title">
-          <span>📷 Customer Uploaded Inspection Views (5 Angles Verified at Intake):</span>
+          <span>📷 Customer Uploaded Inspection Views (${c.userImages.length} Views Verified at Intake):</span>
           <span class="mono brand-pill" style="font-size:0.68rem">USER UPLOADED DOSSIER</span>
         </div>
         <div class="gallery-thumbs">
@@ -374,19 +547,133 @@ function renderDetails() {
       </div>
     ` : ''}
 
-    <!-- Policy Excerpt -->
-    <div class="warranty-clause-card" style="margin:12px 0">
-      <div class="clause-badge">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-        </svg>
-        Flagged Region: ${escapeHtml(c.rn || 'Hardware Incident Zone')}
+    <!-- Multi-Node AI Telemetry Grid: Node 3 Vision + Node 2 Policy -->
+    <div class="nodes-telemetry-grid">
+      <!-- Node 3 Vision Engine Telemetry -->
+      <div class="node-telemetry-box node3-box">
+        <div class="node-box-header">
+          <div class="node-box-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            <span>Node 3 Vision Engine</span>
+          </div>
+          <span class="node-status-pill ${vt.severity === 'CRITICAL' ? 'critical' : vt.severity === 'NOMINAL' ? 'nominal' : 'warning'}">
+            ${escapeHtml(vt.severity)}
+          </span>
+        </div>
+        <div class="node-box-body">
+          <div class="node-telemetry-row">
+            <span class="node-k">Anomaly Score:</span>
+            <span class="node-v mono font-bold" style="color:${vt.anomaly_score >= 0.7 ? 'var(--danger-text)' : vt.anomaly_score <= 0.3 ? 'var(--success-text)' : 'var(--warning-text)'}">
+              ${vt.anomaly_score.toFixed(2)} / 1.00
+            </span>
+          </div>
+          <div class="node-telemetry-row">
+            <span class="node-k">Flagged Region:</span>
+            <span class="node-v">${escapeHtml(vt.flagged_region)}</span>
+          </div>
+          <div class="node-telemetry-row">
+            <span class="node-k">Vision Model:</span>
+            <span class="node-v mono">${escapeHtml(vt.model_used)}</span>
+          </div>
+          <div class="node-findings-quote">
+            <strong>Visual Inspection Findings:</strong>
+            <p>&ldquo;${escapeHtml(vt.visual_findings)}&rdquo;</p>
+          </div>
+        </div>
       </div>
-      <div class="clause-text">&ldquo;${escapeHtml(c.cl || 'Standard warranty terms apply under normal operating conditions.')}&rdquo;</div>
+
+      <!-- Node 2 Policy Grounding Engine (RAG) -->
+      <div class="node-telemetry-box node2-box">
+        <div class="node-box-header">
+          <div class="node-box-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            <span>Node 2 Policy RAG Engine</span>
+          </div>
+          <span class="node-status-pill ${pg.verdict.includes('REJECT') ? 'critical' : 'nominal'}">
+            ${escapeHtml(pg.verdict)}
+          </span>
+        </div>
+        <div class="node-box-body">
+          <div class="node-telemetry-row">
+            <span class="node-k">Policy Determination:</span>
+            <span class="node-v font-bold">${escapeHtml(pg.verdict)}</span>
+          </div>
+          <div class="node-telemetry-row">
+            <span class="node-k">Source Document:</span>
+            <span class="node-v">📄 ${escapeHtml(pg.source_document)} (Page ${pg.page || 1})</span>
+          </div>
+          <div class="node-findings-quote">
+            <strong>Cited Warranty Clause:</strong>
+            <p>&ldquo;${escapeHtml(pg.cited_clause)}&rdquo;</p>
+          </div>
+          <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:2px">
+            <strong>Coverage Grounding:</strong> ${escapeHtml(pg.explanation)}
+          </div>
+        </div>
+      </div>
     </div>
 
-    ${isResolved ? `
-      <!-- Finalized Resolution Banner: All details preserved, buttons are locked & hidden -->
+    <!-- Autonomous Multi-Node AI Recommendation -->
+    <div class="synthesis-banner">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="16" x2="12" y2="12"/>
+        <line x1="12" y1="8" x2="12.01" y2="8"/>
+      </svg>
+      <div>
+        <strong>Multi-Node AI Synthesis:</strong>
+        ${(vt.anomaly_score >= 0.7 && pg.verdict.includes('REJECT'))
+          ? 'High anomaly + Policy exclusion identified &rarr; AI Recommendation: <strong>REJECT RETURN</strong>'
+          : (vt.anomaly_score <= 0.3 && !pg.verdict.includes('REJECT'))
+          ? 'Nominal anomaly + Policy coverage verified &rarr; AI Recommendation: <strong>APPROVE RETURN</strong>'
+          : 'Ambiguous risk score or Tier 4 mandate &rarr; Requires Lead Technician manual adjudication'}
+      </div>
+    </div>
+
+    ${isAutoApproved ? `
+      <!-- Autonomous Approval Certificate: Fully preserved, buttons hidden -->
+      <div class="resolution-finalized-card auto-approved">
+        <div class="finalized-header">
+          <div class="finalized-title">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00A884" stroke-width="2.5">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+            <span style="color:#00A884;font-weight:800;font-size:0.95rem">
+              DETERMINATION: AUTO-APPROVED (AUTONOMOUS SLA)
+            </span>
+          </div>
+          <span class="mono brand-pill" style="background:rgba(0,168,132,0.15);color:#00A884">
+            ⚡ AUTONOMOUS RESOLUTION &bull; COMMITTED TO LEDGER
+          </span>
+        </div>
+
+        <div class="finalized-body">
+          <div style="font-size:0.84rem;margin-bottom:8px">
+            <strong>Explicit Reason for Auto-Approval:</strong>
+            <div class="finalized-quote auto-approve-quote">
+              &ldquo;${escapeHtml(c.autoApproveReason || c.resolvedReason || 'Autonomous SLA cleared under Tier rule and verified clean hardware telemetry.')}&rdquo;
+            </div>
+          </div>
+
+          <div class="finalized-meta-grid">
+            <div><span>Decision Authority:</span> <b>${escapeHtml(c.resolvedOperator || 'AUTONOMOUS-SLA-ROUTER')}</b></div>
+            <div><span>Approval Timestamp:</span> <b>${escapeHtml(c.resolvedTime || 'Recorded at intake')}</b></div>
+            <div><span>SHA-256 Ledger Stamp:</span> <code class="mono">${escapeHtml(c.resolvedHash || c.ledgerHash || '0x4f8a...')}</code></div>
+            <div><span>Final Disposition:</span> <span class="badge Auto-Approved">Auto-Approved</span></div>
+          </div>
+        </div>
+      </div>
+    ` : isTechnicianResolved ? `
+      <!-- Technician Override Resolution Banner: All details preserved, buttons locked & hidden -->
       <div class="resolution-finalized-card ${c.st === 'Approved' ? 'approved' : 'rejected'}">
         <div class="finalized-header">
           <div class="finalized-title">
@@ -429,7 +716,7 @@ function renderDetails() {
         </div>
       </div>
     ` : `
-      <!-- Action Inputs: Only shown when case is pending -->
+      <!-- Action Inputs: Only shown when case is pending technician review -->
       <label for="rs" style="font-weight:600;display:block;margin-top:16px;color:var(--text-primary)">
         Mandatory Forensic Justification &amp; Findings
       </label>
@@ -450,7 +737,7 @@ function renderDetails() {
         </button>
       </div>
 
-      <textarea id="rs" rows="2" placeholder="Document empirical findings before confirming or overriding triage verdict..."></textarea>
+      <textarea id="rs" rows="2" placeholder="Document empirical findings based on customer uploads, Node 3 vision, and Node 2 policy before confirming verdict..."></textarea>
 
       <!-- Action Buttons -->
       <div class="acts" style="margin-top:14px;justify-content:space-between">
@@ -475,7 +762,7 @@ function renderDetails() {
     `}
   `;
 
-  // Bind gallery thumbnail buttons so technician can view any of the customer-uploaded angles
+  // Bind gallery thumbnail buttons so technician can inspect any customer-uploaded angle
   $$('.thumb-btn', d).forEach(btn => {
     btn.onclick = () => {
       const idx = +btn.dataset.idx;
@@ -517,7 +804,7 @@ function executeOverride(decision) {
   const c = CASES[activeIndex];
   if (!c) return;
 
-  if (c.st === 'Approved' || c.st === 'Rejected') {
+  if (c.st === 'Approved' || c.st === 'Rejected' || c.st === 'Auto-Approved') {
     showToast(`Case ${c.id} is already finalized as ${c.st.toUpperCase()}`, 'info');
     return;
   }
@@ -583,12 +870,12 @@ function renderAuditLog() {
   }
 
   if (auditLedger.length === 0) {
-    logEl.innerHTML = `<div class="mu" style="font-size:0.85rem;padding:12px 4px">No technician review decisions recorded yet. Complete a review above to permanently save an audit history entry.</div>`;
+    logEl.innerHTML = `<div class="mu" style="font-size:0.85rem;padding:12px 4px">No decisions recorded yet. Complete a review above or auto-approve a case to save an audit history entry.</div>`;
     return;
   }
 
   logEl.innerHTML = auditLedger.map(item => `
-    <div class="audit-item interactive-audit-card" data-case-id="${escapeHtml(item.caseId)}" tabindex="0" title="Click to inspect complete case dossier and user-uploaded photos">
+    <div class="audit-item interactive-audit-card" data-case-id="${escapeHtml(item.caseId)}" tabindex="0" title="Click to inspect complete case dossier and customer-uploaded photos">
       <div style="display:flex;flex-direction:column;gap:3px">
         <span class="audit-time">${escapeHtml(item.time)}</span>
         <span class="audit-hash">${escapeHtml(item.hash)}</span>
@@ -598,7 +885,7 @@ function renderAuditLog() {
           <strong class="mono" style="color:var(--text-primary);font-size:0.92rem">${escapeHtml(item.caseId)}</strong>
           ${item.product ? `<span style="font-size:0.75rem;color:var(--text-secondary)">(${escapeHtml(item.product)})</span>` : ''}
           <span class="badge ${escapeHtml(item.decision)}" style="font-size:0.68rem;padding:2px 7px">${escapeHtml(item.decision)}</span>
-          <span class="mono brand-pill">${escapeHtml(item.operator || 'TECH-402')}</span>
+          <span class="mono brand-pill">${escapeHtml(item.operator || (item.isAutoApproved ? 'AUTONOMOUS-SLA-ROUTER' : 'TECH-402'))}</span>
         </div>
         <div style="color:var(--text-secondary);font-size:0.8rem">&ldquo;${escapeHtml(item.reason)}&rdquo;</div>
         <div class="inspect-tag">🔍 Click to inspect case details &amp; customer uploaded photos &rarr;</div>
@@ -611,7 +898,20 @@ function renderAuditLog() {
     const handleInspect = () => {
       const caseId = itemEl.dataset.caseId;
       if (!caseId) return;
-      const targetIndex = CASES.findIndex(c => c.id === caseId);
+      let targetIndex = CASES.findIndex(c => c.id === caseId);
+
+      // If not in current CASES memory array, attempt recovery from localStorage
+      if (targetIndex === -1) {
+        try {
+          const stored = JSON.parse(localStorage.getItem('smartrma_cases') || '[]');
+          const found = stored.find(c => c.id === caseId);
+          if (found) {
+            CASES.unshift(found);
+            targetIndex = 0;
+          }
+        } catch (e) {}
+      }
+
       if (targetIndex !== -1) {
         activeIndex = targetIndex;
         // If current filter is pending and this case is resolved, switch tab to all or resolved

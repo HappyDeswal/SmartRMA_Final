@@ -47,7 +47,7 @@ function initSlots() {
       <input type="file" accept="image/*" hidden data-i="${i}">
       <div class="slot-meta">
         <span class="slot-label">${cfg.name}</span>
-        <span class="slot-status mono" id="sl-status-${i}">Verified</span>
+        <span class="slot-status mono" id="sl-status-${i}">Awaiting Upload</span>
       </div>
       <div class="slot-icon-guide">${cfg.icon}</div>
     </label>
@@ -66,10 +66,8 @@ function initSlots() {
     };
   });
 
-  // Pre-load slots with default studio inspection photos for instant readiness
-  SLOTS_CONFIG.forEach((cfg, i) => {
-    markSlot(i, cfg.defaultImg);
-  });
+  // Slots intentionally start unpopulated (no pre-loaded stock images)
+  updatePhotoCount();
 }
 
 function markSlot(index, url) {
@@ -89,7 +87,9 @@ function updatePhotoCount() {
   const count = ph.filter(Boolean).length;
   const cntEl = $('#cnt');
   if (cntEl) {
-    cntEl.textContent = `${count} of 5 views verified`;
+    cntEl.textContent = count === 0
+      ? '0 of 5 views verified (Awaiting Upload)'
+      : `${count} of 5 views verified`;
     cntEl.style.borderColor = count === 5 ? 'var(--success)' : 'rgba(56, 189, 248, 0.3)';
     cntEl.style.color = count === 5 ? 'var(--success-text)' : 'var(--accent)';
   }
@@ -531,11 +531,13 @@ async function handleTriageSubmit(e) {
   let citedSource = data.src;
   let ledgerHash = "sha256:genesis_block";
   let securityAuditMsg = "EXIF & pHash Verified";
+  const mfgVal = $('#mfg-select') ? $('#mfg-select').value : 'NVIDIA';
+  const modelVal = $('#model-line') ? $('#model-line').value : 'Graphics Hardware';
+  let evalResp = null;
+  let evalData = null;
 
   try {
-    const mfgVal = $('#mfg-select') ? $('#mfg-select').value : 'NVIDIA';
-    const modelVal = $('#model-line') ? $('#model-line').value : 'Graphics Hardware';
-    const evalResp = await fetch('http://localhost:8000/api/v1/intake', {
+    evalResp = await fetch('http://localhost:8000/api/v1/intake', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -548,12 +550,13 @@ async function handleTriageSubmit(e) {
         images: ph.map((url, idx) => ({
           slot: idx,
           name: SLOTS_CONFIG[idx] ? SLOTS_CONFIG[idx].name : `Slot ${idx}`,
-          url: url && url.startsWith('assets/') ? url : null
+          image_b64: (url && url.startsWith('data:image')) ? url : null,
+          url: (url && url.startsWith('assets/')) ? url : null
         }))
       })
     });
-    if (evalResp.ok) {
-      const evalData = await evalResp.json();
+    if (evalResp && evalResp.ok) {
+      evalData = await evalResp.json();
       if (evalData.disposition) {
         dec = evalData.disposition === 'APPROVE' ? 'Approve' : evalData.disposition === 'REJECT' ? 'Reject' : 'Escalate';
       }
@@ -581,7 +584,8 @@ async function handleTriageSubmit(e) {
 
   const decColor = dec === 'Approve' ? '#10B981' : dec === 'Reject' ? '#EF4444' : '#F59E0B';
   const decIcon = dec === 'Approve' ? '✅' : dec === 'Reject' ? '🛑' : '⚠️';
-  const primaryUserImg = ph[3] || ph[0] || 'assets/gpu_damaged.jpg';
+  const userImagesList = ph.filter(Boolean);
+  const primaryUserImg = ph[3] || ph[0] || (userImagesList.length > 0 ? userImagesList[0] : '');
 
   // 5. Append WhatsApp Rich RMA Determination Card
   const resultCardHtml = `
@@ -626,7 +630,7 @@ async function handleTriageSubmit(e) {
 
       <div class="wa-card-actions">
         ${dec === 'Approve' ? `
-          <button type="button" class="wa-action-btn" onclick="showToast('RMA #RMA-84920 Packing Slip Generated!', 'success')">
+          <button type="button" class="wa-action-btn" onclick="showToast('RMA Packing Slip Generated! Auto-approved case committed to audit ledger.', 'success')">
             📄 Download Return Packing Slip
           </button>
         ` : dec === 'Reject' ? `
@@ -647,6 +651,18 @@ async function handleTriageSubmit(e) {
 
   // Persist case into localStorage so review.html immediately displays user-uploaded photos
   const caseId = (evalResp && evalResp.ok && evalData && evalData.case_id) ? evalData.case_id : `RMA-${Math.floor(10000 + Math.random() * 90000)}`;
+  const finalStatus = dec === 'Approve' ? 'Auto-Approved' : dec === 'Reject' ? 'Rejected' : 'Pending';
+
+  const anomalyScore = (evalResp && evalResp.ok && evalData && evalData.vision_telemetry && evalData.vision_telemetry.anomaly_score !== undefined)
+    ? evalData.vision_telemetry.anomaly_score
+    : data.a;
+
+  const autoApproveReason = t === 'T1'
+    ? `Autonomous SLA Auto-Approved: Product value ($${val.toLocaleString()}) falls within Tier 1 (< $300), Risk Score (${risk}/100) is well below the 30 ceiling threshold. Node 3 Vision confirmed clean hardware condition (${anomalyScore.toFixed(2)} anomaly score), and Node 2 Policy verified active manufacturer warranty coverage under ${citedSource}.`
+    : `Autonomous SLA Auto-Approved: Product value ($${val.toLocaleString()}) is ${t}, Risk Score (${risk}/100) is low (< 30) with high model confidence (${conf}% >= ${th}% threshold). Node 3 Vision confirmed clean hardware condition and Node 2 Policy verified manufacturer warranty eligibility under ${citedSource}.`;
+
+  const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
   const triagedCase = {
     id: caseId,
     orderId: oid,
@@ -655,7 +671,7 @@ async function handleTriageSubmit(e) {
     v: val,
     t: t,
     r: risk,
-    a: (evalResp && evalResp.ok && evalData && evalData.vision_telemetry && evalData.vision_telemetry.anomaly_score) ? evalData.vision_telemetry.anomaly_score : data.a,
+    a: anomalyScore,
     conf: conf,
     escalationReason: t === 'T4'
       ? 'Tier 4 Enterprise SLA (> $2,500): Mandatory Forensic Lab Teardown'
@@ -667,15 +683,58 @@ async function handleTriageSubmit(e) {
     rn: (evalResp && evalResp.ok && evalData && evalData.vision_telemetry && evalData.vision_telemetry.flagged_region) ? evalData.vision_telemetry.flagged_region : data.rn,
     cl: citedClause,
     src: citedSource,
-    st: dec === 'Approve' ? 'Approved' : dec === 'Reject' ? 'Rejected' : 'Pending',
+    st: finalStatus,
     subImg: primaryUserImg,
-    userImages: ph.slice(0, 5),
-    refImg: 'assets/rma_001_gpu_silicon_core_ortho_90_vis_clean.jpg',
+    userImages: userImagesList,
     at: data.at || [50, 50],
     symptom: rsn,
     ledgerHash: ledgerHash,
-    submittedAt: new Date().toISOString()
+    submittedAt: new Date().toISOString(),
+    isAutoApproved: dec === 'Approve',
+    autoApproveReason: dec === 'Approve' ? autoApproveReason : null,
+    resolvedReason: dec === 'Approve' ? autoApproveReason : null,
+    resolvedOperator: dec === 'Approve' ? 'AUTONOMOUS-SLA-ROUTER' : null,
+    resolvedTime: dec === 'Approve' ? timestamp : null,
+    resolvedHash: dec === 'Approve' ? ledgerHash : null,
+    visionTelemetry: {
+      anomaly_score: anomalyScore,
+      flagged_region: (evalResp && evalResp.ok && evalData && evalData.vision_telemetry && evalData.vision_telemetry.flagged_region) ? evalData.vision_telemetry.flagged_region : data.rn,
+      severity: (evalResp && evalResp.ok && evalData && evalData.vision_telemetry && evalData.vision_telemetry.severity) ? evalData.vision_telemetry.severity : (data.a >= 0.75 ? 'CRITICAL' : data.a <= 0.25 ? 'NOMINAL' : 'MODERATE'),
+      visual_findings: (evalResp && evalResp.ok && evalData && evalData.vision_telemetry && evalData.vision_telemetry.visual_findings) ? evalData.vision_telemetry.visual_findings : (data.a >= 0.75 ? `Severe thermal discoloration and burn patterns detected on ${data.rn}.` : data.a <= 0.25 ? `Clean factory baseline verified across customer-uploaded photos; no thermal or physical damage.` : `Moderate visual variance detected on ${data.rn}.`),
+      model_used: (evalResp && evalResp.ok && evalData && evalData.vision_telemetry && evalData.vision_telemetry.model_used) ? evalData.vision_telemetry.model_used : 'moondream:latest (Vision LLM)',
+      at: data.at || [50, 50]
+    },
+    policyGrounding: {
+      verdict: (evalResp && evalResp.ok && evalData && evalData.policy_grounding && evalData.policy_grounding.node2_verdict) ? evalData.policy_grounding.node2_verdict : (data.rej ? 'REJECTED (EXCLUSION)' : 'APPROVED (COVERED)'),
+      cited_clause: citedClause,
+      source_document: citedSource,
+      page: (evalResp && evalResp.ok && evalData && evalData.policy_grounding && evalData.policy_grounding.page) ? evalData.policy_grounding.page : 1,
+      explanation: (evalResp && evalResp.ok && evalData && evalData.policy_grounding && evalData.policy_grounding.explanation) ? evalData.policy_grounding.explanation : (data.rej ? 'Clause specifies exclusion for non-manufacturing or customer induced defect.' : 'Eligible under manufacturer standard warranty terms.')
+    }
   };
+
+  // If auto-approved, immediately record into persistent audit history
+  if (dec === 'Approve') {
+    try {
+      let auditHistory = JSON.parse(localStorage.getItem('smartrma_audit_history') || '[]');
+      auditHistory = auditHistory.filter(item => item.caseId !== triagedCase.id);
+      auditHistory.unshift({
+        time: timestamp,
+        caseId: triagedCase.id,
+        product: triagedCase.p,
+        tier: triagedCase.t,
+        decision: 'Auto-Approved',
+        reason: autoApproveReason,
+        hash: ledgerHash,
+        operator: 'AUTONOMOUS-SLA-ROUTER',
+        subImg: triagedCase.subImg,
+        isAutoApproved: true
+      });
+      localStorage.setItem('smartrma_audit_history', JSON.stringify(auditHistory));
+    } catch (auditErr) {
+      console.warn('[LocalStorage audit history error]', auditErr);
+    }
+  }
 
   try {
     let savedCases = JSON.parse(localStorage.getItem('smartrma_cases') || '[]');
@@ -686,7 +745,7 @@ async function handleTriageSubmit(e) {
   } catch (storageErr) {
     console.warn('[LocalStorage save error]', storageErr);
   }
-  showToast(`Triage Complete: ${dec.toUpperCase()}`, dec === 'Approve' ? 'success' : dec === 'Reject' ? 'error' : 'warning');
+  showToast(`Triage Complete: ${finalStatus.toUpperCase()}`, dec === 'Approve' ? 'success' : dec === 'Reject' ? 'error' : 'warning');
 }
 
 // Lifecycle Initialization
@@ -699,6 +758,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const form = $('#f');
   if (form) form.onsubmit = handleTriageSubmit;
+
+  const samplePhotosBtn = $('#btn-sample-photos');
+  if (samplePhotosBtn) {
+    samplePhotosBtn.onclick = () => {
+      SLOTS_CONFIG.forEach((cfg, i) => {
+        markSlot(i, cfg.defaultImg);
+      });
+      showToast('Loaded 5 sample inspection angles for testing', 'info');
+    };
+  }
 
   const resetBtn = $('#btn-reset');
   if (resetBtn) {
