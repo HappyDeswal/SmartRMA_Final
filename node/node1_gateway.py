@@ -389,7 +389,8 @@ def get_cases():
                             c for c in data
                             if not str(c.get("orderId", "")).upper().startswith(("ORD-CONCUR", "ORD-AUDIT", "ORD-STRESS", "ORD-TEST", "TEST-", "ORD-BOMB"))
                             and not str(c.get("serialNumber", "")).upper().startswith(("SN-STRESS", "SN-TRAVERSAL", "TEST-"))
-                            and not str(c.get("id", "")).upper().startswith(("RMA-CONCUR", "RMA-AUDIT", "RMA-TEST", "RMA-1042", "RMA-1045", "RMA-1052", "RMA-1039", "RMA-1036", "RMA-1028", "RMA-78758"))
+                            and not str(c.get("id", "")).upper().startswith(("RMA-CONCUR", "RMA-AUDIT", "RMA-TEST", "RMA-1042", "RMA-1045", "RMA-1052", "RMA-1039", "RMA-1036", "RMA-1028", "RMA-78758", "RMA-73502", "RMA-73649", "RMA-75767"))
+                            and str(c.get("orderId", "")).upper() not in ("ORD-7654", "ORD-6287", "ORD-7634")
                         ]
                         return {"count": len(clean_data), "cases": clean_data}
             except Exception:
@@ -404,7 +405,8 @@ def save_case(case_data: Dict[str, Any] = Body(...)):
     if (
         oid.upper().startswith(("ORD-CONCUR", "ORD-AUDIT", "ORD-STRESS", "ORD-TEST", "TEST-", "ORD-BOMB")) or
         s_num.upper().startswith(("SN-STRESS", "SN-TRAVERSAL", "TEST-")) or
-        cid.upper().startswith(("RMA-CONCUR", "RMA-AUDIT", "RMA-TEST", "RMA-1042", "RMA-1045", "RMA-1052", "RMA-1039", "RMA-1036", "RMA-1028", "RMA-78758"))
+        cid.upper().startswith(("RMA-CONCUR", "RMA-AUDIT", "RMA-TEST", "RMA-1042", "RMA-1045", "RMA-1052", "RMA-1039", "RMA-1036", "RMA-1028", "RMA-78758", "RMA-73502", "RMA-73649", "RMA-75767")) or
+        oid.upper() in ("ORD-7654", "ORD-6287", "ORD-7634")
     ):
         return {"status": "SKIPPED_SYNTHETIC", "case_id": cid}
 

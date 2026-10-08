@@ -25,7 +25,9 @@ function requiresTechnicianApproval(c) {
 
 const FAKE_CASE_IDS = new Set([
   'RMA-1042', 'RMA-1045', 'RMA-1052', 'RMA-1039', 'RMA-1036', 'RMA-1028', 'RMA-78758',
-  'RMA-TEST-999', 'RMA-76781', 'RMA-76775', 'RMA-76774', 'RMA-76773', 'RMA-76771', 'RMA-76770', 'RMA-76759', 'RMA-75198', 'RMA-75928', 'RMA-TEST-01', 'RMA-TEST-02'
+  'RMA-TEST-999', 'RMA-76781', 'RMA-76775', 'RMA-76774', 'RMA-76773', 'RMA-76771', 'RMA-76770',
+  'RMA-76759', 'RMA-75198', 'RMA-75928', 'RMA-TEST-01', 'RMA-TEST-02',
+  'RMA-73502', 'RMA-73649', 'RMA-75767', 'ORD-7654', 'ORD-6287', 'ORD-7634'
 ]);
 
 function isSyntheticCase(id, orderId, serial) {
@@ -36,6 +38,8 @@ function isSyntheticCase(id, orderId, serial) {
   if (/^(ORD-CONCUR|ORD-AUDIT|ORD-STRESS|ORD-TEST|TEST-|SN-STRESS|SN-TRAVERSAL|ORD-BOMB)/i.test(sOrder)) return true;
   if (/^(SN-STRESS|SN-TRAVERSAL|TEST-)/i.test(sSerial)) return true;
   if (/^(RMA-CONCUR|RMA-AUDIT|RMA-TEST|TEST-)/i.test(sId)) return true;
+  if (['ORD-7654', 'ORD-6287', 'ORD-7634'].includes(sOrder)) return true;
+  if (['RMA-73502', 'RMA-73649', 'RMA-75767'].includes(sId)) return true;
   return false;
 }
 
@@ -55,7 +59,7 @@ function isAuthenticAudit(item) {
   return true;
 }
 
-// Proactively purge any residual synthetic test cases from browser localStorage
+// Proactively purge any residual synthetic test cases from browser localStorage immediately
 try {
   const rawCases = localStorage.getItem('smartrma_cases');
   if (rawCases) {
@@ -80,59 +84,19 @@ async function syncBackendLedger() {
   try {
     let casesChanged = false;
 
-    // Clean out any synthetic cases currently in CASES
-    const origCasesCount = CASES.length;
-    CASES = CASES.filter(isAuthenticCase);
-    if (CASES.length !== origCasesCount) casesChanged = true;
-
     // 1. Sync full case dossiers from Node 1 backend store
     try {
       const casesResp = await fetch(getGatewayUrl('/api/v1/cases'));
       if (casesResp.ok) {
         const casesData = await casesResp.json();
         const serverCases = (casesData.cases || []).filter(isAuthenticCase);
-        for (const sc of serverCases) {
-          if (!sc || !sc.id || !isAuthenticCase(sc)) continue;
-          const idx = CASES.findIndex(c => c.id === sc.id || (sc.orderId && c.orderId === sc.orderId));
-          if (idx === -1) {
-            CASES.unshift(sc);
-            casesChanged = true;
-          } else {
-            if (sc.userImages && sc.userImages.length > 0 && (!CASES[idx].userImages || CASES[idx].userImages.length === 0)) {
-              CASES[idx].userImages = sc.userImages;
-              CASES[idx].subImg = sc.subImg || sc.userImages[0];
-              casesChanged = true;
-            }
-            if (sc.resolvedOperator && CASES[idx].resolvedOperator !== 'TECH-402') {
-              CASES[idx].st = sc.st;
-              CASES[idx].resolvedOperator = sc.resolvedOperator;
-              CASES[idx].resolvedReason = sc.resolvedReason;
-              CASES[idx].resolvedTime = sc.resolvedTime;
-              CASES[idx].resolvedHash = sc.resolvedHash;
-              casesChanged = true;
-            }
-          }
-
-          // Ensure any finalized approved or non-approved case is tracked in the decision audit history
-          if (sc.st === 'Approved' || sc.st === 'Rejected' || sc.st === 'Auto-Approved' || sc.resolvedOperator === 'TECH-402') {
-            const auditIdx = auditLedger.findIndex(a => a.caseId === sc.id);
-            if (auditIdx === -1) {
-              auditLedger.unshift({
-                time: sc.resolvedTime || (sc.submittedAt ? new Date(sc.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Saved'),
-                caseId: sc.id,
-                product: sc.p || `${sc.oem || ''} ${sc.modelName || ''}`.trim(),
-                tier: sc.t || 'T2',
-                decision: sc.st,
-                reason: sc.resolvedReason || (sc.st === 'Auto-Approved' ? sc.autoApproveReason : (sc.cl ? `Policy exclusion confirmed: ${sc.cl}` : 'Claim disposition determined')),
-                hash: sc.resolvedHash || sc.ledgerHash || generateAuditHash(),
-                operator: sc.resolvedOperator || (sc.isAutoApproved ? 'AUTONOMOUS-SLA-ROUTER' : 'TECH-402'),
-                subImg: sc.subImg,
-                isAutoApproved: sc.isAutoApproved || sc.st === 'Auto-Approved'
-              });
-              casesChanged = true;
-            }
-          }
-        }
+        
+        // Synchronize CASES strictly to backend store
+        CASES = serverCases;
+        try {
+          localStorage.setItem('smartrma_cases', JSON.stringify(CASES));
+        } catch (e) {}
+        casesChanged = true;
       }
     } catch (errCases) {
       console.warn('[Sync Backend Cases Error]', errCases);
@@ -143,62 +107,29 @@ async function syncBackendLedger() {
       const resp = await fetch(getGatewayUrl('/api/v1/ledger?limit=100'));
       if (resp.ok) {
         const data = await resp.json();
-        const blocks = data.recent_blocks || [];
-        for (const block of blocks) {
-          if (!block || !block.case_id) continue;
-          if (isSyntheticCase(block.case_id, block.order_id, block.serial_number)) continue;
+        const blocks = (data.recent_blocks || []).filter(b => b && b.case_id && isAuthenticAudit({ caseId: b.case_id, orderId: b.order_id, serialNumber: b.serial_number }));
 
-          let existing = CASES.find(c => c.id === block.case_id || (block.order_id && c.orderId === block.order_id));
-          if (!existing) {
-            const newCase = {
-              id: block.case_id,
-              orderId: block.order_id || block.case_id,
-              serialNumber: block.serial_number || 'N/A',
-              oem: 'Hardware OEM',
-              modelName: 'Hardware Component',
-              p: `Hardware Unit (${block.tier || 'T2'})`,
-              v: block.product_value || 1200,
-              t: block.tier || 'T2',
-              r: block.risk_score !== undefined ? block.risk_score : 35,
-              a: block.anomaly_score !== undefined ? block.anomaly_score : 0.2,
-              conf: 95,
-              escalationReason: block.disposition === 'ESCALATE' ? 'Flagged for Lead Technician adjudication' : `Intake disposition: ${block.disposition}`,
-              rn: block.anomaly_region || 'Hardware Component',
-              cl: block.cited_clause || 'Manufacturer Standard Warranty Terms',
-              src: block.source_doc || 'Warranty Policy Document',
-              st: block.disposition === 'APPROVE' ? 'Auto-Approved' : block.disposition === 'REJECT' ? 'Rejected' : 'Pending',
-              subImg: '',
-              userImages: [],
-              at: [50, 50],
-              symptom: 'Reported hardware defect at RMA intake.',
-              ledgerHash: block.block_hash || '',
-              submittedAt: block.timestamp || new Date().toISOString(),
-              resolvedOperator: null,
-              visionTelemetry: {
-                anomaly_score: block.anomaly_score !== undefined ? block.anomaly_score : 0.2,
-                flagged_region: block.anomaly_region || 'Hardware Component',
-                severity: (block.anomaly_score >= 0.7) ? 'CRITICAL' : (block.anomaly_score <= 0.3) ? 'NOMINAL' : 'MODERATE',
-                visual_findings: `Anomaly score ${block.anomaly_score} recorded at intake ledger.`,
-                model_used: 'llama3.2-vision:latest',
-                at: [50, 50]
-              },
-              policyGrounding: {
-                verdict: block.disposition === 'REJECT' ? 'REJECTED (EXCLUSION)' : 'APPROVED (COVERED)',
-                cited_clause: block.cited_clause || 'Standard warranty terms apply.',
-                source_document: block.source_doc || 'Warranty Document',
-                page: block.page || 1,
-                explanation: 'Benchmarked against intake criteria.'
-              }
-            };
-            if (isAuthenticCase(newCase)) {
-              CASES.unshift(newCase);
-              casesChanged = true;
-            }
+        // Rebuild auditLedger strictly from finalized cases and server ledger
+        auditLedger.length = 0;
+        for (const sc of CASES) {
+          if (sc.st === 'Approved' || sc.st === 'Rejected' || sc.st === 'Auto-Approved' || sc.resolvedOperator === 'TECH-402') {
+            auditLedger.push({
+              time: sc.resolvedTime || (sc.submittedAt ? new Date(sc.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Saved'),
+              caseId: sc.id,
+              product: sc.p || `${sc.oem || ''} ${sc.modelName || ''}`.trim(),
+              tier: sc.t || 'T2',
+              decision: sc.st,
+              reason: sc.resolvedReason || (sc.st === 'Auto-Approved' ? sc.autoApproveReason : (sc.cl ? `Policy exclusion confirmed: ${sc.cl}` : 'Claim disposition determined')),
+              hash: sc.resolvedHash || sc.ledgerHash || generateAuditHash(),
+              operator: sc.resolvedOperator || (sc.isAutoApproved ? 'AUTONOMOUS-SLA-ROUTER' : 'TECH-402'),
+              subImg: sc.subImg,
+              isAutoApproved: sc.isAutoApproved || sc.st === 'Auto-Approved'
+            });
           }
-
-          let existingAudit = auditLedger.find(a => a.caseId === block.case_id || a.hash === block.block_hash);
-          if (!existingAudit && block.disposition && block.disposition !== 'ESCALATE') {
-            const auditEntry = {
+        }
+        for (const block of blocks) {
+          if (block.disposition && block.disposition !== 'ESCALATE' && !auditLedger.some(a => a.caseId === block.case_id || a.hash === block.block_hash)) {
+            auditLedger.push({
               time: block.timestamp ? new Date(block.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Intake',
               caseId: block.case_id,
               product: `Hardware Unit (${block.tier || 'T2'})`,
@@ -210,32 +141,19 @@ async function syncBackendLedger() {
               hash: block.block_hash || generateAuditHash(),
               operator: 'AUTONOMOUS-SLA-ROUTER',
               isAutoApproved: block.disposition === 'APPROVE'
-            };
-            if (isAuthenticAudit(auditEntry)) {
-              auditLedger.unshift(auditEntry);
-              casesChanged = true;
-            }
+            });
           }
         }
+        try {
+          localStorage.setItem('smartrma_audit_history', JSON.stringify(auditLedger));
+        } catch (e) {}
+        casesChanged = true;
       }
     } catch (errLedger) {
       console.warn('[Sync Backend Ledger Error]', errLedger);
     }
 
-    // Purge any residual non-authentic audits
-    const origAuditCount = auditLedger.length;
-    const cleanAudits = auditLedger.filter(isAuthenticAudit);
-    if (cleanAudits.length !== origAuditCount) {
-      auditLedger.length = 0;
-      cleanAudits.forEach(a => auditLedger.push(a));
-      casesChanged = true;
-    }
-
     if (casesChanged) {
-      try {
-        localStorage.setItem('smartrma_cases', JSON.stringify(CASES.filter(isAuthenticCase)));
-        localStorage.setItem('smartrma_audit_history', JSON.stringify(auditLedger.filter(isAuthenticAudit)));
-      } catch (e) {}
       updateTabCounts();
       updateWorkbenchVisibility();
       renderQueue();
