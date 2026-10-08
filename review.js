@@ -67,7 +67,6 @@ function getInitialCases() {
       cl: 'Damage from electrical overload or scorched pin connectors is explicitly excluded.',
       st: 'Pending',
       userImages: [...defaultUserImages],
-      refImg: 'assets/gpu_reference.jpg',
       subImg: 'assets/gpu_damaged.jpg',
       at: [62, 38]
     },
@@ -84,7 +83,6 @@ function getInitialCases() {
       cl: 'High-value enterprise returns require mandatory physical teardown inspection prior to credit release.',
       st: 'Pending',
       userImages: [...defaultUserImages],
-      refImg: 'assets/gpu_reference.jpg',
       subImg: 'assets/gpu_front.jpg',
       at: [48, 52]
     },
@@ -102,7 +100,6 @@ function getInitialCases() {
       cl: 'Claims exhibiting serial recycling or photographic reuse require forensic review.',
       st: 'Pending',
       userImages: [...defaultUserImages],
-      refImg: 'assets/gpu_reference.jpg',
       subImg: 'assets/gpu_reference.jpg',
       at: [30, 70]
     },
@@ -119,7 +116,6 @@ function getInitialCases() {
       cl: 'Defects in silicon materials or factory soldering under normal use are fully covered.',
       st: 'Pending',
       userImages: [...defaultUserImages],
-      refImg: 'assets/gpu_reference.jpg',
       subImg: 'assets/gpu_front.jpg',
       at: [48, 52]
     },
@@ -142,7 +138,6 @@ function getInitialCases() {
         'assets/base_vrm.jpg',
         'assets/base_vrm.jpg'
       ],
-      refImg: 'assets/base_vrm.jpg',
       subImg: 'assets/base_vrm.jpg',
       at: [35, 65]
     }
@@ -350,20 +345,15 @@ function renderDetails() {
       </div>
     </div>
 
-    <!-- Dual Comparator Viewports (Showing Customer Uploaded Photo) -->
-    <div class="comparator-grid">
-      <div class="img" style="background-image:url(${escapeHtml(c.refImg || 'assets/gpu_reference.jpg')})">
-        <div class="viewport-label">FACTORY REFERENCE SPEC</div>
-      </div>
-      <div class="img" id="cust-viewport" style="background-image:url(${escapeHtml(customerUnitImg)})">
-        <div class="viewport-label">CUSTOMER UNIT: ${escapeHtml(c.rn || 'Uploaded Hardware View')}</div>
-        <div class="spectral-overlay" style="--hx:${c.at ? c.at[0] : 50}%;--hy:${c.at ? c.at[1] : 50}%"></div>
-        ${(c.a > 0.3) ? `
-          <div class="defect-crosshair" style="left:${c.at ? c.at[0] : 50}%;top:${c.at ? c.at[1] : 50}%">
-            <div class="crosshair-center"></div>
-          </div>
-        ` : ''}
-      </div>
+    <!-- Customer Uploaded Hardware Inspection Viewport (No factory reference spec) -->
+    <div class="hardware-inspection-viewport" id="cust-viewport" style="background-image:url(${escapeHtml(customerUnitImg)})">
+      <div class="viewport-label">CUSTOMER UPLOADED VIEW: ${escapeHtml(c.rn || 'Uploaded Hardware Angle')}</div>
+      <div class="spectral-overlay" style="--hx:${c.at ? c.at[0] : 50}%;--hy:${c.at ? c.at[1] : 50}%"></div>
+      ${(c.a > 0.3) ? `
+        <div class="defect-crosshair" style="left:${c.at ? c.at[0] : 50}%;top:${c.at ? c.at[1] : 50}%">
+          <div class="crosshair-center"></div>
+        </div>
+      ` : ''}
     </div>
 
     <!-- Customer Uploaded Photos Gallery (5 Guided Views) -->
