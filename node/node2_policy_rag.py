@@ -273,7 +273,13 @@ def call_gemini_api(user_prompt: str, system_instruction: str, history: Optional
     if not key:
         return None, None
 
-    gemini_models = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]
+    gemini_models = [
+        "gemini-flash-latest",
+        "gemini-3.5-flash",
+        "gemini-3.8-flash",
+        "gemini-3.7-flash",
+        "gemini-3.1-flash-lite"
+    ]
     contents = []
     if history:
         for h in history[-6:]:
@@ -295,7 +301,7 @@ def call_gemini_api(user_prompt: str, system_instruction: str, history: Optional
         },
         "generationConfig": {
             "temperature": 0.3,
-            "maxOutputTokens": 350,
+            "maxOutputTokens": 1024,
             "topP": 0.95
         }
     }
@@ -388,7 +394,7 @@ def health():
         "indexed_documents": len(POLICY_DATA.get("catalog", [])),
         "manufacturers": POLICY_DATA.get("metadata", {}).get("manufacturers", []),
         "gemini_api_configured": has_gemini,
-        "primary_chat_engine": "Google Gemini API (gemini-1.5-flash)" if has_gemini else "Local Ollama LLM (qwen2.5-coder:14b)",
+        "primary_chat_engine": "Google Gemini API (gemini-3.8-flash)" if has_gemini else "Local Ollama LLM (qwen2.5-coder:14b)",
         "fallback_chat_engine": "Local Ollama LLM (qwen2.5-coder:14b)",
         "active_models": MODELS_TO_TRY
     }
@@ -409,7 +415,7 @@ def get_gemini_key():
     return {
         "configured": has_key,
         "masked_key": masked if has_key else None,
-        "primary_engine": "Google Gemini API (gemini-1.5-flash)" if has_key else "Local Ollama LLM (qwen2.5-coder:14b)",
+        "primary_engine": "Google Gemini API (gemini-3.8-flash)" if has_key else "Local Ollama LLM (qwen2.5-coder:14b)",
         "fallback_engine": "Local Ollama LLM (qwen2.5-coder:14b)"
     }
 
