@@ -216,6 +216,7 @@ def extract_vision_telemetry(vision_text: str, slot_name: str, symptoms: str) ->
 
     minor_cosmetic_keywords = ["hairline scuff", "scuff", "surface mark", "insertion mark", "thermal paste", "paste smear", "paste smudge", "friction track", "dust speck"]
     has_minor_cosmetic = any(k in vt_lower for k in minor_cosmetic_keywords) or any(k in sym_lower for k in ["scuff", "paste", "insertion mark", "thermal paste"])
+    is_minor_cosmetic = has_minor_cosmetic and not (is_burnt or is_tamper)
 
     # 2. Silicon component failure patterns (capacitors, traces, vram, artifacts)
     silicon_keywords = ["capacitor", "resistor", "chip", "transistor", "circuit board", "traces", "vram", "artifact", "solder", "wear", "swelling", "discolor"]
