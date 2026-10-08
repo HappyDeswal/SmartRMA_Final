@@ -328,7 +328,10 @@ def call_cloud_ai_api(user_prompt: str, system_instruction: str, history: Option
                             return reply_text, "High-Performance Cloud AI"
         except urllib.error.HTTPError as http_err:
             print(f"[Node 2] Cloud AI API HTTP error ({model_name}): {http_err.code} - {http_err.reason}")
-            # If 429 (quota exhausted/rate limit) or 400/403, proceed to next model or fallback to local Ollama
+            # If 400 or 403, key is invalid/unauthorized -> immediately fall back to local Ollama
+            if http_err.code in (400, 403):
+                break
+            # If 404 (model deprecated) or 429 (rate limit/quota), try next model
             continue
         except Exception as e:
             print(f"[Node 2] Cloud AI API connection error: {e}")
