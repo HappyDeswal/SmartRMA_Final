@@ -1,42 +1,42 @@
 [
   {
-    "id": "RMA-76781",
-    "orderId": "ORD-AUDIT-N3-01",
-    "serialNumber": "SN-RTX4090-OC",
-    "oem": "NVIDIA",
-    "modelName": "GeForce RTX 4090 Founders Edition",
-    "p": "NVIDIA GeForce RTX 4090 Founders Edition",
-    "v": 1599.0,
-    "t": "T3",
-    "r": 62,
-    "a": 0.88,
-    "conf": 96,
-    "escalationReason": "Tier T3 SLA Intake Evaluation: ESCALATE",
-    "rn": "12VHPWR Power Socket (Pins 3 & 4)",
+    "id": "RMA-75767",
+    "orderId": "ORD-7634",
+    "serialNumber": "132422000100",
+    "oem": "GIGABYTE",
+    "modelName": "GeForce RTX 4080 Gaming OC 16GB",
+    "p": "GIGABYTE GeForce RTX 4080 Gaming OC 16GB",
+    "v": 3000.0,
+    "t": "T4",
+    "r": 38,
+    "a": 0.12,
+    "conf": 92,
+    "escalationReason": "Tier T4 SLA Intake Evaluation: ESCALATE",
+    "rn": "Pristine Hardware Surface (Factory Standard)",
     "cl": "Ambiguous Defect / Manual Inspection Required",
-    "src": "nvidia_hardware_warranty_policy.md",
+    "src": "Warranty - GIGABYTE Global.pdf",
     "st": "Pending",
-    "subImg": "assets/gpu_damaged.jpg",
+    "subImg": "approve/01_clean_gpu_shroud_front.jpg",
     "userImages": [
-      "assets/gpu_damaged.jpg"
+      "approve/01_clean_gpu_shroud_front.jpg"
     ],
     "at": [
       50,
       50
     ],
-    "symptom": "Scorched 12VHPWR pin connector | Vision findings: **Component Identification:** Graphics card power connector (PCIe power socket / 12VHPWR or similar high-power header) mounted on a PCB.\n\n**Physical Condition Analysis:** \n- Severe catastrophic thermal failure and localized melting are present on the",
-    "ledgerHash": "5f8aaa1e6e975a96dacef85a19a46f4fab4297a5fb255e676bde6d254cec810e",
-    "submittedAt": "2026-10-08T16:26:21.307067+00:00",
+    "symptom": "Clean GPU hardware submitted by customer; intermittent black screen under compute load; pristine hardware surface.",
+    "ledgerHash": "24bd6fec52d7ad4990b5a86b4adb1717360a5bdeb719d23f1272adf2a6b97e13",
+    "submittedAt": "2026-10-08T16:09:27.345494+00:00",
     "isAutoApproved": false,
     "resolvedOperator": null,
     "resolvedReason": null,
     "resolvedTime": null,
     "resolvedHash": null,
     "visionTelemetry": {
-      "anomaly_score": 0.88,
-      "flagged_region": "12VHPWR Power Socket (Pins 3 & 4)",
-      "severity": "CRITICAL",
-      "visual_findings": "**Hardware Triage Report:**\n\n* **Component:** Graphics Card PCB / Power Connector (12VHPWR / 16-pin power receptacle area).\n* **Physical Condition & Failure Analysis:** Severe catastrophic thermal failure. The primary power connector receptacle exhibits extensive melting, charring, and thermal destruction of the plastic housing around the central pins. Severe electrical arcing and burning have caused structural cracking of the connector block, soot residue deposited on the surrounding PCB surface, and thermal scorching that has transferred onto the measuring ruler placed above.\n\nVERDICT: PHYSICAL_DAMAGE",
+      "anomaly_score": 0.12,
+      "flagged_region": "Pristine Hardware Surface (Factory Standard)",
+      "severity": "NOMINAL",
+      "visual_findings": "Hardware inspection confirms pristine condition across GPU shroud, retention bracket, and heatsink fins. No visible mechanical damage or scorch patterns.",
       "model_used": "Cloud Vision (gemini-flash-lite-latest)",
       "at": [
         50,
@@ -46,311 +46,9 @@
     "policyGrounding": {
       "verdict": "ESCALATED",
       "cited_clause": "Ambiguous Defect / Manual Inspection Required",
-      "source_document": "nvidia_hardware_warranty_policy.md",
-      "page": 1,
-      "explanation": "Symptom profile requires secondary verification by L2 Engineering Workbench to differentiate solder fatigue from external shock."
-    }
-  },
-  {
-    "id": "RMA-76775",
-    "orderId": "ORD-CONCUR-007",
-    "serialNumber": "SN-STRESS-007",
-    "oem": "NVIDIA",
-    "modelName": "RTX 4070 Ti Super",
-    "p": "NVIDIA RTX 4070 Ti Super",
-    "v": 590.0,
-    "t": "T2",
-    "r": 62,
-    "a": 0.88,
-    "conf": 96,
-    "escalationReason": "Tier T2 SLA Intake Evaluation: ESCALATE",
-    "rn": "12VHPWR Power Socket (Pins 3 & 4)",
-    "cl": "Ambiguous Defect / Manual Inspection Required",
-    "src": "nvidia_hardware_warranty_policy.md",
-    "st": "Pending",
-    "subImg": "",
-    "userImages": [],
-    "at": [
-      50,
-      50
-    ],
-    "symptom": "Screen blackouts under heavy compute load, no physical scorch",
-    "ledgerHash": "a41b2f063abcd8a785aee69c4829ce088db609de6224eac7682b6da663c07a64",
-    "submittedAt": "2026-10-08T16:26:15.292453+00:00",
-    "isAutoApproved": false,
-    "resolvedOperator": null,
-    "resolvedReason": null,
-    "resolvedTime": null,
-    "resolvedHash": null,
-    "visionTelemetry": {
-      "anomaly_score": 0.88,
-      "flagged_region": "12VHPWR Power Socket (Pins 3 & 4)",
-      "severity": "CRITICAL",
-      "visual_findings": "**Hardware Triage and Failure Analysis Report:**\n\n* **Component:** Graphics card power connector receptacle (PCIe power socket mounted on GPU printed circuit board).\n* **Physical Condition & Findings:** Severe thermal damage and electrical overstress (EOS). The plastic housing of the power connector shows catastrophic melting, charring, and severe structural cracking around the pin terminals. Carbon soot and discoloration are evident on the surrounding PCB surface and on the edge of the measurement tool held above the connector. \n* **Failure Classification:** Severe catastrophic thermal failure / melted power connector.\n\nVERDICT: PHYSICAL_DAMAGE",
-      "model_used": "Cloud Vision (gemini-flash-lite-latest)",
-      "at": [
-        50,
-        50
-      ]
-    },
-    "policyGrounding": {
-      "verdict": "ESCALATED",
-      "cited_clause": "Ambiguous Defect / Manual Inspection Required",
-      "source_document": "nvidia_hardware_warranty_policy.md",
-      "page": 1,
-      "explanation": "Symptom profile requires secondary verification by L2 Engineering Workbench to differentiate solder fatigue from external shock."
-    }
-  },
-  {
-    "id": "RMA-76774",
-    "orderId": "ORD-CONCUR-006",
-    "serialNumber": "SN-STRESS-006",
-    "oem": "ASUS",
-    "modelName": "RTX 4070 Ti Super",
-    "p": "ASUS RTX 4070 Ti Super",
-    "v": 570.0,
-    "t": "T2",
-    "r": 62,
-    "a": 0.88,
-    "conf": 96,
-    "escalationReason": "Tier T2 SLA Intake Evaluation: ESCALATE",
-    "rn": "12VHPWR Power Socket (Pins 3 & 4)",
-    "cl": "Ambiguous Defect / Manual Inspection Required",
-    "src": "br_Graphic Card.pdf",
-    "st": "Pending",
-    "subImg": "",
-    "userImages": [],
-    "at": [
-      50,
-      50
-    ],
-    "symptom": "Screen blackouts under heavy compute load, no physical scorch",
-    "ledgerHash": "ed77524e1aa57a8e4039818fa843bb345fe84e2db217d988cc9b5c07b65b2d75",
-    "submittedAt": "2026-10-08T16:26:14.172135+00:00",
-    "isAutoApproved": false,
-    "resolvedOperator": null,
-    "resolvedReason": null,
-    "resolvedTime": null,
-    "resolvedHash": null,
-    "visionTelemetry": {
-      "anomaly_score": 0.88,
-      "flagged_region": "12VHPWR Power Socket (Pins 3 & 4)",
-      "severity": "CRITICAL",
-      "visual_findings": "**Component Identification:** Graphics card PCB focusing on a high-power connector socket (such as a 12VHPWR or standard PCIe power receptacle).\n\n**Physical Condition & Failure Analysis:** \nThe image reveals severe thermal and electrical failure at the power connector receptacle. There is catastrophic melting, severe charring, and extensive soot/burn marks localized around the central pins of the connector housing and extending onto the surrounding PCB surface. The plastic housing is structurally compromised with visible cracks and deformation due to extreme localized heat. Soot transfer is also clearly visible on the adjacent metal ruler. \n\nVERDICT: PHYSICAL_DAMAGE",
-      "model_used": "Cloud Vision (gemini-flash-lite-latest)",
-      "at": [
-        50,
-        50
-      ]
-    },
-    "policyGrounding": {
-      "verdict": "ESCALATED",
-      "cited_clause": "Ambiguous Defect / Manual Inspection Required",
-      "source_document": "br_Graphic Card.pdf",
-      "page": 4,
-      "explanation": "Symptom profile requires secondary verification by L2 Engineering Workbench to differentiate solder fatigue from external shock."
-    }
-  },
-  {
-    "id": "RMA-76773",
-    "orderId": "ORD-CONCUR-005",
-    "serialNumber": "SN-STRESS-005",
-    "oem": "NVIDIA",
-    "modelName": "RTX 4070 Ti Super",
-    "p": "NVIDIA RTX 4070 Ti Super",
-    "v": 550.0,
-    "t": "T2",
-    "r": 62,
-    "a": 0.88,
-    "conf": 96,
-    "escalationReason": "Tier T2 SLA Intake Evaluation: ESCALATE",
-    "rn": "12VHPWR Power Socket (Pins 3 & 4)",
-    "cl": "Ambiguous Defect / Manual Inspection Required",
-    "src": "nvidia_hardware_warranty_policy.md",
-    "st": "Approved",
-    "subImg": "",
-    "userImages": [],
-    "at": [
-      50,
-      50
-    ],
-    "symptom": "Screen blackouts under heavy compute load, no physical scorch",
-    "ledgerHash": "ac66a24d31445b9c97485ac089ddc87d16507b07215bf8037f411b43628eafbd",
-    "submittedAt": "2026-10-08T16:26:13.679403+00:00",
-    "isAutoApproved": false,
-    "resolvedOperator": "TECH-402",
-    "resolvedReason": "Lead technician verified factory solder fault; approved replacement.",
-    "resolvedTime": "2026-10-08T16:35:50.879252+00:00",
-    "resolvedHash": null,
-    "visionTelemetry": {
-      "anomaly_score": 0.88,
-      "flagged_region": "12VHPWR Power Socket (Pins 3 & 4)",
-      "severity": "CRITICAL",
-      "visual_findings": "**Component Analysis:** GPU graphics card PCB focusing on the PCIe 12VHPWR / high-power power connector socket.\n\n**Physical Condition & Defects:** Severe thermal damage and electrical failure are evident on the power connector socket. There is catastrophic melting, severe charring, and thermal destruction of the plastic housing around the central pins. Surrounding PCB traces and components show significant soot, scorch marks, and heat discoloration. \n\nVERDICT: PHYSICAL_DAMAGE",
-      "model_used": "Cloud Vision (gemini-flash-lite-latest)",
-      "at": [
-        50,
-        50
-      ]
-    },
-    "policyGrounding": {
-      "verdict": "ESCALATED",
-      "cited_clause": "Ambiguous Defect / Manual Inspection Required",
-      "source_document": "nvidia_hardware_warranty_policy.md",
-      "page": 1,
-      "explanation": "Symptom profile requires secondary verification by L2 Engineering Workbench to differentiate solder fatigue from external shock."
-    }
-  },
-  {
-    "id": "RMA-76771",
-    "orderId": "ORD-CONCUR-001",
-    "serialNumber": "SN-STRESS-001",
-    "oem": "NVIDIA",
-    "modelName": "RTX 4070 Ti Super",
-    "p": "NVIDIA RTX 4070 Ti Super",
-    "v": 470.0,
-    "t": "T2",
-    "r": 62,
-    "a": 0.88,
-    "conf": 96,
-    "escalationReason": "Tier T2 SLA Intake Evaluation: ESCALATE",
-    "rn": "12VHPWR Power Socket (Pins 3 & 4)",
-    "cl": "Ambiguous Defect / Manual Inspection Required",
-    "src": "nvidia_hardware_warranty_policy.md",
-    "st": "Rejected",
-    "subImg": "",
-    "userImages": [],
-    "at": [
-      50,
-      50
-    ],
-    "symptom": "Screen blackouts under heavy compute load, no physical scorch",
-    "ledgerHash": "46d6ef7f3c69e95f0f854b10fb5db3f5bac15f600dc1320abce5852c6a0eda25",
-    "submittedAt": "2026-10-08T16:26:11.890843+00:00",
-    "isAutoApproved": false,
-    "resolvedOperator": "TECH-402",
-    "resolvedReason": "Lead technician verified external cable surge scorch; policy exclusion.",
-    "resolvedTime": "2026-10-08T16:35:50.887262+00:00",
-    "resolvedHash": null,
-    "visionTelemetry": {
-      "anomaly_score": 0.88,
-      "flagged_region": "12VHPWR Power Socket (Pins 3 & 4)",
-      "severity": "CRITICAL",
-      "visual_findings": "**Component Identification:** Graphics card power connector receptacle (12VHPWR / 16-pin or high-power PCIe connector) mounted on a GPU printed circuit board.\n\n**Physical Condition & Failure Analysis:** \n- Severe thermal damage, catastrophic melting, and charring are visible on the central power connector housing and surrounding plastic terminals.\n- Carbon soot and scorch marks extend onto the adjacent PCB substrate and upward onto the metal measurement ruler.\n- Pin contacts inside the connector show heavy oxidation, pitting, and thermal destruction due to excessive electrical resistance or high-current arcing (connector melting failure mode).\n\nVERDICT: PHYSICAL_DAMAGE",
-      "model_used": "Cloud Vision (gemini-flash-lite-latest)",
-      "at": [
-        50,
-        50
-      ]
-    },
-    "policyGrounding": {
-      "verdict": "ESCALATED",
-      "cited_clause": "Ambiguous Defect / Manual Inspection Required",
-      "source_document": "nvidia_hardware_warranty_policy.md",
-      "page": 1,
-      "explanation": "Symptom profile requires secondary verification by L2 Engineering Workbench to differentiate solder fatigue from external shock."
-    }
-  },
-  {
-    "id": "RMA-76770",
-    "orderId": "ORD-CONCUR-002",
-    "serialNumber": "SN-STRESS-002",
-    "oem": "ASUS",
-    "modelName": "RTX 4070 Ti Super",
-    "p": "ASUS RTX 4070 Ti Super",
-    "v": 490.0,
-    "t": "T2",
-    "r": 62,
-    "a": 0.88,
-    "conf": 96,
-    "escalationReason": "Tier T2 SLA Intake Evaluation: ESCALATE",
-    "rn": "12VHPWR Power Socket (Pins 3 & 4)",
-    "cl": "Ambiguous Defect / Manual Inspection Required",
-    "src": "br_Graphic Card.pdf",
-    "st": "Pending",
-    "subImg": "",
-    "userImages": [],
-    "at": [
-      50,
-      50
-    ],
-    "symptom": "Screen blackouts under heavy compute load, no physical scorch",
-    "ledgerHash": "fe99c8a2ae5494255fc03e679a91104db81194ff9dae6ed5a0974037558c2f0e",
-    "submittedAt": "2026-10-08T16:26:10.767787+00:00",
-    "isAutoApproved": false,
-    "resolvedOperator": null,
-    "resolvedReason": null,
-    "resolvedTime": null,
-    "resolvedHash": null,
-    "visionTelemetry": {
-      "anomaly_score": 0.88,
-      "flagged_region": "12VHPWR Power Socket (Pins 3 & 4)",
-      "severity": "CRITICAL",
-      "visual_findings": "**Hardware Triage Report:**\n\n* **Component:** Graphics Card PCB featuring a 12VHPWR (or standard 8/16-pin depending on context) power connector receptacle.\n* **Physical Condition & Findings:** Severe thermal damage and electrical overstress (EOS). The power connector shows catastrophic melting, charring, and thermal deformation, particularly centered around the internal pins. Extensive soot and burn marks extend onto the surrounding printed circuit board (PCB) substrate and up onto the metal measurement scale. Cracking is visible in the plastic housing of the connector. \n\nVERDICT: PHYSICAL_DAMAGE",
-      "model_used": "Cloud Vision (gemini-flash-lite-latest)",
-      "at": [
-        50,
-        50
-      ]
-    },
-    "policyGrounding": {
-      "verdict": "ESCALATED",
-      "cited_clause": "Ambiguous Defect / Manual Inspection Required",
-      "source_document": "br_Graphic Card.pdf",
-      "page": 4,
-      "explanation": "Symptom profile requires secondary verification by L2 Engineering Workbench to differentiate solder fatigue from external shock."
-    }
-  },
-  {
-    "id": "RMA-76759",
-    "orderId": "ORD-AUDIT-01",
-    "serialNumber": "SN-TRAVERSAL-01",
-    "oem": "NVIDIA",
-    "modelName": "RTX 4080",
-    "p": "NVIDIA RTX 4080",
-    "v": 750.0,
-    "t": "T2",
-    "r": 62,
-    "a": 0.88,
-    "conf": 96,
-    "escalationReason": "Tier T2 SLA Intake Evaluation: ESCALATE",
-    "rn": "12VHPWR Power Socket (Pins 3 & 4)",
-    "cl": "Ambiguous Defect / Manual Inspection Required",
-    "src": "nvidia_official_geforce_warranty.md",
-    "st": "Pending",
-    "subImg": "../audit_ledger.json",
-    "userImages": [
-      "../audit_ledger.json"
-    ],
-    "at": [
-      50,
-      50
-    ],
-    "symptom": "Normal operation check",
-    "ledgerHash": "eeef70f28d33c7e94b600783a316e7e71d0a7a101405ef2713f35823ff41064d",
-    "submittedAt": "2026-10-08T16:25:59.437840+00:00",
-    "isAutoApproved": false,
-    "resolvedOperator": null,
-    "resolvedReason": null,
-    "resolvedTime": null,
-    "resolvedHash": null,
-    "visionTelemetry": {
-      "anomaly_score": 0.88,
-      "flagged_region": "12VHPWR Power Socket (Pins 3 & 4)",
-      "severity": "CRITICAL",
-      "visual_findings": "**Component Identification:** GPU Printed Circuit Board (PCB) focusing on the 12VHPWR / 16-pin power connector interface.\n\n**Physical Condition & Failure Analysis:** \nThe primary component exhibits catastrophic thermal damage and electrical failure. The plastic housing of the power connector is severely melted, charred, and structurally cracked, with visible soot and scorch residue extending onto the adjacent PCB substrate and the metal ruler held against it. Internal pins show severe pitting, oxidation, and localized melting indicative of high-resistance connection failure or extreme overcurrent. \n\nVERDICT: PHYSICAL_DAMAGE",
-      "model_used": "Cloud Vision (gemini-flash-lite-latest)",
-      "at": [
-        50,
-        50
-      ]
-    },
-    "policyGrounding": {
-      "verdict": "ESCALATED",
-      "cited_clause": "Ambiguous Defect / Manual Inspection Required",
-      "source_document": "nvidia_official_geforce_warranty.md",
-      "page": 1,
-      "explanation": "Symptom profile requires secondary verification by L2 Engineering Workbench to differentiate solder fatigue from external shock."
+      "source_document": "Warranty - GIGABYTE Global.pdf",
+      "page": 3,
+      "explanation": "High-value enterprise tier (T4) requires lead technician physical verification before return authorization sign-off."
     }
   }
 ]

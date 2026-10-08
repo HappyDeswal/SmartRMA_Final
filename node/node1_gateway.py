@@ -385,13 +385,29 @@ def get_cases():
                 with open(CASES_FILE, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     if isinstance(data, list):
-                        return {"count": len(data), "cases": data}
+                        clean_data = [
+                            c for c in data
+                            if not str(c.get("orderId", "")).upper().startswith(("ORD-CONCUR", "ORD-AUDIT", "ORD-STRESS", "ORD-TEST", "TEST-", "ORD-BOMB"))
+                            and not str(c.get("serialNumber", "")).upper().startswith(("SN-STRESS", "SN-TRAVERSAL", "TEST-"))
+                            and not str(c.get("id", "")).upper().startswith(("RMA-CONCUR", "RMA-AUDIT", "RMA-TEST", "RMA-1042", "RMA-1045", "RMA-1052", "RMA-1039", "RMA-1036", "RMA-1028", "RMA-78758"))
+                        ]
+                        return {"count": len(clean_data), "cases": clean_data}
             except Exception:
                 pass
     return {"count": 0, "cases": []}
 
 @app.post("/api/v1/cases")
 def save_case(case_data: Dict[str, Any] = Body(...)):
+    cid = str(case_data.get("id", ""))
+    oid = str(case_data.get("orderId", ""))
+    s_num = str(case_data.get("serialNumber", ""))
+    if (
+        oid.upper().startswith(("ORD-CONCUR", "ORD-AUDIT", "ORD-STRESS", "ORD-TEST", "TEST-", "ORD-BOMB")) or
+        s_num.upper().startswith(("SN-STRESS", "SN-TRAVERSAL", "TEST-")) or
+        cid.upper().startswith(("RMA-CONCUR", "RMA-AUDIT", "RMA-TEST", "RMA-1042", "RMA-1045", "RMA-1052", "RMA-1039", "RMA-1036", "RMA-1028", "RMA-78758"))
+    ):
+        return {"status": "SKIPPED_SYNTHETIC", "case_id": cid}
+
     with CASES_LOCK:
         existing = []
         if os.path.exists(CASES_FILE):
@@ -403,8 +419,6 @@ def save_case(case_data: Dict[str, Any] = Body(...)):
             except Exception:
                 existing = []
         
-        cid = case_data.get("id")
-        oid = case_data.get("orderId")
         # Deduplicate and prepend
         existing = [c for c in existing if c.get("id") != cid and (not oid or c.get("orderId") != oid)]
         existing.insert(0, case_data)
@@ -712,24 +726,29 @@ def process_intake(req: IntakeRequest):
                 "explanation": node2_result.get("notes")
             }
         }
-        with CASES_LOCK:
-            existing_cases = []
-            if os.path.exists(CASES_FILE):
-                try:
-                    with open(CASES_FILE, "r", encoding="utf-8") as f:
-                        existing_cases = json.load(f)
-                        if not isinstance(existing_cases, list):
-                            existing_cases = []
-                except Exception:
-                    existing_cases = []
-            cid = full_case_record["id"]
-            oid = full_case_record["orderId"]
-            existing_cases = [c for c in existing_cases if c.get("id") != cid and (not oid or c.get("orderId") != oid)]
-            existing_cases.insert(0, full_case_record)
-            if len(existing_cases) > 500:
-                existing_cases = existing_cases[:500]
-            with open(CASES_FILE, "w", encoding="utf-8") as f:
-                json.dump(existing_cases, f, indent=2)
+        is_synthetic = (
+            req.order_id.upper().startswith(("ORD-CONCUR", "ORD-AUDIT", "ORD-STRESS", "ORD-TEST", "TEST-", "ORD-BOMB")) or
+            req.serial_number.upper().startswith(("SN-STRESS", "SN-TRAVERSAL", "TEST-"))
+        )
+        if not is_synthetic:
+            with CASES_LOCK:
+                existing_cases = []
+                if os.path.exists(CASES_FILE):
+                    try:
+                        with open(CASES_FILE, "r", encoding="utf-8") as f:
+                            existing_cases = json.load(f)
+                            if not isinstance(existing_cases, list):
+                                existing_cases = []
+                    except Exception:
+                        existing_cases = []
+                cid = full_case_record["id"]
+                oid = full_case_record["orderId"]
+                existing_cases = [c for c in existing_cases if c.get("id") != cid and (not oid or c.get("orderId") != oid)]
+                existing_cases.insert(0, full_case_record)
+                if len(existing_cases) > 500:
+                    existing_cases = existing_cases[:500]
+                with open(CASES_FILE, "w", encoding="utf-8") as f:
+                    json.dump(existing_cases, f, indent=2)
     except Exception as e:
         print(f"[Node 1] Error persisting intake case to cases_store.json: {e}")
 

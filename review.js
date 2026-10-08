@@ -24,18 +24,30 @@ function requiresTechnicianApproval(c) {
 }
 
 const FAKE_CASE_IDS = new Set([
-  'RMA-1042', 'RMA-1045', 'RMA-1052', 'RMA-1039', 'RMA-1036', 'RMA-1028', 'RMA-78758'
+  'RMA-1042', 'RMA-1045', 'RMA-1052', 'RMA-1039', 'RMA-1036', 'RMA-1028', 'RMA-78758',
+  'RMA-TEST-999', 'RMA-76781', 'RMA-76775', 'RMA-76774', 'RMA-76773', 'RMA-76771', 'RMA-76770', 'RMA-76759', 'RMA-75198', 'RMA-75928', 'RMA-TEST-01', 'RMA-TEST-02'
 ]);
+
+function isSyntheticCase(id, orderId, serial) {
+  const sId = String(id || '').toUpperCase();
+  const sOrder = String(orderId || '').toUpperCase();
+  const sSerial = String(serial || '').toUpperCase();
+  if (FAKE_CASE_IDS.has(String(id || ''))) return true;
+  if (/^(ORD-CONCUR|ORD-AUDIT|ORD-STRESS|ORD-TEST|TEST-|SN-STRESS|SN-TRAVERSAL|ORD-BOMB)/i.test(sOrder)) return true;
+  if (/^(SN-STRESS|SN-TRAVERSAL|TEST-)/i.test(sSerial)) return true;
+  if (/^(RMA-CONCUR|RMA-AUDIT|RMA-TEST|TEST-)/i.test(sId)) return true;
+  return false;
+}
 
 function isAuthenticCase(c) {
   if (!c || typeof c !== 'object' || !c.id) return false;
-  if (FAKE_CASE_IDS.has(c.id)) return false;
+  if (isSyntheticCase(c.id, c.orderId, c.serialNumber)) return false;
   return true;
 }
 
 function isAuthenticAudit(item) {
   if (!item || typeof item !== 'object' || !item.caseId) return false;
-  if (FAKE_CASE_IDS.has(item.caseId)) return false;
+  if (isSyntheticCase(item.caseId, item.orderId, item.serialNumber)) return false;
   const reasonStr = String(item.reason || '');
   if (reasonStr.includes('ROG Astral RTX') || reasonStr.includes('Dominator Platinum') || reasonStr.includes('Socket pin distortion') || reasonStr.includes('PCIe retention clip')) {
     return false;
@@ -43,19 +55,44 @@ function isAuthenticAudit(item) {
   return true;
 }
 
+// Proactively purge any residual synthetic test cases from browser localStorage
+try {
+  const rawCases = localStorage.getItem('smartrma_cases');
+  if (rawCases) {
+    const parsed = JSON.parse(rawCases);
+    if (Array.isArray(parsed)) {
+      const cleaned = parsed.filter(isAuthenticCase);
+      localStorage.setItem('smartrma_cases', JSON.stringify(cleaned));
+    }
+  }
+  const rawAudits = localStorage.getItem('smartrma_audit_history');
+  if (rawAudits) {
+    const parsedA = JSON.parse(rawAudits);
+    if (Array.isArray(parsedA)) {
+      const cleanedA = parsedA.filter(isAuthenticAudit);
+      localStorage.setItem('smartrma_audit_history', JSON.stringify(cleanedA));
+    }
+  }
+} catch (e) {}
+
 // Background sync against Node 1 backend ledger & cases store (guarantees intake cases are never lost)
 async function syncBackendLedger() {
   try {
     let casesChanged = false;
+
+    // Clean out any synthetic cases currently in CASES
+    const origCasesCount = CASES.length;
+    CASES = CASES.filter(isAuthenticCase);
+    if (CASES.length !== origCasesCount) casesChanged = true;
 
     // 1. Sync full case dossiers from Node 1 backend store
     try {
       const casesResp = await fetch(getGatewayUrl('/api/v1/cases'));
       if (casesResp.ok) {
         const casesData = await casesResp.json();
-        const serverCases = casesData.cases || [];
+        const serverCases = (casesData.cases || []).filter(isAuthenticCase);
         for (const sc of serverCases) {
-          if (!sc || !sc.id || FAKE_CASE_IDS.has(sc.id)) continue;
+          if (!sc || !sc.id || !isAuthenticCase(sc)) continue;
           const idx = CASES.findIndex(c => c.id === sc.id || (sc.orderId && c.orderId === sc.orderId));
           if (idx === -1) {
             CASES.unshift(sc);
@@ -108,7 +145,8 @@ async function syncBackendLedger() {
         const data = await resp.json();
         const blocks = data.recent_blocks || [];
         for (const block of blocks) {
-          if (!block || !block.case_id || FAKE_CASE_IDS.has(block.case_id)) continue;
+          if (!block || !block.case_id) continue;
+          if (isSyntheticCase(block.case_id, block.order_id, block.serial_number)) continue;
 
           let existing = CASES.find(c => c.id === block.case_id || (block.order_id && c.orderId === block.order_id));
           if (!existing) {
@@ -152,13 +190,15 @@ async function syncBackendLedger() {
                 explanation: 'Benchmarked against intake criteria.'
               }
             };
-            CASES.unshift(newCase);
-            casesChanged = true;
+            if (isAuthenticCase(newCase)) {
+              CASES.unshift(newCase);
+              casesChanged = true;
+            }
           }
 
           let existingAudit = auditLedger.find(a => a.caseId === block.case_id || a.hash === block.block_hash);
           if (!existingAudit && block.disposition && block.disposition !== 'ESCALATE') {
-            auditLedger.unshift({
+            const auditEntry = {
               time: block.timestamp ? new Date(block.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Intake',
               caseId: block.case_id,
               product: `Hardware Unit (${block.tier || 'T2'})`,
@@ -170,8 +210,11 @@ async function syncBackendLedger() {
               hash: block.block_hash || generateAuditHash(),
               operator: 'AUTONOMOUS-SLA-ROUTER',
               isAutoApproved: block.disposition === 'APPROVE'
-            });
-            casesChanged = true;
+            };
+            if (isAuthenticAudit(auditEntry)) {
+              auditLedger.unshift(auditEntry);
+              casesChanged = true;
+            }
           }
         }
       }
@@ -179,10 +222,19 @@ async function syncBackendLedger() {
       console.warn('[Sync Backend Ledger Error]', errLedger);
     }
 
+    // Purge any residual non-authentic audits
+    const origAuditCount = auditLedger.length;
+    const cleanAudits = auditLedger.filter(isAuthenticAudit);
+    if (cleanAudits.length !== origAuditCount) {
+      auditLedger.length = 0;
+      cleanAudits.forEach(a => auditLedger.push(a));
+      casesChanged = true;
+    }
+
     if (casesChanged) {
       try {
-        localStorage.setItem('smartrma_cases', JSON.stringify(CASES));
-        localStorage.setItem('smartrma_audit_history', JSON.stringify(auditLedger));
+        localStorage.setItem('smartrma_cases', JSON.stringify(CASES.filter(isAuthenticCase)));
+        localStorage.setItem('smartrma_audit_history', JSON.stringify(auditLedger.filter(isAuthenticAudit)));
       } catch (e) {}
       updateTabCounts();
       updateWorkbenchVisibility();

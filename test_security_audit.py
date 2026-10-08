@@ -31,6 +31,15 @@ if os.path.exists(LEDGER_PATH):
     except Exception:
         pass
 
+CASES_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cases_store.json")
+INITIAL_CASES = None
+if os.path.exists(CASES_PATH):
+    try:
+        with open(CASES_PATH, "r", encoding="utf-8") as f:
+            INITIAL_CASES = f.read()
+    except Exception:
+        pass
+
 PASSED = 0
 FAILED = 0
 
@@ -323,4 +332,12 @@ if INITIAL_LEDGER is not None:
         print("  [CLEANUP] Restored pristine audit ledger genesis state.")
     except Exception as e:
         print(f"  [CLEANUP] Ledger restore failed: {e}")
+
+if INITIAL_CASES is not None:
+    try:
+        with open(CASES_PATH, "w", encoding="utf-8") as f:
+            f.write(INITIAL_CASES)
+        print("  [CLEANUP] Restored pristine cases store state.")
+    except Exception as e:
+        print(f"  [CLEANUP] Cases store restore failed: {e}")
 

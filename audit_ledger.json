@@ -1,63 +1,5 @@
 [
   {
-    "timestamp": "2026-10-08T15:31:42.385716+00:00",
-    "case_id": "RMA-73502",
-    "order_id": "ORD-7654",
-    "serial_number": "132422000100",
-    "product_value": 3000.0,
-    "tier": "T4",
-    "disposition": "ESCALATE",
-    "risk_score": 38,
-    "anomaly_score": 0.12,
-    "anomaly_region": "Pristine Hardware Surface (Factory Standard)",
-    "cited_clause": "Ambiguous Defect / Manual Inspection Required",
-    "source_doc": "Warranty - GIGABYTE Global.pdf",
-    "page": 3,
-    "fraud_flags": [
-      "DUPLICATE_PHASH_DETECTED"
-    ],
-    "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
-    "block_hash": "be526b62cb4e92162d9516658ade9c5572418a99c58bfbb06e332e73f2df38b8"
-  },
-  {
-    "timestamp": "2026-10-08T15:34:09.484956+00:00",
-    "case_id": "RMA-73649",
-    "order_id": "ORD-6287",
-    "serial_number": "132422000100",
-    "product_value": 3000.0,
-    "tier": "T4",
-    "disposition": "ESCALATE",
-    "risk_score": 38,
-    "anomaly_score": 0.12,
-    "anomaly_region": "Pristine Hardware Surface (Factory Standard)",
-    "cited_clause": "Ambiguous Defect / Manual Inspection Required",
-    "source_doc": "Warranty - GIGABYTE Global.pdf",
-    "page": 3,
-    "fraud_flags": [
-      "DUPLICATE_PHASH_DETECTED"
-    ],
-    "prev_hash": "be526b62cb4e92162d9516658ade9c5572418a99c58bfbb06e332e73f2df38b8",
-    "block_hash": "0ccd687d31c1e77a5e2e2e9eabf405fddd4807e6c37fdf3fbd9c95c13912378a"
-  },
-  {
-    "timestamp": "2026-10-08T15:59:58.203688+00:00",
-    "case_id": "RMA-75198",
-    "order_id": "ORD-TEST-99",
-    "serial_number": "SN-44332211",
-    "product_value": 1450.0,
-    "tier": "T3",
-    "disposition": "ESCALATE",
-    "risk_score": 62,
-    "anomaly_score": 0.88,
-    "anomaly_region": "12VHPWR Power Socket (Pins 3 & 4)",
-    "cited_clause": "Standard Manufacturing Hardware Defect Coverage",
-    "source_doc": "br_Graphic Card.pdf",
-    "page": 4,
-    "fraud_flags": [],
-    "prev_hash": "0ccd687d31c1e77a5e2e2e9eabf405fddd4807e6c37fdf3fbd9c95c13912378a",
-    "block_hash": "b715926139b1c1800379e2074bb9223a955a6085317df5fb273c2045d76074f3"
-  },
-  {
     "timestamp": "2026-10-08T16:09:27.345494+00:00",
     "case_id": "RMA-75767",
     "order_id": "ORD-7634",
@@ -71,78 +13,8 @@
     "cited_clause": "Ambiguous Defect / Manual Inspection Required",
     "source_doc": "Warranty - GIGABYTE Global.pdf",
     "page": 3,
-    "fraud_flags": [
-      "DUPLICATE_PHASH_DETECTED"
-    ],
-    "prev_hash": "b715926139b1c1800379e2074bb9223a955a6085317df5fb273c2045d76074f3",
-    "block_hash": "413a5068af3fdcd8150ab06ed40e678e1402ed833be34acd5a3051dd5074cc25"
-  },
-  {
-    "timestamp": "2026-10-08T16:12:08.108412+00:00",
-    "case_id": "RMA-75928",
-    "order_id": "TEST-SPEED",
-    "serial_number": "SN-TEST-1",
-    "product_value": 1200.0,
-    "tier": "T3",
-    "disposition": "ESCALATE",
-    "risk_score": 92,
-    "anomaly_score": 0.88,
-    "anomaly_region": "Slot 0 - Burn/Thermal Defect",
-    "cited_clause": "Standard Manufacturing Hardware Defect Coverage",
-    "source_doc": "br_Graphic Card.pdf",
-    "page": 3,
-    "fraud_flags": [
-      "DUPLICATE_PHASH_DETECTED"
-    ],
-    "prev_hash": "413a5068af3fdcd8150ab06ed40e678e1402ed833be34acd5a3051dd5074cc25",
-    "block_hash": "563d6dddf3201fa1850779bdc98e694171099aa3df35334aff7ebf3596aea0a5"
-  },
-  {
-    "timestamp": "2026-10-08T16:24:45.651654+00:00",
-    "case_id": "RMA-TEST-999",
-    "product_value": 1599,
-    "tier": "T3",
-    "disposition": "APPROVE",
-    "risk_score": 20,
-    "anomaly_score": 0.1,
-    "anomaly_region": "Hardware Unit",
-    "cited_clause": "Technician Adjudication (TECH-402): Manual inspection confirmed",
-    "source_doc": "Technician Workbench",
-    "page": 1,
     "fraud_flags": [],
-    "prev_hash": "563d6dddf3201fa1850779bdc98e694171099aa3df35334aff7ebf3596aea0a5",
-    "block_hash": "a6b333b5197ee68df58bc996dce587dc260c55fc1e78f545573ee60798a497ca"
-  },
-  {
-    "timestamp": "2026-10-08T16:35:50.879252+00:00",
-    "case_id": "RMA-76773",
-    "product_value": 550,
-    "tier": "T2",
-    "disposition": "APPROVE",
-    "risk_score": 20,
-    "anomaly_score": 0.1,
-    "anomaly_region": "Hardware Unit",
-    "cited_clause": "Technician Adjudication (TECH-402): Lead technician verified factory solder fault; approved replacement.",
-    "source_doc": "Technician Workbench",
-    "page": 1,
-    "fraud_flags": [],
-    "prev_hash": "a6b333b5197ee68df58bc996dce587dc260c55fc1e78f545573ee60798a497ca",
-    "block_hash": "bc2394915f1038fcacf91f46725cb1fecc8afa62394a65b8c1faec5734ef1f88"
-  },
-  {
-    "timestamp": "2026-10-08T16:35:50.887262+00:00",
-    "case_id": "RMA-76771",
-    "product_value": 470,
-    "tier": "T2",
-    "disposition": "REJECT",
-    "risk_score": 20,
-    "anomaly_score": 0.1,
-    "anomaly_region": "Hardware Unit",
-    "cited_clause": "Technician Adjudication (TECH-402): Lead technician verified external cable surge scorch; policy exclusion.",
-    "source_doc": "Technician Workbench",
-    "page": 1,
-    "fraud_flags": [],
-    "prev_hash": "bc2394915f1038fcacf91f46725cb1fecc8afa62394a65b8c1faec5734ef1f88",
-    "block_hash": "acb6cb002902f5e3e851d9f13b58bd4e3c0edc930fdf2c78cc3dc4429b380c4a"
+    "prev_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "block_hash": "24bd6fec52d7ad4990b5a86b4adb1717360a5bdeb719d23f1272adf2a6b97e13"
   }
 ]
