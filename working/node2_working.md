@@ -45,8 +45,8 @@ Node 2 operates in two interconnected modes:
 ## 3. Dual-Engine LLM Architecture & Boundary Guardrails
 
 Node 2 implements a resilient **Dual-Engine Architecture** for conversational chat:
-1. **Primary Cloud Engine**: Google Gemini API (`gemini-1.5-flash` / `gemini-2.0-flash` via `GEMINI_API_KEY`).
-2. **Resilient Local Fallback**: When `GEMINI_API_KEY` is unset, rate-limited, or quota is exhausted (HTTP 429), Node 2 automatically redirects to the local Ollama LLM (`qwen2.5-coder:14b` with fallback to `llama3.2-vision:latest`).
+1. **Primary Cloud Engine**: High-Performance Cloud AI via API key.
+2. **Resilient Local Fallback**: When cloud key is unset, rate-limited, or quota is exhausted (HTTP 429), Node 2 automatically redirects to the local Ollama LLM (`qwen2.5-coder:14b` with fallback to `llama3.2-vision:latest`).
 
 ### Strict System Guardrails & Limitations Enforced in Node 2:
 
@@ -58,8 +58,8 @@ Node 2 implements a resilient **Dual-Engine Architecture** for conversational ch
                                              │
                                 ┌────────────┴────────────┐
                                 ▼                         ▼
-                     [Google Gemini API]          [Gemini 429 / Unset]
-                     (Primary Cloud LLM)                  │
+                     [Cloud AI Engine]             [Cloud 429 / Unset]
+                    (Primary Cloud LLM)                   │
                                 │                         ▼
                                 │                [Local Ollama LLM]
                                 │               (qwen2.5-coder:14b)
@@ -92,8 +92,8 @@ Node 2 implements a resilient **Dual-Engine Architecture** for conversational ch
   "indexed_chunks": 1525,
   "indexed_documents": 25,
   "manufacturers": ["Dell", "Apple", "GIGABYTE", "Acer", "ASUS", "Lenovo", "HP", "Intel", "EVGA", "NVIDIA"],
-  "gemini_api_configured": true,
-  "primary_chat_engine": "Google Gemini API (gemini-1.5-flash)",
+  "cloud_api_configured": true,
+  "primary_chat_engine": "High-Performance Cloud AI",
   "fallback_chat_engine": "Local Ollama LLM (qwen2.5-coder:14b)",
   "active_models": ["qwen2.5-coder:14b", "llama3.2-vision:latest", "qwen3.5:35b-a3b"]
 }

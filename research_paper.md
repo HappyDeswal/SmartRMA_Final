@@ -305,7 +305,7 @@ Node 2 houses the regulatory and policy intelligence:
 * **Static Asset Server**: Serves `index.html`, `review.html`, `architecture.html`, stylesheets, and JavaScript assets.
 * **Vector Policy Repository**: Manages 1,525 parsed policy chunks extracted from official PDF documents stored in `policy/`.
 * **Internal Triage API (`/api/triage/evaluate`)**: Evaluates specific hardware symptoms for Node 1, cross-referencing factory defect terms against Customer Induced Damage exclusions.
-* **Conversational AI API (`/api/chat`)**: Powers the **Interactive AI Chatbot** with a resilient **Dual-Engine Architecture** (Google Gemini Cloud API with automatic fallback to local Ollama LLM):
+* **Conversational AI API (`/api/chat`)**: Powers the **Interactive AI Chatbot** with a resilient **Dual-Engine Architecture** (High-Performance Cloud Technical AI with automatic fallback to local Ollama LLM):
   - *Strict Operational Boundaries*: Operates exclusively for informational inquiries. Prohibits image uploads in chat, and explicitly forbids approving or guaranteeing return/refund outcomes.
   - *General Hardware Guidance*: Explains concepts (e.g., thermal throttling, PCIe lane splitting) directly from internal knowledge.
   - *Return Process Walkthrough*: Guides users step-by-step through return preparation (Proof of Purchase, Condition Inspection, Anti-Static Packaging, RMA Authorization via portal) without robotic canned responses.
@@ -330,7 +330,7 @@ SmartRMA was evaluated across four rigorous testing dimensions: (1) visual defec
 * **Hardware Platform**: Apple Silicon Mac (M-Series Unified Memory Architecture, 36GB Unified RAM).
 * **Software Environment**: macOS 15, Python 3.14.6, FastAPI 0.115, Uvicorn 0.34, Pillow 11.1, OpenCV 4.10, Ollama 0.5.
 * **Deployed Neural Models**:
-  - Policy & Reasoning: `qwen2.5-coder:14b` / Google Gemini 1.5 Flash Cloud API.
+  - Policy & Reasoning: `qwen2.5-coder:14b` / High-Performance Cloud Technical LLM.
   - Vision Telemetry: `llama3.2-vision:latest` (11B parameter multimodal vision model; primary) and `moondream:latest` (fallback).
 
 ### 5.2 Visual Anomaly Detection & Defect Classification Performance

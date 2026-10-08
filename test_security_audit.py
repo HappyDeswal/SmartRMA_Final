@@ -12,6 +12,7 @@ Tests:
 8. Static Web App Assets Delivery
 """
 
+import os
 import urllib.request
 import urllib.error
 import json
@@ -20,6 +21,15 @@ import io
 import time
 import concurrent.futures
 from PIL import Image
+
+LEDGER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "audit_ledger.json")
+INITIAL_LEDGER = None
+if os.path.exists(LEDGER_PATH):
+    try:
+        with open(LEDGER_PATH, "r", encoding="utf-8") as f:
+            INITIAL_LEDGER = f.read()
+    except Exception:
+        pass
 
 PASSED = 0
 FAILED = 0
@@ -305,3 +315,12 @@ except Exception as e:
 print("\n================================================================")
 print(f"  Audit Results: {PASSED} PASSED, {FAILED} FAILED")
 print("================================================================\n")
+
+if INITIAL_LEDGER is not None:
+    try:
+        with open(LEDGER_PATH, "w", encoding="utf-8") as f:
+            f.write(INITIAL_LEDGER)
+        print("  [CLEANUP] Restored pristine audit ledger genesis state.")
+    except Exception as e:
+        print(f"  [CLEANUP] Ledger restore failed: {e}")
+

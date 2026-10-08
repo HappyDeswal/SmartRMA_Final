@@ -111,7 +111,7 @@ if os.path.exists(INDEX_FILE):
     except Exception as e:
         print(f"[Node 2] Error reading index file: {e}")
 
-# Preferred local Ollama models in order of priority (fallback when Gemini API unavailable/exhausted)
+# Preferred local Ollama models in order of priority (fallback when Cloud AI API unavailable/exhausted)
 MODELS_TO_TRY = ["qwen2.5-coder:14b", "llama3.2-vision:latest", "qwen3.5:35b-a3b"]
 
 SYSTEM_PROMPT = """You are the SmartRMA Intelligent Technical & Policy Assistant.
@@ -172,6 +172,7 @@ class ChatRequest(BaseModel):
     manufacturer: Optional[str] = Field(None, max_length=64)
     model: Optional[str] = Field(None, max_length=64)
     history: Optional[List[ChatMessage]] = Field(default=[], max_length=6)
+    cloud_api_key: Optional[str] = Field(None, max_length=256)
     gemini_api_key: Optional[str] = Field(None, max_length=256)
 
 class TriageRequest(BaseModel):
@@ -268,12 +269,12 @@ def is_warranty_or_rma_query(text: str) -> bool:
     ]
     return any(re.search(rf"\b{term}\b", t) for term in warranty_terms)
 
-def call_gemini_api(user_prompt: str, system_instruction: str, history: Optional[List[Any]] = None, explicit_key: Optional[str] = None) -> tuple[Optional[str], Optional[str]]:
-    key = explicit_key or os.environ.get("GEMINI_API_KEY", "").strip()
+def call_cloud_ai_api(user_prompt: str, system_instruction: str, history: Optional[List[Any]] = None, explicit_key: Optional[str] = None) -> tuple[Optional[str], Optional[str]]:
+    key = explicit_key or os.environ.get("CLOUD_API_KEY", "").strip() or os.environ.get("GEMINI_API_KEY", "").strip()
     if not key:
         return None, None
 
-    gemini_models = [
+    cloud_models = [
         "gemini-flash-latest",
         "gemini-3.5-flash",
         "gemini-3.8-flash",
@@ -306,7 +307,7 @@ def call_gemini_api(user_prompt: str, system_instruction: str, history: Optional
         }
     }
 
-    for model_name in gemini_models:
+    for model_name in cloud_models:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={key}"
         try:
             req_data = json.dumps(payload).encode("utf-8")
@@ -324,13 +325,13 @@ def call_gemini_api(user_prompt: str, system_instruction: str, history: Optional
                         text_chunks = [p.get("text", "") for p in parts if isinstance(p, dict) and "text" in p]
                         reply_text = "".join(text_chunks).strip()
                         if reply_text:
-                            return reply_text, f"{model_name} (Google Gemini Cloud)"
+                            return reply_text, "High-Performance Cloud AI"
         except urllib.error.HTTPError as http_err:
-            print(f"[Node 2] Gemini API HTTP error ({model_name}): {http_err.code} - {http_err.reason}")
+            print(f"[Node 2] Cloud AI API HTTP error ({model_name}): {http_err.code} - {http_err.reason}")
             # If 429 (quota exhausted/rate limit) or 400/403, proceed to next model or fallback to local Ollama
             continue
         except Exception as e:
-            print(f"[Node 2] Gemini API connection error ({model_name}): {e}")
+            print(f"[Node 2] Cloud AI API connection error: {e}")
             continue
 
     return None, None
@@ -379,7 +380,7 @@ def call_ollama(messages: List[Dict[str, str]], preferred_model: Optional[str] =
 
 @app.get("/health")
 def health():
-    has_gemini = bool(os.environ.get("GEMINI_API_KEY"))
+    has_cloud = bool(os.environ.get("CLOUD_API_KEY") or os.environ.get("GEMINI_API_KEY"))
     return {
         "status": "ONLINE",
         "service": "SmartRMA Node 2 - Policy RAG Engine",
@@ -393,29 +394,33 @@ def health():
         "indexed_chunks": len(POLICY_DATA.get("chunks", [])),
         "indexed_documents": len(POLICY_DATA.get("catalog", [])),
         "manufacturers": POLICY_DATA.get("metadata", {}).get("manufacturers", []),
-        "gemini_api_configured": has_gemini,
-        "primary_chat_engine": "Google Gemini API (gemini-3.8-flash)" if has_gemini else "Local Ollama LLM (qwen2.5-coder:14b)",
+        "cloud_api_configured": has_cloud,
+        "gemini_api_configured": has_cloud,
+        "primary_chat_engine": "High-Performance Cloud AI" if has_cloud else "Local Ollama LLM (qwen2.5-coder:14b)",
         "fallback_chat_engine": "Local Ollama LLM (qwen2.5-coder:14b)",
         "active_models": MODELS_TO_TRY
     }
 
-class GeminiKeyRequest(BaseModel):
+class CloudKeyRequest(BaseModel):
     api_key: str = Field(..., min_length=1, max_length=256)
 
+@app.post("/api/config/cloud_key")
 @app.post("/api/config/gemini_key")
-def set_gemini_key(req: GeminiKeyRequest):
+def set_cloud_key(req: CloudKeyRequest):
+    os.environ["CLOUD_API_KEY"] = req.api_key.strip()
     os.environ["GEMINI_API_KEY"] = req.api_key.strip()
-    return {"status": "SUCCESS", "message": "Gemini API key configured successfully."}
+    return {"status": "SUCCESS", "message": "Cloud AI API key configured successfully."}
 
+@app.get("/api/config/cloud_key")
 @app.get("/api/config/gemini_key")
-def get_gemini_key():
-    key = os.environ.get("GEMINI_API_KEY", "")
+def get_cloud_key():
+    key = os.environ.get("CLOUD_API_KEY", "") or os.environ.get("GEMINI_API_KEY", "")
     has_key = bool(key)
     masked = f"{key[:4]}...{key[-4:]}" if len(key) >= 8 else ("configured" if has_key else "not_configured")
     return {
         "configured": has_key,
         "masked_key": masked if has_key else None,
-        "primary_engine": "Google Gemini API (gemini-3.8-flash)" if has_key else "Local Ollama LLM (qwen2.5-coder:14b)",
+        "primary_engine": "High-Performance Cloud AI" if has_key else "Local Ollama LLM (qwen2.5-coder:14b)",
         "fallback_engine": "Local Ollama LLM (qwen2.5-coder:14b)"
     }
 
@@ -508,18 +513,18 @@ Instructions:
 
     messages.append({"role": "user", "content": user_prompt})
 
-    # 4. Generate response: Try Google Gemini API first; on error, quota end, or missing key -> redirect to local Ollama LLM
-    gemini_reply, gemini_model = call_gemini_api(
+    # 4. Generate response: Try High-Performance Cloud AI first; on error, quota end, or missing key -> redirect to local Ollama LLM
+    cloud_reply, cloud_model = call_cloud_ai_api(
         user_prompt=user_prompt,
         system_instruction=SYSTEM_PROMPT,
         history=req.history,
-        explicit_key=req.gemini_api_key
+        explicit_key=req.cloud_api_key or req.gemini_api_key
     )
 
-    if gemini_reply:
-        reply = gemini_reply
-        used_model = gemini_model
-        provider = "google_gemini"
+    if cloud_reply:
+        reply = cloud_reply
+        used_model = cloud_model
+        provider = "cloud_llm"
     else:
         # Graceful fallback to local Ollama LLM
         reply, used_model = call_ollama(messages, preferred_model=req.model)

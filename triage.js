@@ -245,22 +245,23 @@ window.handleChatSubmit = async function(e) {
       `;
     }
 
-    // Engine attribution pill (Gemini Cloud vs Local Ollama fallback)
+    // Engine attribution pill (Cloud Engine vs Local Ollama fallback)
     if (data.model_used || data.provider) {
-      const isGemini = data.provider === 'google_gemini';
+      const isCloud = data.provider === 'cloud_llm' || Boolean(data.provider && data.provider.includes('cloud'));
+      const cleanModelName = data.model_used || (isCloud ? 'High-Performance Cloud AI' : 'Local Ollama (Qwen 14B)');
       htmlContent += `
         <div style="margin-top:8px;font-size:0.68rem;color:var(--text-muted);display:flex;align-items:center;gap:5px">
-          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${isGemini ? '#10B981' : '#3B82F6'}"></span>
-          <span>Engine: <strong>${escapeHtml(data.model_used || (isGemini ? 'gemini-1.5-flash' : 'qwen2.5-coder:14b'))}</strong></span>
-          ${isGemini ? '<span class="mono brand-pill" style="font-size:0.60rem;background:rgba(16,185,129,0.12);color:#10B981">Gemini Cloud</span>' : '<span class="mono brand-pill" style="font-size:0.60rem;background:rgba(59,130,246,0.12);color:#3B82F6">Local Ollama</span>'}
+          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${isCloud ? '#10B981' : '#3B82F6'}"></span>
+          <span>Engine: <strong>${escapeHtml(cleanModelName)}</strong></span>
+          ${isCloud ? '<span class="mono brand-pill" style="font-size:0.60rem;background:rgba(16,185,129,0.12);color:#10B981">Cloud AI</span>' : '<span class="mono brand-pill" style="font-size:0.60rem;background:rgba(59,130,246,0.12);color:#3B82F6">Local Engine</span>'}
         </div>
       `;
 
       const statusTextEl = $('#wa-status-text');
       if (statusTextEl) {
-        statusTextEl.innerHTML = isGemini
-          ? '● Node 2 AI (<span style="color:#10B981">Gemini Cloud Active</span>)'
-          : '● Node 2 AI (<span style="color:#3B82F6">Local Ollama Active</span>)';
+        statusTextEl.innerHTML = isCloud
+          ? '● Node 2 AI (<span style="color:#10B981">Cloud Engine Active</span>)'
+          : '● Node 2 AI (<span style="color:#3B82F6">Local Engine Active</span>)';
       }
     }
 
