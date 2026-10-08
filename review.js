@@ -8,6 +8,7 @@ const CASES = [
     t: 'T3',
     r: 80,
     a: 0.86,
+    conf: 94,
     rn: '12VHPWR Power Connector (Pin 3)',
     cl: 'Damage from electrical overload or scorched pin connectors is explicitly excluded.',
     st: 'Pending',
@@ -22,6 +23,7 @@ const CASES = [
     t: 'T4',
     r: 55,
     a: 0.62,
+    conf: 84,
     rn: 'GPU Core BGA / Power Stages',
     cl: 'High-value enterprise returns require mandatory physical teardown inspection prior to credit release.',
     st: 'Pending',
@@ -36,6 +38,7 @@ const CASES = [
     t: 'T2',
     r: 41,
     a: 0.58,
+    conf: 84,
     rn: 'VRAM Bank A0-A2 Traces',
     cl: 'Defects in silicon materials or factory soldering under normal use are fully covered.',
     st: 'Pending',
@@ -50,6 +53,7 @@ const CASES = [
     t: 'T1',
     r: 34,
     a: 0.44,
+    conf: 84,
     rn: 'Solid Capacitor Bank C14',
     cl: 'Cosmetic wear that does not affect electrical continuity is not a defect.',
     st: 'Pending',
@@ -64,6 +68,7 @@ const CASES = [
     t: 'T2',
     r: 8,
     a: 0.12,
+    conf: 94,
     rn: 'No Region Flagged (Clean Spec)',
     cl: 'Unused products in original condition may be returned within the standard 30-day window.',
     st: 'Pending',
@@ -71,7 +76,6 @@ const CASES = [
     subImg: 'assets/rma_089_pcie4_gold_fingers_ortho_90_vis_clean.jpg',
     at: [30, 70]
   }
-
 ].sort((x, y) => (y.v * y.r) - (x.v * x.r));
 
 let activeIndex = 0;
@@ -141,6 +145,9 @@ function renderQueue() {
           </div>
         </td>
         <td>
+          <span class="mono" style="font-weight:700;color:#00A884">${c.conf || Math.round(Math.max(c.a, 1 - c.a) * 100)}%</span>
+        </td>
+        <td>
           <span class="mono brand-pill">${escapeHtml(c.t)}</span>
         </td>
         <td>
@@ -195,7 +202,7 @@ function renderDetails() {
     <div class="met" style="margin-top:0">
       <div class="met-box">
         <span class="met-val">$${c.v}</span>
-        <span class="met-lbl">Declared Value</span>
+        <span class="met-lbl">Declared Cost</span>
       </div>
       <div class="met-box">
         <span class="met-val">${escapeHtml(c.t)}</span>
@@ -204,6 +211,10 @@ function renderDetails() {
       <div class="met-box">
         <span class="met-val">${c.r}</span>
         <span class="met-lbl">Risk Index</span>
+      </div>
+      <div class="met-box">
+        <span class="met-val" style="color:#00A884">${c.conf || Math.round(Math.max(c.a, 1 - c.a) * 100)}%</span>
+        <span class="met-lbl">Confidence</span>
       </div>
       <div class="met-box">
         <span class="met-val">${c.a.toFixed(2)}</span>

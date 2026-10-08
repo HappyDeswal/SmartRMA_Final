@@ -477,11 +477,11 @@ async function handleTriageSubmit(e) {
   const data = SYMPTOM_DATA[symptomKey];
   const t = getTier(val);
   const th = t === 'T3' ? 95 : 85;
-  const conf = Math.round(Math.max(data.a, 1 - data.a) * 100);
+  let conf = Math.round(Math.max(data.a, 1 - data.a) * 100);
   let risk = Math.round(data.a * 70 + (data.rej ? 20 : 0));
   const lo = data.a < 0.3;
   const hi = data.a >= 0.8;
-  const band = conf >= 95 ? 'High Confidence' : conf >= 85 ? 'Medium' : 'Low';
+  let band = conf >= 95 ? 'High Confidence' : conf >= 85 ? 'Medium' : 'Low';
 
   let dec = 'Escalate';
   if (t === 'T4') {
@@ -526,6 +526,10 @@ async function handleTriageSubmit(e) {
         dec = evalData.disposition === 'APPROVE' ? 'Approve' : evalData.disposition === 'REJECT' ? 'Reject' : 'Escalate';
       }
       if (evalData.risk_index !== undefined) risk = evalData.risk_index;
+      if (evalData.confidence !== undefined) {
+        conf = Math.round(evalData.confidence * 100);
+        band = conf >= 95 ? 'High Confidence' : conf >= 85 ? 'Medium' : 'Low';
+      }
       if (evalData.policy_grounding) {
         const pg = evalData.policy_grounding;
         if (pg.cited_clause) citedClause = pg.cited_clause + ' — ' + (pg.explanation || '');
@@ -568,9 +572,10 @@ async function handleTriageSubmit(e) {
 
       <div style="font-size:0.82rem;line-height:1.45;color:var(--text-primary)">
         <strong>Diagnostic Summary:</strong><br>
+        &bull; <strong>Declared Cost:</strong> <span class="mono">$${val.toLocaleString()} (${t})</span><br>
         &bull; <strong>Risk Score:</strong> <span class="mono">${risk}/100</span><br>
         &bull; <strong>Anomaly Deviation:</strong> <span class="mono">${data.a.toFixed(2)}</span> (${hi ? 'Critical' : lo ? 'Clean' : 'Moderate'})<br>
-        &bull; <strong>Confidence:</strong> <span class="mono">${conf}% (${band})</span><br>
+        &bull; <strong>Model Confidence:</strong> <span class="mono" style="font-weight:700;color:#00A884">${conf}% (${band})</span><br>
         &bull; <strong>Component Flag:</strong> ${escapeHtml(data.rn)}<br>
         &bull; <strong>Security Audit:</strong> <span style="color:#00A884;font-size:0.76rem">${securityAuditMsg}</span>
       </div>
