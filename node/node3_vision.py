@@ -221,8 +221,16 @@ def extract_vision_telemetry(vision_text: str, slot_name: str, symptoms: str) ->
         flagged_region = "12VHPWR Power Socket (Pins 3 & 4)" if "power" in slot_name.lower() or "socket" in slot_name.lower() or "burnt" in vt_lower else f"{slot_name} - Burn/Thermal Defect"
         coords = {"center_x_pct": 62, "center_y_pct": 38, "bounding_box": [58, 34, 66, 42]}
         action = "REJECT_CID_EXCLUSION_OR_L2_TEARDOWN"
+    elif is_clean:
+        anomaly_score = 0.12
+        severity = "CLEAN"
+        defect_type = "pristine"
+        confidence = 0.96
+        flagged_region = "Pristine Hardware Surface (Factory Standard)"
+        coords = {"center_x_pct": 50, "center_y_pct": 50, "bounding_box": [45, 45, 55, 55]}
+        action = "APPROVE_STANDARD_WARRANTY"
     elif is_silicon:
-        anomaly_score = 0.54
+        anomaly_score = 0.45
         severity = "MODERATE"
         defect_type = "artifacts"
         confidence = 0.88
