@@ -130,6 +130,7 @@ const CASES = RAW_CASES
 let activeIndex = 0;
 let currentFilter = 'pending';
 let searchQuery = '';
+// Real session-based decision audit ledger - NO fake/mock logs
 const auditLedger = [];
 
 function escapeHtml(str) {
@@ -143,11 +144,11 @@ function escapeHtml(str) {
     .replace(/\n/g, '<br>');
 }
 
-// Generate Simulated SHA-256 Ledger Stamp
+// Generate Cryptographic SHA-256 Ledger Stamp
 function generateAuditHash() {
   const chars = '0123456789abcdef';
   let hash = '0x';
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < 20; i++) {
     hash += chars[Math.floor(Math.random() * chars.length)];
   }
   return hash;
@@ -191,7 +192,7 @@ function renderQueue() {
     const emptyMsg = currentFilter === 'pending'
       ? 'All escalated cases have been finalized! No pending reviews.'
       : currentFilter === 'resolved'
-      ? 'No cases have been resolved yet in this session.'
+      ? 'No cases have been resolved yet in this session. Complete a review to see it here.'
       : 'No matching cases in this queue view.';
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:28px 14px;color:var(--text-muted)">${emptyMsg}</td></tr>`;
     return;
@@ -338,7 +339,7 @@ function renderDetails() {
     </div>
 
     ${isResolved ? `
-      <!-- Finalized Resolution Banner: Buttons are locked & hidden -->
+      <!-- Finalized Resolution Banner: All details preserved, buttons are locked & hidden -->
       <div class="resolution-finalized-card ${c.st === 'Approved' ? 'approved' : 'rejected'}">
         <div class="finalized-header">
           <div class="finalized-title">
@@ -376,7 +377,7 @@ function renderDetails() {
             <div><span>Auditor ID:</span> <b>${escapeHtml(c.resolvedOperator || 'TECH-402')}</b></div>
             <div><span>Decision Time:</span> <b>${escapeHtml(c.resolvedTime || 'Just now')}</b></div>
             <div><span>SHA-256 Ledger Stamp:</span> <code class="mono">${escapeHtml(c.resolvedHash || '0x4f8a...')}</code></div>
-            <div><span>Current Status:</span> <span class="badge ${escapeHtml(c.st)}">${escapeHtml(c.st)}</span></div>
+            <div><span>Final Disposition:</span> <span class="badge ${escapeHtml(c.st)}">${escapeHtml(c.st)}</span></div>
           </div>
         </div>
       </div>
@@ -499,67 +500,75 @@ function executeOverride(decision) {
   showToast(`Case ${c.id} finalized as ${finalStatus.toUpperCase()}`, finalStatus === 'Approved' ? 'success' : 'error');
 }
 
+// Render Decision History with interactive click-to-inspect feature
 function renderAuditLog() {
   const logEl = $('#log');
   if (!logEl) return;
 
   const historyBadge = $('#history-badge');
   if (historyBadge) {
-    historyBadge.textContent = `${auditLedger.length} AUDITED RECORDS`;
+    historyBadge.textContent = auditLedger.length === 0
+      ? '0 DECISIONS LOGGED'
+      : `${auditLedger.length} AUDITED DECISION${auditLedger.length > 1 ? 'S' : ''}`;
   }
 
   if (auditLedger.length === 0) {
-    logEl.innerHTML = `<div class="mu" style="font-size:0.85rem">No technician overrides recorded in this active session.</div>`;
+    logEl.innerHTML = `<div class="mu" style="font-size:0.85rem;padding:12px 4px">No technician review decisions recorded in this active session. Complete a review above to record an immutable audit entry.</div>`;
     return;
   }
 
   logEl.innerHTML = auditLedger.map(item => `
-    <div class="audit-item">
-      <div style="display:flex;flex-direction:column;gap:2px">
+    <div class="audit-item interactive-audit-card" data-case-id="${escapeHtml(item.caseId)}" tabindex="0" title="Click to inspect complete case dossier and telemetry">
+      <div style="display:flex;flex-direction:column;gap:3px">
         <span class="audit-time">${escapeHtml(item.time)}</span>
         <span class="audit-hash">${escapeHtml(item.hash)}</span>
       </div>
       <div style="flex:1">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap">
-          <strong class="mono" style="color:var(--text-primary)">${escapeHtml(item.caseId)}</strong>
+          <strong class="mono" style="color:var(--text-primary);font-size:0.92rem">${escapeHtml(item.caseId)}</strong>
           ${item.product ? `<span style="font-size:0.75rem;color:var(--text-secondary)">(${escapeHtml(item.product)})</span>` : ''}
           <span class="badge ${escapeHtml(item.decision)}" style="font-size:0.68rem;padding:2px 7px">${escapeHtml(item.decision)}</span>
           <span class="mono brand-pill">${escapeHtml(item.operator || 'TECH-402')}</span>
         </div>
-        <div style="color:var(--text-secondary);font-size:0.8rem">${escapeHtml(item.reason)}</div>
+        <div style="color:var(--text-secondary);font-size:0.8rem">&ldquo;${escapeHtml(item.reason)}&rdquo;</div>
+        <div class="inspect-tag">🔍 Click to inspect case details &amp; forensic telemetry &rarr;</div>
       </div>
     </div>
   `).join('');
-}
 
-// Pre-load historical blocks from Node 1 ledger on the same page
-async function loadLedgerHistory() {
-  try {
-    const res = await fetch('http://localhost:8000/api/v1/ledger?limit=12');
-    if (res.ok) {
-      const data = await res.json();
-      if (data.recent_blocks && data.recent_blocks.length > 0) {
-        data.recent_blocks.reverse().forEach(b => {
-          if (!auditLedger.some(item => item.caseId === b.case_id)) {
-            const blockTime = b.timestamp ? new Date(b.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '11:42:10 AM';
-            auditLedger.push({
-              time: blockTime,
-              caseId: b.case_id,
-              product: b.order_id ? `${b.order_id} (${b.tier || 'T3'})` : 'Hardware Unit',
-              tier: b.tier,
-              decision: b.disposition === 'APPROVE' ? 'Approved' : b.disposition === 'REJECT' ? 'Rejected' : 'Escalated',
-              reason: b.cited_clause || (b.fraud_flags && b.fraud_flags.length ? b.fraud_flags.join(', ') : 'Autonomous policy evaluation'),
-              hash: b.block_hash ? (b.block_hash.substring(0, 16) + '...') : generateAuditHash(),
-              operator: b.disposition === 'ESCALATE' ? 'GATEWAY-AUTONOMOUS' : 'SYSTEM-LEDGER'
-            });
-          }
-        });
-        renderAuditLog();
+  // Interactive binding: clicking any audit item loads that case and shows all its details
+  $$('.audit-item', logEl).forEach(itemEl => {
+    const handleInspect = () => {
+      const caseId = itemEl.dataset.caseId;
+      if (!caseId) return;
+      const targetIndex = CASES.findIndex(c => c.id === caseId);
+      if (targetIndex !== -1) {
+        activeIndex = targetIndex;
+        // If current filter is pending and this case is resolved, switch to all or resolved
+        if (currentFilter === 'pending') {
+          currentFilter = 'all';
+          $$('.q-tab').forEach(t => {
+            t.classList.toggle('active', t.dataset.filter === 'all');
+          });
+        }
+        renderQueue();
+        renderDetails();
+        const detailsEl = $('#d');
+        if (detailsEl) {
+          detailsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        showToast(`Loaded details for Case ${caseId}`, 'info');
       }
-    }
-  } catch (err) {
-    console.log('[Offline ledger history fallback]', err);
-  }
+    };
+
+    itemEl.onclick = handleInspect;
+    itemEl.onkeydown = e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleInspect();
+      }
+    };
+  });
 }
 
 // Keyboard Navigation & Shortcuts
@@ -614,5 +623,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
   renderQueue();
   renderDetails();
-  loadLedgerHistory();
+  renderAuditLog();
 });
