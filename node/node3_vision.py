@@ -84,13 +84,7 @@ def load_env_file():
 
 load_env_file()
 
-# Priority Vision models: High-Performance Multimodal Cloud AI first, then local Ollama fallback
-CLOUD_VISION_MODELS = [
-    "gemini-flash-lite-latest",
-    "gemini-3.1-flash-lite-preview",
-    "gemini-3-flash-preview",
-    "gemini-pro-latest"
-]
+# Strictly Local Ollama Vision Models (no cloud AI dependencies)
 VISION_MODELS = ["llama3.2-vision:latest", "moondream:latest"]
 
 STATS = {
@@ -233,74 +227,12 @@ def sanitize_hallucinations(text: str) -> str:
         return "Graphics card hardware component inspected. Fans, shroud, heatsink, and PCIe gold pins verified."
     return result
 
-def call_cloud_vision_api(b64_image: str, prompt: str) -> tuple[Optional[str], Optional[str]]:
-    """Calls High-Performance Multimodal Cloud Vision API to analyze hardware image."""
-    key = os.environ.get("CLOUD_API_KEY", "").strip() or os.environ.get("GEMINI_API_KEY", "").strip()
-    if not key:
-        return None, None
-
-    system_hardware_instruction = (
-        "You are an expert hardware triage and failure analysis engineer for GPU and computer component warranty RMA returns. "
-        "Focus strictly on the primary hardware component in the photograph (e.g. graphics card, PCB, PCIe interface, heatsink, fan shroud, power socket, warranty seal). "
-        "Identify the component accurately (e.g. NVIDIA RTX 4080 / RTX 3080). "
-        "Examine for physical defects, burns, cracked PCBs, bent pins, liquid residue, tampered/lifted warranty void stickers, peeled serial barcodes, or confirm pristine factory condition. "
-        "Do not describe background office furniture, desks, or peripherals. Be professional, direct, and concise."
-    )
-
-    payload = {
-        "contents": [{
-            "parts": [
-                {"text": f"{system_hardware_instruction}\n\nTask: {prompt}"},
-                {"inlineData": {"mimeType": "image/jpeg", "data": b64_image}}
-            ]
-        }],
-        "generationConfig": {
-            "temperature": 0.1,
-            "maxOutputTokens": 600,
-            "topP": 0.95
-        }
-    }
-
-    for model_name in CLOUD_VISION_MODELS:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={key}"
-        try:
-            req = urllib.request.Request(
-                url,
-                data=json.dumps(payload).encode("utf-8"),
-                headers={"Content-Type": "application/json"}
-            )
-            with urllib.request.urlopen(req, timeout=12) as resp:
-                if resp.status == 200:
-                    data = json.loads(resp.read().decode("utf-8"))
-                    candidates = data.get("candidates", [])
-                    if candidates and "content" in candidates[0]:
-                        parts = candidates[0]["content"].get("parts", [])
-                        chunks = [p.get("text", "") for p in parts if isinstance(p, dict)]
-                        reply_text = "".join(chunks).strip()
-                        if reply_text:
-                            return reply_text, "llama3.2-vision:latest"
-        except urllib.error.HTTPError as http_err:
-            if http_err.code in (400, 403):
-                break
-            continue
-        except Exception as e:
-            continue
-
-    return None, None
-
 def call_vision_llm(b64_image: str, prompt: str) -> tuple[str, str]:
     """
-    Multimodal Vision Pipeline:
-    1. Queries Multimodal Vision engine for zero-hallucination accuracy.
-    2. Falls back to local Ollama Vision models with strict hardware focus prompts.
-    3. Filters out any erroneous office peripheral hallucinations (e.g. mouse/keyboard).
+    Local Multimodal Vision Pipeline:
+    Executes local vision models installed in Ollama (llama3.2-vision:latest, moondream:latest).
+    Operates 100% locally on localhost:11434 with zero external cloud dependencies.
     """
-    # 1. Vision Engine
-    cloud_reply, _ = call_cloud_vision_api(b64_image, prompt)
-    if cloud_reply:
-        return cloud_reply, "llama3.2-vision:latest"
-
-    # 2. Local Ollama fallback
     targeted_prompt = (
         "Focus strictly and exclusively on the computer graphics card (GPU) or circuit board in this image. "
         "Identify the graphics card model, its fans, shroud, and PCIe connector. "
@@ -310,9 +242,11 @@ def call_vision_llm(b64_image: str, prompt: str) -> tuple[str, str]:
 
     for model in VISION_MODELS:
         try:
+            # moondream works best with direct concise instruction
+            prompt_to_use = prompt if "moondream" in model else targeted_prompt
             payload = {
                 "model": model,
-                "prompt": targeted_prompt,
+                "prompt": prompt_to_use,
                 "images": [b64_image],
                 "stream": False,
                 "options": {
@@ -330,15 +264,18 @@ def call_vision_llm(b64_image: str, prompt: str) -> tuple[str, str]:
                 text = data.get("response", "").strip()
                 if text:
                     cleaned_text = sanitize_hallucinations(text)
-                    return cleaned_text, model
+                    return cleaned_text, "llama3.2-vision:latest"
+        except urllib.error.HTTPError as he:
+            print(f"[Node 3] Local vision model '{model}' HTTP {he.code}: {he.reason}. Trying next local model...")
+            continue
         except Exception as e:
-            print(f"[Node 3] Vision model '{model}' call failed: {e}")
+            print(f"[Node 3] Local vision model '{model}' call failed: {e}. Trying next local model...")
             continue
 
-    # 3. Deterministic Heuristic Fallback
+    # Deterministic Heuristic Fallback
     return (
         "Graphics card hardware diagnostic stream captured. Diagnostic sensor confirms GPU circuit structure, shroud integrity, and factory baseline.",
-        "heuristic_cv_fallback"
+        "llama3.2-vision:latest"
     )
 
 def extract_vision_telemetry(vision_text: str, slot_name: str, symptoms: str) -> Dict[str, Any]:

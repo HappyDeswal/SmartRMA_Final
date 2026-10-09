@@ -111,8 +111,8 @@ if os.path.exists(INDEX_FILE):
     except Exception as e:
         print(f"[Node 2] Error reading index file: {e}")
 
-# Preferred local Ollama models in order of priority (fallback when Cloud AI API unavailable/exhausted)
-MODELS_TO_TRY = ["qwen2.5-coder:14b", "llama3.2-vision:latest", "qwen3.5:35b-a3b"]
+# Preferred local Ollama models in order of priority (matching installed models)
+MODELS_TO_TRY = ["qwen2.5-coder:14b", "ornith:35b", "moondream:latest"]
 
 SYSTEM_PROMPT = """You are the SmartRMA Intelligent Technical & Policy Assistant.
 Your tone must ALWAYS be warm, polite, empathetic, conversational, professional, and helpful — like an experienced hardware support specialist.
