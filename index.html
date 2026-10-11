@@ -1,11 +1,13 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Hardware RMA Triage & Telemetry | SmartRMA</title>
   <meta name="description" content="Automated hardware return triage with computer vision anomaly detection, false-color heatmaps, and warranty policy RAG verification.">
   <link rel="icon" type="image/png" href="assets/smartrma_icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -64,6 +66,7 @@
     </div>
   </header>
 
+  <div class="app-scroll">
   <main>
     <div class="page-header">
       <h1>RMA Hardware Triage Bay</h1>
@@ -110,7 +113,7 @@
           </label>
           <label class="f">
             Manufacturer / OEM *
-            <select id="mfg-select" required style="background:var(--bg-subtle);color:var(--text-primary);border:1px solid var(--border-color);border-radius:6px;padding:9px 12px;font-size:0.88rem;outline:none">
+            <select id="mfg-select" required>
               <option value="" disabled selected>Select Manufacturer / OEM...</option>
               <option value="NVIDIA">NVIDIA</option>
               <option value="GIGABYTE">GIGABYTE / AORUS</option>
@@ -133,7 +136,7 @@
         <div class="row">
           <label class="f" style="grid-column:1 / -1">
             Hardware Model Line &amp; Component Details *
-            <input id="model-line" required placeholder="e.g. GeForce RTX 4080 Super Gaming OC / ROG Strix Z790" autocomplete="off" style="background:var(--bg-subtle)">
+            <input id="model-line" required placeholder="e.g. GeForce RTX 4080 Super Gaming OC / ROG Strix Z790" autocomplete="off">
           </label>
         </div>
 
@@ -192,7 +195,7 @@
             </div>
           </div>
           <div class="wa-header-icons">
-            <span class="mono brand-pill" style="font-size:0.68rem;padding:3px 8px;background:rgba(0,168,132,0.12);color:#00A884;border:1px solid rgba(0,168,132,0.3)">
+            <span class="mono brand-pill" style="font-size:0.68rem;padding:3px 8px;background:var(--accent-subtle);color:var(--accent);border:1px solid var(--accent-border)">
               25 PDFs Indexed
             </span>
           </div>
@@ -209,7 +212,7 @@
             <!-- Initial Welcome Message from Bot -->
             <div class="wa-msg-row in">
               <div class="wa-bubble">
-                <div style="font-weight:700;font-size:0.78rem;color:#00A884;margin-bottom:4px">SmartRMA Assistant &bull; Node 2</div>
+                <div style="font-weight:700;font-size:0.78rem;color:var(--accent);margin-bottom:4px">SmartRMA Assistant &bull; Node 2</div>
                 <div>
                   👋 Hello! I am your <strong>SmartRMA Technical &amp; Policy Assistant</strong> powered by <strong>Node 2 Policy RAG</strong> and high-performance neural reasoning.<br><br>
                   I can answer questions regarding indexed manufacturer warranty policies (Apple, ASUS, Dell, Gigabyte, HP, etc.) and general hardware troubleshooting.<br><br>
@@ -257,6 +260,7 @@
       </div>
     </div>
   </footer>
+  </div>
 
   <script src="common.js"></script>
   <script src="triage.js"></script>
