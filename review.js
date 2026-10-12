@@ -513,8 +513,25 @@ function renderDetails() {
   const isAutoApproved = c.st === 'Auto-Approved' || !!c.isAutoApproved;
   const isAutoApprovedIntake = isAutoApproved;
   const isResolved = isTechnicianResolved;
-  c.activeImageIndex = (typeof c.activeImageIndex === 'number' && c.userImages && c.userImages[c.activeImageIndex]) ? c.activeImageIndex : 0;
-  const customerUnitImg = (c.userImages && c.userImages[c.activeImageIndex]) || c.subImg || (c.userImages && c.userImages.length > 0 ? c.userImages[0] : null);
+
+  // Ensure case userImages list is populated
+  if ((!c.userImages || c.userImages.length === 0) && c.subImg) {
+    c.userImages = [c.subImg];
+  }
+
+  // Derive active photo index
+  let selIdx = 0;
+  if (c.userImages && c.userImages.length > 0) {
+    if (c.selectedImageIndex !== undefined && c.selectedImageIndex >= 0 && c.selectedImageIndex < c.userImages.length) {
+      selIdx = c.selectedImageIndex;
+    } else if (c.subImg) {
+      const found = c.userImages.indexOf(c.subImg);
+      selIdx = found !== -1 ? found : 0;
+    }
+  }
+  c.selectedImageIndex = selIdx;
+  const customerUnitImg = (c.userImages && c.userImages[selIdx]) ? c.userImages[selIdx] : (c.subImg || null);
+  c.subImg = customerUnitImg;
 
   // Extract Node 3 Vision and Node 2 Policy Telemetry
   const vt = c.visionTelemetry || {
@@ -737,23 +754,24 @@ function renderDetails() {
 
     <!-- Customer Uploaded Hardware Inspection Viewport (No factory reference spec) -->
     ${customerUnitImg ? `
-      <div class="hardware-inspection-viewport interactive-viewport" id="cust-viewport" title="Click to open Fullscreen Lightbox Dossier">
-        <img id="cust-viewport-img" class="viewport-main-img" src="${escapeHtml(customerUnitImg)}" alt="Customer Uploaded Hardware View" />
-        <div class="viewport-label" id="cust-viewport-label">CUSTOMER UPLOADED VIEW: ${escapeHtml(SLOT_NAMES[c.activeImageIndex] || vt.flagged_region || c.rn || 'Hardware View')}</div>
-        <div class="spectral-overlay" style="--hx:${c.at ? c.at[0] : 50}%;--hy:${c.at ? c.at[1] : 50}%"></div>
+      <div class="hardware-inspection-viewport" id="cust-viewport" style="background-image:url('${customerUnitImg}')">
+        <img id="cust-viewport-img" src="${customerUnitImg}" alt="Customer Hardware Inspection View" class="viewport-main-img">
+        <div class="viewport-label" id="cust-viewport-label">CUSTOMER UPLOADED VIEW: ${escapeHtml(SLOT_NAMES[selIdx] || vt.flagged_region || c.rn || 'Hardware View')}</div>
+        <div class="spectral-overlay" id="cust-spectral-overlay" style="--hx:${c.at ? c.at[0] : 50}%;--hy:${c.at ? c.at[1] : 50}%;opacity:${(selIdx === 3 || c.a > 0.6) ? '1' : '0.35'}"></div>
         ${(c.a > 0.3) ? `
-          <div class="defect-crosshair" id="cust-defect-crosshair" style="left:${c.at ? c.at[0] : 50}%;top:${c.at ? c.at[1] : 50}%;display:${c.activeImageIndex === 0 ? 'block' : 'none'}">
+          <div class="defect-crosshair" id="cust-defect-crosshair" style="left:${c.at ? c.at[0] : 50}%;top:${c.at ? c.at[1] : 50}%;display:${(selIdx === 3 || c.a >= 0.7) ? 'block' : 'none'}">
             <div class="crosshair-center"></div>
           </div>
         ` : ''}
-        <div class="viewport-zoom-badge">🔍 Click to Enlarge / Full View</div>
       </div>
     ` : `
       <div class="hardware-inspection-viewport no-image" id="cust-viewport">
+        <img id="cust-viewport-img" src="" alt="No Image" class="viewport-main-img" style="display:none">
         <div class="no-image-placeholder">
           <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
             <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
           </svg>
           <div style="font-weight:700;margin-top:8px;font-size:0.92rem;color:var(--text-secondary)">No Customer Hardware Photos Uploaded</div>
           <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">Case submitted without image dossier. Verification evaluated via symptom diagnostics and policy clauses.</div>
@@ -770,8 +788,10 @@ function renderDetails() {
         </div>
         <div class="gallery-thumbs">
           ${c.userImages.map((imgUrl, i) => `
-            <button type="button" class="thumb-btn ${i === c.activeImageIndex ? 'active' : ''}" data-idx="${i}" title="Inspect ${SLOT_NAMES[i] || `View ${i+1}`}">
-              <img class="thumb-preview-img" src="${escapeHtml(imgUrl)}" alt="${SLOT_NAMES[i] || `View ${i+1}`}" />
+            <button type="button" class="thumb-btn ${i === selIdx ? 'active' : ''}" data-idx="${i}" title="Inspect ${SLOT_NAMES[i] || `View ${i+1}`}">
+              <div class="thumb-preview" style="background-image:url('${imgUrl}')">
+                <img src="${imgUrl}" alt="${SLOT_NAMES[i] || `View ${i+1}`}" class="thumb-img" loading="lazy">
+              </div>
               <span class="thumb-name">${SLOT_NAMES[i] || `View ${i+1}`}</span>
             </button>
           `).join('')}
@@ -990,44 +1010,54 @@ function renderDetails() {
   $$('.thumb-btn', d).forEach(btn => {
     btn.onclick = (e) => {
       e.preventDefault();
-      e.stopPropagation();
-      const idx = parseInt(btn.dataset.idx, 10);
+      const idx = +btn.dataset.idx;
       if (c.userImages && c.userImages[idx]) {
-        c.activeImageIndex = idx;
-        c.subImg = c.userImages[idx];
-        const custImg = $('#cust-viewport-img', d);
+        const nextImg = c.userImages[idx];
+        c.selectedImageIndex = idx;
+        c.subImg = nextImg;
+
+        // 1. Direct <img> update (immune to CSS quoting/syntax issues)
+        const custImg = $('#cust-viewport-img');
         if (custImg) {
-          custImg.src = c.subImg;
+          custImg.src = nextImg;
+          custImg.style.display = 'block';
         }
-        const custVp = $('#cust-viewport', d);
+
+        // 2. Direct viewport background update with quotes
+        const custVp = $('#cust-viewport');
         if (custVp) {
-          custVp.style.backgroundImage = 'none';
+          custVp.classList.remove('no-image');
+          custVp.style.backgroundImage = `url("${nextImg}")`;
+          const placeholder = $('.no-image-placeholder', custVp);
+          if (placeholder) placeholder.style.display = 'none';
         }
-        const labelEl = $('#cust-viewport-label', d);
-        if (labelEl) {
-          const slotTitle = SLOT_NAMES[idx] || `View ${idx + 1}`;
-          labelEl.textContent = `CUSTOMER UPLOADED VIEW: ${slotTitle}`;
+
+        // 3. Update viewport label to show the newly selected angle
+        const vpLabel = $('#cust-viewport-label') || $('.viewport-label', custVp);
+        const slotTitle = SLOT_NAMES[idx] || `View ${idx+1}`;
+        if (vpLabel) {
+          vpLabel.textContent = `CUSTOMER UPLOADED VIEW: ${slotTitle}`;
         }
-        const crosshairEl = $('#cust-defect-crosshair', d);
-        if (crosshairEl) {
-          crosshairEl.style.display = (idx === 0) ? 'block' : 'none';
+
+        // 4. Update defect crosshair & overlay for the selected angle
+        const crosshair = $('#cust-defect-crosshair');
+        if (crosshair) {
+          crosshair.style.display = (idx === 3 || c.a >= 0.7) ? 'block' : 'none';
         }
+        const overlay = $('#cust-spectral-overlay');
+        if (overlay) {
+          overlay.style.opacity = (idx === 3 || c.a > 0.6) ? '1' : '0.35';
+        }
+
+        // 5. Update active thumbnail state
         $$('.thumb-btn', d).forEach(b => {
-          b.classList.toggle('active', parseInt(b.dataset.idx, 10) === idx);
+          b.classList.toggle('active', +b.dataset.idx === idx);
         });
-        showToast(`Inspecting Customer Upload: ${SLOT_NAMES[idx] || `View ${idx + 1}`}`, 'info');
+
+        showToast(`Inspecting Customer Upload: ${slotTitle}`, 'info');
       }
     };
   });
-
-  // Bind viewport click to open Fullscreen Lightbox Modal
-  const custVpEl = $('#cust-viewport', d);
-  if (custVpEl && customerUnitImg) {
-    custVpEl.onclick = (e) => {
-      if (e.target.closest('button')) return;
-      openPhotoLightbox(c, c.activeImageIndex || 0);
-    };
-  }
 
   if (isTechnicianResolved) {
     const reopenBtn = $('#btn-reopen');
@@ -1484,6 +1514,7 @@ document.addEventListener('DOMContentLoaded', () => {
       tab.classList.add('active');
       currentFilter = tab.dataset.filter;
       renderQueue();
+      renderDetails();
     };
   });
 
@@ -1501,6 +1532,7 @@ document.addEventListener('DOMContentLoaded', () => {
     searchInput.oninput = () => {
       searchQuery = searchInput.value.trim();
       renderQueue();
+      renderDetails();
     };
   }
 
@@ -1514,96 +1546,4 @@ document.addEventListener('DOMContentLoaded', () => {
   // Background sync against backend ledger (merges intake cases if any)
   syncBackendLedger();
 });
-
-// Fullscreen Lightbox Modal Viewer
-function openPhotoLightbox(c, initialIdx) {
-  const images = (c.userImages && c.userImages.length > 0) ? c.userImages : (c.subImg ? [c.subImg] : []);
-  if (!images.length) return;
-
-  let currentIdx = (initialIdx >= 0 && initialIdx < images.length) ? initialIdx : 0;
-  
-  let modal = $('#photo-lightbox-modal');
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'photo-lightbox-modal';
-    modal.className = 'photo-lightbox-modal';
-    document.body.appendChild(modal);
-  }
-
-  function renderLightboxBody() {
-    const curImg = images[currentIdx];
-    const slotTitle = SLOT_NAMES[currentIdx] || `Inspection Angle ${currentIdx + 1}`;
-    modal.innerHTML = `
-      <div class="lightbox-backdrop"></div>
-      <div class="lightbox-dialog" role="dialog" aria-modal="true">
-        <div class="lightbox-header">
-          <div class="lightbox-title-group">
-            <span class="mono brand-pill">CASE ${escapeHtml(c.id)}</span>
-            <div class="lightbox-title font-mono" style="font-weight:600">
-              ${escapeHtml(slotTitle)} (${currentIdx + 1} of ${images.length})
-            </div>
-          </div>
-          <button type="button" class="lightbox-close-btn" aria-label="Close Lightbox">&times;</button>
-        </div>
-        <div class="lightbox-body">
-          ${images.length > 1 ? `
-            <button type="button" class="lightbox-nav-btn prev" aria-label="Previous image">‹</button>
-            <button type="button" class="lightbox-nav-btn next" aria-label="Next image">›</button>
-          ` : ''}
-          <div class="lightbox-img-wrap">
-            <img src="${escapeHtml(curImg)}" class="lightbox-img" alt="${escapeHtml(slotTitle)}" />
-          </div>
-        </div>
-        <div class="lightbox-footer">
-          <div style="display:flex;align-items:center;justify-content:space-between;font-size:0.8rem;color:var(--text-muted)">
-            <div><strong>Component:</strong> ${escapeHtml(c.p || 'Hardware Unit')} | <strong>Serial:</strong> ${escapeHtml(c.serialNumber || 'N/A')}</div>
-            <div class="mono" style="color:#38bdf8">Forensic Zoom 100%</div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    modal.classList.add('open');
-
-    $('.lightbox-close-btn', modal).onclick = closeLightbox;
-    $('.lightbox-backdrop', modal).onclick = closeLightbox;
-
-    const prevBtn = $('.lightbox-nav-btn.prev', modal);
-    if (prevBtn) {
-      prevBtn.onclick = (e) => {
-        e.stopPropagation();
-        currentIdx = (currentIdx - 1 + images.length) % images.length;
-        renderLightboxBody();
-      };
-    }
-
-    const nextBtn = $('.lightbox-nav-btn.next', modal);
-    if (nextBtn) {
-      nextBtn.onclick = (e) => {
-        e.stopPropagation();
-        currentIdx = (currentIdx + 1) % images.length;
-        renderLightboxBody();
-      };
-    }
-  }
-
-  function closeLightbox() {
-    modal.classList.remove('open');
-    document.removeEventListener('keydown', handleKey);
-  }
-
-  function handleKey(e) {
-    if (e.key === 'Escape') closeLightbox();
-    else if (e.key === 'ArrowLeft' && images.length > 1) {
-      currentIdx = (currentIdx - 1 + images.length) % images.length;
-      renderLightboxBody();
-    } else if (e.key === 'ArrowRight' && images.length > 1) {
-      currentIdx = (currentIdx + 1) % images.length;
-      renderLightboxBody();
-    }
-  }
-
-  document.addEventListener('keydown', handleKey);
-  renderLightboxBody();
-}
 

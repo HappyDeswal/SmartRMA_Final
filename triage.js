@@ -112,7 +112,7 @@ function markSlot(index, url) {
   if (!slotEl) return;
 
   slotEl.classList.add('on');
-  slotEl.style.backgroundImage = `url(${url})`;
+  slotEl.style.backgroundImage = `url("${url}")`;
   const statusEl = $('#sl-status-' + index);
   if (statusEl) statusEl.textContent = '✓ Verified';
 
@@ -657,7 +657,7 @@ async function handleTriageSubmit(e) {
         <span class="mono brand-pill">${t}</span>
       </div>
 
-      <div class="wa-card-img" style="background-image:url(${primaryUserImg})">
+      <div class="wa-card-img" style="background-image:url('${primaryUserImg || ''}')">
         <div class="spectral-overlay" style="--hx:${data.at[0]}%;--hy:${data.at[1]}%"></div>
         ${anomalyScore > 0.3 ? `
           <div class="defect-crosshair" style="left:${data.at[0]}%;top:${data.at[1]}%">
