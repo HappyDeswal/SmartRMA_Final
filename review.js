@@ -86,7 +86,7 @@ try {
       localStorage.setItem('smartrma_audit_history', JSON.stringify(cleanedA));
     }
   }
-} catch (e) {}
+} catch (e) { }
 
 // Background sync against Node 1 backend ledger & cases store (guarantees intake cases are never lost)
 async function syncBackendLedger() {
@@ -99,12 +99,12 @@ async function syncBackendLedger() {
       if (casesResp.ok) {
         const casesData = await casesResp.json();
         const serverCases = (casesData.cases || []).filter(isAuthenticCase);
-        
+
         // Synchronize CASES strictly to backend store
         CASES = serverCases;
         try {
           localStorage.setItem('smartrma_cases', JSON.stringify(CASES));
-        } catch (e) {}
+        } catch (e) { }
         casesChanged = true;
       }
     } catch (errCases) {
@@ -180,7 +180,7 @@ async function syncBackendLedger() {
         }
         try {
           localStorage.setItem('smartrma_audit_history', JSON.stringify(auditLedger));
-        } catch (e) {}
+        } catch (e) { }
         casesChanged = true;
       }
     } catch (errLedger) {
@@ -274,11 +274,11 @@ function getInitialCases() {
         };
         try {
           localStorage.setItem('smartrma_cases', JSON.stringify([draftCase]));
-        } catch (e) {}
+        } catch (e) { }
         return [draftCase];
       }
     }
-  } catch(e) {}
+  } catch (e) { }
 
   return [];
 }
@@ -311,8 +311,8 @@ function sanitizeModelName(model) {
 function sanitizeFindings(findings) {
   if (!findings || typeof findings !== 'string') return '';
   return findings.replace(/gemini[^\s,]*/gi, 'Llama-3.2-Vision')
-                 .replace(/cloud\s+vision[^\s,]*/gi, 'Ollama Local Vision')
-                 .replace(/cloud\s+ai[^\s,]*/gi, 'Local Ollama LLM');
+    .replace(/cloud\s+vision[^\s,]*/gi, 'Ollama Local Vision')
+    .replace(/cloud\s+ai[^\s,]*/gi, 'Local Ollama LLM');
 }
 
 // Generate Cryptographic SHA-256 Ledger Stamp
@@ -405,10 +405,10 @@ function renderQueue() {
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       const match = (c.id && c.id.toLowerCase().includes(q)) ||
-                    (c.p && c.p.toLowerCase().includes(q)) ||
-                    (c.orderId && String(c.orderId).toLowerCase().includes(q)) ||
-                    (c.serialNumber && String(c.serialNumber).toLowerCase().includes(q)) ||
-                    (c.st && c.st.toLowerCase().includes(q));
+        (c.p && c.p.toLowerCase().includes(q)) ||
+        (c.orderId && String(c.orderId).toLowerCase().includes(q)) ||
+        (c.serialNumber && String(c.serialNumber).toLowerCase().includes(q)) ||
+        (c.st && c.st.toLowerCase().includes(q));
       if (!match) return false;
     }
     if (currentFilter === 'pending') return isPendingTechnicianReview(c);
@@ -422,12 +422,12 @@ function renderQueue() {
     const emptyMsg = currentFilter === 'pending'
       ? 'No pending cases requiring technician review.'
       : currentFilter === 'approved'
-      ? 'No approved cases in history yet.'
-      : currentFilter === 'rejected'
-      ? 'No non-approved / rejected cases in history yet.'
-      : currentFilter === 'resolved'
-      ? 'No resolved cases in history yet.'
-      : 'No cases found.';
+        ? 'No approved cases in history yet.'
+        : currentFilter === 'rejected'
+          ? 'No non-approved / rejected cases in history yet.'
+          : currentFilter === 'resolved'
+            ? 'No resolved cases in history yet.'
+            : 'No cases found.';
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:36px 14px;color:var(--text-muted)">${emptyMsg}</td></tr>`;
     return;
   }
@@ -445,10 +445,10 @@ function renderQueue() {
     const statusDisplay = c.resolvedOperator === 'TECH-402'
       ? `${c.st} (Tech)`
       : c.st === 'Auto-Approved'
-      ? 'Auto-Approved (Pending Sign-off)'
-      : c.st === 'Rejected'
-      ? 'AI Rejected (Pending Review)'
-      : c.st || 'Pending';
+        ? 'Auto-Approved (Pending Sign-off)'
+        : c.st === 'Rejected'
+          ? 'AI Rejected (Pending Review)'
+          : c.st || 'Pending';
 
     return `
       <tr tabindex="0" data-idx="${origIndex}" class="${isSel ? 'sel' : ''}">
@@ -552,8 +552,8 @@ function renderDetails() {
     details: (c.a <= 0.3)
       ? `Optical barcode label matches customer input '${userSerial}'. Intact silkscreen.`
       : (c.rn && c.rn.toLowerCase().includes('serial'))
-      ? `Serial label is peeled or missing from designated pad.`
-      : `Serial verified on hardware backplate: '${userSerial}'.`
+        ? `Serial label is peeled or missing from designated pad.`
+        : `Serial verified on hardware backplate: '${userSerial}'.`
   };
   const modelVerif = (vt && vt.model_verification) ? vt.model_verification : {
     status: 'CONFIRMED',
@@ -733,13 +733,13 @@ function renderDetails() {
       </div>
       <div class="inspection-checklist-grid">
         ${inspPoints.map(pt => {
-          const sLower = String(pt.status || '').toLowerCase();
-          const pillClass = (sLower.includes('nominal') || sLower.includes('intact') || sLower.includes('match') || sLower.includes('confirmed'))
-            ? 'nominal'
-            : (sLower.includes('burn') || sLower.includes('critical') || sLower.includes('mismatch'))
-            ? 'critical'
-            : 'warning';
-          return `
+    const sLower = String(pt.status || '').toLowerCase();
+    const pillClass = (sLower.includes('nominal') || sLower.includes('intact') || sLower.includes('match') || sLower.includes('confirmed'))
+      ? 'nominal'
+      : (sLower.includes('burn') || sLower.includes('critical') || sLower.includes('mismatch'))
+        ? 'critical'
+        : 'warning';
+    return `
             <div class="checklist-tile">
               <div class="tile-header">
                 <span class="tile-title">${escapeHtml(pt.point)}</span>
@@ -748,7 +748,7 @@ function renderDetails() {
               <div class="tile-details">${escapeHtml(pt.details)}</div>
             </div>
           `;
-        }).join('')}
+  }).join('')}
       </div>
     </div>
 
@@ -788,11 +788,11 @@ function renderDetails() {
         </div>
         <div class="gallery-thumbs">
           ${c.userImages.map((imgUrl, i) => `
-            <button type="button" class="thumb-btn ${i === selIdx ? 'active' : ''}" data-idx="${i}" title="Inspect ${SLOT_NAMES[i] || `View ${i+1}`}">
+            <button type="button" class="thumb-btn ${i === selIdx ? 'active' : ''}" data-idx="${i}" title="Inspect ${SLOT_NAMES[i] || `View ${i + 1}`}">
               <div class="thumb-preview" style="background-image:url('${imgUrl}')">
-                <img src="${imgUrl}" alt="${SLOT_NAMES[i] || `View ${i+1}`}" class="thumb-img" loading="lazy">
+                <img src="${imgUrl}" alt="${SLOT_NAMES[i] || `View ${i + 1}`}" class="thumb-img" loading="lazy">
               </div>
-              <span class="thumb-name">${SLOT_NAMES[i] || `View ${i+1}`}</span>
+              <span class="thumb-name">${SLOT_NAMES[i] || `View ${i + 1}`}</span>
             </button>
           `).join('')}
         </div>
@@ -884,10 +884,10 @@ function renderDetails() {
       <div>
         <strong>Multi-Node AI Synthesis:</strong>
         ${(vt.anomaly_score >= 0.7 && pg.verdict.includes('REJECT'))
-          ? 'High anomaly + Policy exclusion identified &rarr; AI Recommendation: <strong>REJECT RETURN</strong>'
-          : (vt.anomaly_score <= 0.3 && !pg.verdict.includes('REJECT'))
-          ? 'Nominal anomaly + Policy coverage verified &rarr; AI Recommendation: <strong>APPROVE RETURN</strong>'
-          : 'Ambiguous risk score or Tier 4 mandate &rarr; Requires Lead Technician manual adjudication'}
+      ? 'High anomaly + Policy exclusion identified &rarr; AI Recommendation: <strong>REJECT RETURN</strong>'
+      : (vt.anomaly_score <= 0.3 && !pg.verdict.includes('REJECT'))
+        ? 'Nominal anomaly + Policy coverage verified &rarr; AI Recommendation: <strong>APPROVE RETURN</strong>'
+        : 'Ambiguous risk score or Tier 4 mandate &rarr; Requires Lead Technician manual adjudication'}
       </div>
     </div>
 
@@ -950,10 +950,10 @@ function renderDetails() {
             </label>
             <span style="font-size:0.75rem;color:var(--text-muted);display:block;margin-top:2px">
               ${isAutoApprovedIntake
-                ? '⚡ Intake AI suggested Auto-Approval. As Lead Tech #402, verify customer photos and exercise approval or override rejection permission.'
-                : (c.st === 'Rejected'
-                ? '🛑 Intake AI suggested Rejection. As Lead Tech #402, inspect photos and confirm rejection or override with approval.'
-                : '⚠️ Case escalated for technician adjudication. Select finding or enter justification, then approve or reject return.')}
+      ? '⚡ Intake AI suggested Auto-Approval. As Lead Tech #402, verify customer photos and exercise approval or override rejection permission.'
+      : (c.st === 'Rejected'
+        ? '🛑 Intake AI suggested Rejection. As Lead Tech #402, inspect photos and confirm rejection or override with approval.'
+        : '⚠️ Case escalated for technician adjudication. Select finding or enter justification, then approve or reject return.')}
             </span>
           </div>
           <span class="mono brand-pill" style="background:rgba(0,168,132,0.15);color:#00A884;font-size:0.72rem">
@@ -1034,7 +1034,7 @@ function renderDetails() {
 
         // 3. Update viewport label to show the newly selected angle
         const vpLabel = $('#cust-viewport-label') || $('.viewport-label', custVp);
-        const slotTitle = SLOT_NAMES[idx] || `View ${idx+1}`;
+        const slotTitle = SLOT_NAMES[idx] || `View ${idx + 1}`;
         if (vpLabel) {
           vpLabel.textContent = `CUSTOMER UPLOADED VIEW: ${slotTitle}`;
         }
@@ -1086,7 +1086,7 @@ function renderDetails() {
   }
 }
 
-window.applyReason = function(text) {
+window.applyReason = function (text) {
   const textarea = $('#rs');
   if (!textarea) return;
   textarea.value = text;
@@ -1172,7 +1172,7 @@ function executeOverride(decision) {
         region: c.rn || 'Hardware Unit'
       })
     }).catch(err => console.warn('[Failed to sync decision to Node 1]', err));
-  } catch (e) {}
+  } catch (e) { }
 
   renderAuditLog();
   renderQueue();
@@ -1217,8 +1217,8 @@ function renderAuditLog() {
     const emptyMsg = currentAuditFilter === 'approved'
       ? 'No approved cases in decision history yet.'
       : currentAuditFilter === 'rejected'
-      ? 'No non-approved / rejected cases in decision history yet.'
-      : 'No decisions recorded yet. Decisions will appear here once finalized.';
+        ? 'No non-approved / rejected cases in decision history yet.'
+        : 'No decisions recorded yet. Decisions will appear here once finalized.';
     logEl.innerHTML = `<div class="mu" style="font-size:0.85rem;padding:16px 4px">${emptyMsg}</div>`;
     updateWorkbenchVisibility();
     return;
@@ -1300,7 +1300,7 @@ function renderAuditLog() {
             CASES.unshift(found);
             targetIndex = 0;
           }
-        } catch (e) {}
+        } catch (e) { }
       }
 
       // 3. If still not in CASES, synthesize full case dossier directly from audit ledger entry!
@@ -1469,7 +1469,7 @@ async function purgeAllAudits() {
   try {
     await fetch(getGatewayUrl('/api/v1/cases/clear'), { method: 'POST' });
     await fetch(getGatewayUrl('/api/v1/ledger/clear'), { method: 'POST' });
-  } catch (e) {}
+  } catch (e) { }
 
   updateWorkbenchVisibility();
   renderQueue();
@@ -1506,7 +1506,7 @@ document.addEventListener('DOMContentLoaded', () => {
         activeIndex = foundIdx;
       }
     }
-  } catch (e) {}
+  } catch (e) { }
 
   $$('.q-tab').forEach(tab => {
     tab.onclick = () => {
