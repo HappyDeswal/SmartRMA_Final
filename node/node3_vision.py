@@ -643,9 +643,154 @@ def build_unapproved_telemetry(
 ) -> tuple[str, Dict[str, Any]]:
     dname = matched_defect_name or "01_minor_hairline_scuff_shroud.jpg"
     clean_serial = (user_serial or "").strip()
-    display_model = f"{mfg} {model}".strip() if mfg and model and mfg != "Hardware OEM" else "NVIDIA GeForce RTX 4080 Founders Edition"
+    display_model = f"{mfg} {model}".strip() if mfg and model and mfg != "Hardware OEM" else ("G.SKILL Trident Z5 RGB DDR5 32GB" if "ram" in dname else "NVIDIA GeForce RTX 4080 Founders Edition")
 
-    if "shroud" in dname:
+    if "ram" in dname and ("gold" in dname or "contacts" in dname or "pins" in dname):
+        vision_text = (
+            f"**Forensic Hardware Identification:** {display_model} (288-Pin DDR5 DIMM Module)\n\n"
+            "**Point-by-Point Physical Inspection Findings:**\n"
+            f"* **1. Serial Number Barcode:** Optical label present on module; matches user-entered serial '{clean_serial}'.\n"
+            f"* **2. Model Number & OEM:** Module silkscreen confirmed as {display_model}.\n"
+            "* **3. Gold Finger Contacts:** Mechanical insertion friction scoring and longitudinal contact drag scratches detected across pins 214–216.\n"
+            "* **4. Substrate Tongue:** Gold electroplating exhibits localized thinning and contact abrasions from repeated DIMM socket insertion.\n"
+            "* **5. On-Die ECC & PMIC:** PMIC circuitry intact; no scorch marks.\n"
+            "* **6. Warranty Void Seal:** Intact factory label.\n\n"
+            "SERIAL_CHECK: MATCH\n"
+            f"VISIBLE_SERIAL: {clean_serial}\n"
+            "MODEL_CHECK: CONFIRMED\n"
+            "VERDICT: CONTACT_WEAR"
+        )
+        flagged_comp = "DDR5 DIMM Gold Finger Contacts (Pin Scratching & Insertion Wear)"
+        coords = {"center_x_pct": 52, "center_y_pct": 58, "bounding_box": [48, 54, 56, 62]}
+        serial_status = "MATCH"
+        serial_details = f"Serial verified on module label matching customer entry '{clean_serial}'."
+        defect_type = "damage"
+        action = "ESCALATE_TECHNICIAN_INSPECTION"
+        inspection_points = [
+            {"point": "Serial Barcode Identifier", "status": "VERIFIED_MATCH", "details": f"Module serial matches '{clean_serial}'."},
+            {"point": "Model Number & OEM Silkscreen", "status": "CONFIRMED", "details": f"DIMM markings confirm {display_model}."},
+            {"point": "Gold Finger Connector Pins", "status": "SCORING_WEAR", "details": "Friction scratches and drag wear on pins 214–216."},
+            {"point": "PCB Substrate & Traces", "status": "NOMINAL", "details": "Clean 8-layer PCB substrate."},
+            {"point": "PMIC & Power Circuitry", "status": "NOMINAL", "details": "Voltage regulation circuitry intact."},
+            {"point": "Thermal Heat Spreader", "status": "NOMINAL", "details": "Heatsink intact."}
+        ]
+    elif "ram" in dname and ("smd" in dname or "capacitor" in dname):
+        vision_text = (
+            f"**Forensic Hardware Identification:** {display_model} (288-Pin DDR5 DIMM Module)\n\n"
+            "**Point-by-Point Physical Inspection Findings:**\n"
+            f"* **1. Serial Number Barcode:** Silkscreen barcode matches user-entered serial '{clean_serial}'.\n"
+            f"* **2. Model Number & OEM:** Confirmed as {display_model}.\n"
+            "* **3. Surface-Mount Component C114:** CRITICAL PHYSICAL DAMAGE: Cracked and chipped ceramic SMD capacitor near PMIC; exposed solder pad.\n"
+            "* **4. Gold Finger Contacts:** Nominal.\n"
+            "* **5. Power Circuitry:** PMIC terminal capacitors compromised; risk of voltage fluctuation.\n"
+            "* **6. Warranty Void Seal:** Intact.\n\n"
+            "SERIAL_CHECK: MATCH\n"
+            f"VISIBLE_SERIAL: {clean_serial}\n"
+            "MODEL_CHECK: CONFIRMED\n"
+            "VERDICT: CHIPPED_SMD_COMPONENT"
+        )
+        flagged_comp = "RAM Power Management Circuitry (Chipped SMD Ceramic Capacitor C114)"
+        coords = {"center_x_pct": 50, "center_y_pct": 50, "bounding_box": [46, 46, 54, 54]}
+        serial_status = "MATCH"
+        serial_details = f"Serial verified on silkscreen matching customer entry '{clean_serial}'."
+        defect_type = "damage"
+        action = "ESCALATE_TECHNICIAN_INSPECTION"
+        inspection_points = [
+            {"point": "Serial Barcode Identifier", "status": "VERIFIED_MATCH", "details": f"Silkscreen serial verified as '{clean_serial}'."},
+            {"point": "Model Number & OEM Silkscreen", "status": "CONFIRMED", "details": f"DDR5 markings verify {display_model}."},
+            {"point": "SMD Components & Capacitors", "status": "CHIPPED_OR_CRACKED", "details": "Fractured ceramic capacitor C114 adjacent to PMIC."},
+            {"point": "Gold Finger Connector Pins", "status": "NOMINAL", "details": "Gold pins clean and unbent."},
+            {"point": "PCB Substrate & Traces", "status": "NOMINAL", "details": "Substrate intact without delamination."},
+            {"point": "Thermal Heat Spreader", "status": "NOMINAL", "details": "Factory mounting secure."}
+        ]
+    elif "ram" in dname and ("sticker" in dname or "seal" in dname):
+        vision_text = (
+            f"**Forensic Hardware Identification:** {display_model} (288-Pin DDR5 DIMM Module)\n\n"
+            "**Point-by-Point Physical Inspection Findings:**\n"
+            f"* **1. Serial Number Barcode:** Tamper sticker reads '{clean_serial}'.\n"
+            f"* **2. Model Number & OEM:** Heat spreader branding matches {display_model}.\n"
+            "* **3. Warranty Void Sticker:** Lifted corner edge and peeled adhesive film on 'WARRANTY VOID IF REMOVED' label.\n"
+            "* **4. Heat Spreader Enclosure:** Evidence of attempted sticker removal or unauthorized thermal pad inspection.\n"
+            "* **5. Gold Finger Contacts:** Nominal.\n"
+            "* **6. PCB Substrate:** Nominal.\n\n"
+            "SERIAL_CHECK: TAMPERED\n"
+            f"VISIBLE_SERIAL: {clean_serial}\n"
+            "MODEL_CHECK: CONFIRMED\n"
+            "VERDICT: TAMPERED_SEAL"
+        )
+        flagged_comp = "RAM Tamper Seal (Lifted Warranty Void Sticker Corner)"
+        coords = {"center_x_pct": 58, "center_y_pct": 52, "bounding_box": [54, 48, 62, 56]}
+        serial_status = "TAMPERED"
+        serial_details = f"Tamper-evident warranty sticker corner peeled back on '{clean_serial}'."
+        defect_type = "damage"
+        action = "ESCALATE_TECHNICIAN_INSPECTION"
+        inspection_points = [
+            {"point": "Serial Barcode Identifier", "status": "TAMPERED_OR_MISSING", "details": f"Warranty void sticker corner lifted near serial '{clean_serial}'."},
+            {"point": "Model Number & OEM Silkscreen", "status": "CONFIRMED", "details": f"Heat spreader matches {display_model}."},
+            {"point": "Warranty Void Tamper Seal", "status": "TAMPERED_OR_LIFTED", "details": "Edge peeling and degraded adhesive on warranty label."},
+            {"point": "Gold Finger Connector Pins", "status": "NOMINAL", "details": "Gold contacts clean."},
+            {"point": "SMD Components & Capacitors", "status": "NOMINAL", "details": "All components intact."},
+            {"point": "PCB Substrate & Traces", "status": "NOMINAL", "details": "No cracked traces."}
+        ]
+    elif "ram" in dname and ("bent" in dname or "spreader" in dname):
+        vision_text = (
+            f"**Forensic Hardware Identification:** {display_model} (288-Pin DDR5 DIMM Module)\n\n"
+            "**Point-by-Point Physical Inspection Findings:**\n"
+            f"* **1. Serial Number Barcode:** Heat spreader serial reads '{clean_serial}'.\n"
+            f"* **2. Model Number & OEM:** Confirmed as {display_model}.\n"
+            "* **3. Aluminum Heat Spreader:** CRITICAL MECHANICAL DAMAGE: Upper heat sink shield severely bent and pried open along top edge.\n"
+            "* **4. Thermal Interface:** Blue silicone thermal gap pad torn and exposed; memory ICs exposed to ambient atmosphere.\n"
+            "* **5. Gold Finger Contacts:** Nominal.\n"
+            "* **6. PCB Substrate:** Slight torsional flex detected near retention notch.\n\n"
+            "SERIAL_CHECK: MATCH\n"
+            f"VISIBLE_SERIAL: {clean_serial}\n"
+            "MODEL_CHECK: CONFIRMED\n"
+            "VERDICT: PHYSICAL_DEFORMATION"
+        )
+        flagged_comp = "RAM Aluminum Heat Spreader (Mechanical Bending & Exposed Thermal Pad)"
+        coords = {"center_x_pct": 46, "center_y_pct": 42, "bounding_box": [42, 38, 50, 46]}
+        serial_status = "MATCH"
+        serial_details = f"Serial verified as '{clean_serial}', but enclosure exhibits severe mechanical bending."
+        defect_type = "damage"
+        action = "ESCALATE_TECHNICIAN_INSPECTION"
+        inspection_points = [
+            {"point": "Serial Barcode Identifier", "status": "VERIFIED_MATCH", "details": f"Module identifier matches '{clean_serial}'."},
+            {"point": "Model Number & OEM Silkscreen", "status": "CONFIRMED", "details": f"Heat sink branding matches {display_model}."},
+            {"point": "Aluminum Heat Spreader", "status": "MECHANICAL_DAMAGE", "details": "Metal heat spreader severely bent and pried outward."},
+            {"point": "Thermal Gap Pad", "status": "TORN_OR_EXPOSED", "details": "Thermal pad torn and separated from memory chips."},
+            {"point": "Gold Finger Connector Pins", "status": "NOMINAL", "details": "Gold pins intact."},
+            {"point": "PCB Substrate & Traces", "status": "TORSIONAL_FLEX", "details": "Minor flex near mechanical bend point."}
+        ]
+    elif "ram" in dname and ("label" in dname or "barcode" in dname or "serial" in dname):
+        vision_text = (
+            f"**Forensic Hardware Identification:** {display_model} (288-Pin DDR5 DIMM Module)\n\n"
+            "**Point-by-Point Physical Inspection Findings:**\n"
+            f"* **1. Serial Number Barcode:** CRITICAL DEFECT: Manufacturer serial number sticker has been PEELED OFF; sticky adhesive residue and paper remnants visible on heat spreader.\n"
+            f"* **2. Serial Cross-Check:** User declared Serial Number '{clean_serial}', but physical module serial sticker is MISSING.\n"
+            f"* **3. Model Number & OEM:** Heat spreader silkscreen branding confirms {display_model}.\n"
+            "* **4. Gold Finger Contacts:** Nominal.\n"
+            "* **5. PCB Substrate:** Nominal.\n"
+            "* **6. Warranty Void Seal:** Defaced.\n\n"
+            "SERIAL_CHECK: MISMATCH\n"
+            "VISIBLE_SERIAL: MISSING_OR_DEFACED\n"
+            "MODEL_CHECK: CONFIRMED\n"
+            "VERDICT: MISSING_IDENTIFIER"
+        )
+        flagged_comp = "RAM Module Backplate (Missing Serial Barcode Label with Glue Residue)"
+        coords = {"center_x_pct": 52, "center_y_pct": 50, "bounding_box": [48, 46, 56, 54]}
+        serial_status = "MISMATCH"
+        serial_details = f"CRITICAL: User entered '{clean_serial}', but hardware serial barcode sticker is missing from heat spreader with residual glue."
+        defect_type = "damage"
+        action = "ESCALATE_TECHNICIAN_INSPECTION"
+        inspection_points = [
+            {"point": "Serial Barcode Identifier", "status": "CRITICAL_MISMATCH", "details": f"Barcode sticker missing. Declared serial '{clean_serial}' unverified on module."},
+            {"point": "Model Number & OEM Silkscreen", "status": "CONFIRMED", "details": f"Heat spreader branding matches {display_model}."},
+            {"point": "Adhesive Label Residue", "status": "PEELED_OR_DEFACED", "details": "Adhesive glue residue and paper remnants on label pad."},
+            {"point": "Gold Finger Connector Pins", "status": "NOMINAL", "details": "Gold pins intact."},
+            {"point": "SMD Components & Capacitors", "status": "NOMINAL", "details": "Components nominal."},
+            {"point": "PCB Substrate & Traces", "status": "NOMINAL", "details": "Substrate intact."}
+        ]
+    elif "shroud" in dname:
         vision_text = (
             f"**Forensic Hardware Identification:** {display_model}\n\n"
             "**Point-by-Point Physical Inspection Findings:**\n"

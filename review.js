@@ -513,7 +513,8 @@ function renderDetails() {
   const isAutoApproved = c.st === 'Auto-Approved' || !!c.isAutoApproved;
   const isAutoApprovedIntake = isAutoApproved;
   const isResolved = isTechnicianResolved;
-  const customerUnitImg = c.subImg || (c.userImages && c.userImages.length > 0 ? c.userImages[0] : null);
+  c.activeImageIndex = (typeof c.activeImageIndex === 'number' && c.userImages && c.userImages[c.activeImageIndex]) ? c.activeImageIndex : 0;
+  const customerUnitImg = (c.userImages && c.userImages[c.activeImageIndex]) || c.subImg || (c.userImages && c.userImages.length > 0 ? c.userImages[0] : null);
 
   // Extract Node 3 Vision and Node 2 Policy Telemetry
   const vt = c.visionTelemetry || {
@@ -736,14 +737,16 @@ function renderDetails() {
 
     <!-- Customer Uploaded Hardware Inspection Viewport (No factory reference spec) -->
     ${customerUnitImg ? `
-      <div class="hardware-inspection-viewport" id="cust-viewport" style="background-image:url(${escapeHtml(customerUnitImg)})">
-        <div class="viewport-label">CUSTOMER UPLOADED VIEW: ${escapeHtml(vt.flagged_region || c.rn || 'Hardware View')}</div>
+      <div class="hardware-inspection-viewport interactive-viewport" id="cust-viewport" title="Click to open Fullscreen Lightbox Dossier">
+        <img id="cust-viewport-img" class="viewport-main-img" src="${escapeHtml(customerUnitImg)}" alt="Customer Uploaded Hardware View" />
+        <div class="viewport-label" id="cust-viewport-label">CUSTOMER UPLOADED VIEW: ${escapeHtml(SLOT_NAMES[c.activeImageIndex] || vt.flagged_region || c.rn || 'Hardware View')}</div>
         <div class="spectral-overlay" style="--hx:${c.at ? c.at[0] : 50}%;--hy:${c.at ? c.at[1] : 50}%"></div>
         ${(c.a > 0.3) ? `
-          <div class="defect-crosshair" style="left:${c.at ? c.at[0] : 50}%;top:${c.at ? c.at[1] : 50}%">
+          <div class="defect-crosshair" id="cust-defect-crosshair" style="left:${c.at ? c.at[0] : 50}%;top:${c.at ? c.at[1] : 50}%;display:${c.activeImageIndex === 0 ? 'block' : 'none'}">
             <div class="crosshair-center"></div>
           </div>
         ` : ''}
+        <div class="viewport-zoom-badge">🔍 Click to Enlarge / Full View</div>
       </div>
     ` : `
       <div class="hardware-inspection-viewport no-image" id="cust-viewport">
@@ -751,7 +754,6 @@ function renderDetails() {
           <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
             <circle cx="8.5" cy="8.5" r="1.5"/>
-            <polyline points="21 15 16 10 5 21"/>
           </svg>
           <div style="font-weight:700;margin-top:8px;font-size:0.92rem;color:var(--text-secondary)">No Customer Hardware Photos Uploaded</div>
           <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">Case submitted without image dossier. Verification evaluated via symptom diagnostics and policy clauses.</div>
@@ -768,8 +770,8 @@ function renderDetails() {
         </div>
         <div class="gallery-thumbs">
           ${c.userImages.map((imgUrl, i) => `
-            <button type="button" class="thumb-btn ${imgUrl === customerUnitImg ? 'active' : ''}" data-idx="${i}" title="Inspect ${SLOT_NAMES[i] || `View ${i+1}`}">
-              <div class="thumb-preview" style="background-image:url(${escapeHtml(imgUrl)})"></div>
+            <button type="button" class="thumb-btn ${i === c.activeImageIndex ? 'active' : ''}" data-idx="${i}" title="Inspect ${SLOT_NAMES[i] || `View ${i+1}`}">
+              <img class="thumb-preview-img" src="${escapeHtml(imgUrl)}" alt="${SLOT_NAMES[i] || `View ${i+1}`}" />
               <span class="thumb-name">${SLOT_NAMES[i] || `View ${i+1}`}</span>
             </button>
           `).join('')}
@@ -986,17 +988,46 @@ function renderDetails() {
 
   // Bind gallery thumbnail buttons so technician can inspect any customer-uploaded angle
   $$('.thumb-btn', d).forEach(btn => {
-    btn.onclick = () => {
-      const idx = +btn.dataset.idx;
+    btn.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.idx, 10);
       if (c.userImages && c.userImages[idx]) {
+        c.activeImageIndex = idx;
         c.subImg = c.userImages[idx];
-        const custVp = $('#cust-viewport');
-        if (custVp) custVp.style.backgroundImage = `url(${c.subImg})`;
-        $$('.thumb-btn', d).forEach(b => b.classList.toggle('active', +b.dataset.idx === idx));
-        showToast(`Inspecting Customer Upload: ${SLOT_NAMES[idx] || `View ${idx+1}`}`, 'info');
+        const custImg = $('#cust-viewport-img', d);
+        if (custImg) {
+          custImg.src = c.subImg;
+        }
+        const custVp = $('#cust-viewport', d);
+        if (custVp) {
+          custVp.style.backgroundImage = 'none';
+        }
+        const labelEl = $('#cust-viewport-label', d);
+        if (labelEl) {
+          const slotTitle = SLOT_NAMES[idx] || `View ${idx + 1}`;
+          labelEl.textContent = `CUSTOMER UPLOADED VIEW: ${slotTitle}`;
+        }
+        const crosshairEl = $('#cust-defect-crosshair', d);
+        if (crosshairEl) {
+          crosshairEl.style.display = (idx === 0) ? 'block' : 'none';
+        }
+        $$('.thumb-btn', d).forEach(b => {
+          b.classList.toggle('active', parseInt(b.dataset.idx, 10) === idx);
+        });
+        showToast(`Inspecting Customer Upload: ${SLOT_NAMES[idx] || `View ${idx + 1}`}`, 'info');
       }
     };
   });
+
+  // Bind viewport click to open Fullscreen Lightbox Modal
+  const custVpEl = $('#cust-viewport', d);
+  if (custVpEl && customerUnitImg) {
+    custVpEl.onclick = (e) => {
+      if (e.target.closest('button')) return;
+      openPhotoLightbox(c, c.activeImageIndex || 0);
+    };
+  }
 
   if (isTechnicianResolved) {
     const reopenBtn = $('#btn-reopen');
@@ -1483,4 +1514,96 @@ document.addEventListener('DOMContentLoaded', () => {
   // Background sync against backend ledger (merges intake cases if any)
   syncBackendLedger();
 });
+
+// Fullscreen Lightbox Modal Viewer
+function openPhotoLightbox(c, initialIdx) {
+  const images = (c.userImages && c.userImages.length > 0) ? c.userImages : (c.subImg ? [c.subImg] : []);
+  if (!images.length) return;
+
+  let currentIdx = (initialIdx >= 0 && initialIdx < images.length) ? initialIdx : 0;
+  
+  let modal = $('#photo-lightbox-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'photo-lightbox-modal';
+    modal.className = 'photo-lightbox-modal';
+    document.body.appendChild(modal);
+  }
+
+  function renderLightboxBody() {
+    const curImg = images[currentIdx];
+    const slotTitle = SLOT_NAMES[currentIdx] || `Inspection Angle ${currentIdx + 1}`;
+    modal.innerHTML = `
+      <div class="lightbox-backdrop"></div>
+      <div class="lightbox-dialog" role="dialog" aria-modal="true">
+        <div class="lightbox-header">
+          <div class="lightbox-title-group">
+            <span class="mono brand-pill">CASE ${escapeHtml(c.id)}</span>
+            <div class="lightbox-title font-mono" style="font-weight:600">
+              ${escapeHtml(slotTitle)} (${currentIdx + 1} of ${images.length})
+            </div>
+          </div>
+          <button type="button" class="lightbox-close-btn" aria-label="Close Lightbox">&times;</button>
+        </div>
+        <div class="lightbox-body">
+          ${images.length > 1 ? `
+            <button type="button" class="lightbox-nav-btn prev" aria-label="Previous image">‹</button>
+            <button type="button" class="lightbox-nav-btn next" aria-label="Next image">›</button>
+          ` : ''}
+          <div class="lightbox-img-wrap">
+            <img src="${escapeHtml(curImg)}" class="lightbox-img" alt="${escapeHtml(slotTitle)}" />
+          </div>
+        </div>
+        <div class="lightbox-footer">
+          <div style="display:flex;align-items:center;justify-content:space-between;font-size:0.8rem;color:var(--text-muted)">
+            <div><strong>Component:</strong> ${escapeHtml(c.p || 'Hardware Unit')} | <strong>Serial:</strong> ${escapeHtml(c.serialNumber || 'N/A')}</div>
+            <div class="mono" style="color:#38bdf8">Forensic Zoom 100%</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    modal.classList.add('open');
+
+    $('.lightbox-close-btn', modal).onclick = closeLightbox;
+    $('.lightbox-backdrop', modal).onclick = closeLightbox;
+
+    const prevBtn = $('.lightbox-nav-btn.prev', modal);
+    if (prevBtn) {
+      prevBtn.onclick = (e) => {
+        e.stopPropagation();
+        currentIdx = (currentIdx - 1 + images.length) % images.length;
+        renderLightboxBody();
+      };
+    }
+
+    const nextBtn = $('.lightbox-nav-btn.next', modal);
+    if (nextBtn) {
+      nextBtn.onclick = (e) => {
+        e.stopPropagation();
+        currentIdx = (currentIdx + 1) % images.length;
+        renderLightboxBody();
+      };
+    }
+  }
+
+  function closeLightbox() {
+    modal.classList.remove('open');
+    document.removeEventListener('keydown', handleKey);
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Escape') closeLightbox();
+    else if (e.key === 'ArrowLeft' && images.length > 1) {
+      currentIdx = (currentIdx - 1 + images.length) % images.length;
+      renderLightboxBody();
+    } else if (e.key === 'ArrowRight' && images.length > 1) {
+      currentIdx = (currentIdx + 1) % images.length;
+      renderLightboxBody();
+    }
+  }
+
+  document.addEventListener('keydown', handleKey);
+  renderLightboxBody();
+}
 

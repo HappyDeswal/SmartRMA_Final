@@ -405,5 +405,49 @@
     "fraud_flags": [],
     "prev_hash": "b4df8133022728fada8d9301860a0bdd92d4236b1555cfbdbcaf91f905742d2b",
     "block_hash": "9ca829ff0a6a0c720bdf768ea48d625c83f752564c8b02232f285c9a4fe2b93d"
+  },
+  {
+    "timestamp": "2026-10-12T04:48:56.992588+00:00",
+    "case_id": "RMA-54345",
+    "order_id": null,
+    "serial_number": null,
+    "product": null,
+    "product_value": 850,
+    "tier": "T2",
+    "disposition": "REJECT",
+    "risk_score": 18,
+    "anomaly_score": 0.12,
+    "anomaly_region": "Factory Standard Baseline",
+    "cited_clause": "Technician Adjudication (TECH-402): NO IMAGE FOUND",
+    "source_doc": "Technician Workbench",
+    "page": 1,
+    "subImg": null,
+    "userImages": null,
+    "visionTelemetry": null,
+    "policyGrounding": null,
+    "symptom": null,
+    "fraud_flags": [],
+    "prev_hash": "9ca829ff0a6a0c720bdf768ea48d625c83f752564c8b02232f285c9a4fe2b93d",
+    "block_hash": "dbca6af57c50cdf25f02662db8d51d072270b21c1664083193cec178e7ab18bd"
+  },
+  {
+    "timestamp": "2026-10-12T05:34:50.638143+00:00",
+    "case_id": "RMA-83290",
+    "order_id": "Fred-1111",
+    "serial_number": "sn-eeeee",
+    "product_value": 1000.0,
+    "tier": "T2",
+    "disposition": "ESCALATE",
+    "risk_score": 48,
+    "anomaly_score": 0.85,
+    "anomaly_region": "Warranty Void Seal / Serial Identifier Label",
+    "cited_clause": "Ambiguous Defect / Manual Inspection Required",
+    "source_doc": "Warranty - GIGABYTE Global.pdf",
+    "page": 3,
+    "fraud_flags": [
+      "WARRANTY_SEAL_OR_SERIAL_TAMPERING_DETECTED"
+    ],
+    "prev_hash": "dbca6af57c50cdf25f02662db8d51d072270b21c1664083193cec178e7ab18bd",
+    "block_hash": "4f1c4bad399879e9064bfcabe13b620c5ebe006a1947f02caf58589b9da5575e"
   }
 ]
