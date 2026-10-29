@@ -1,0 +1,15 @@
+{
+  "provider": "local_onnx",
+  "tested": 145,
+  "matches_colab_predictions": 145,
+  "correct": 122,
+  "seconds": 0.5930442079989007,
+  "health": {
+    "state": "ready",
+    "provider": "local_onnx",
+    "task": "hardware_type_classification",
+    "advisory_only": true,
+    "model_sha256": "afc89d99fb6ec9543ca1c5a5598a7eb74f837d6c763b7c08732a1456843e30f2",
+    "error": null
+  }
+}

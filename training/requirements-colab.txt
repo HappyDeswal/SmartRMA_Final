@@ -1,0 +1,6 @@
+# Colab provides compatible torch/torchvision/matplotlib/numpy preinstalled.
+# The resulting metrics.json records the actual versions and GPU used.
+onnx==1.20.1
+onnxruntime==1.24.1
+ImageHash==4.3.2
+scikit-learn==1.6.1

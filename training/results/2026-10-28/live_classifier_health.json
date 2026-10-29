@@ -1,0 +1,36 @@
+{
+  "architecture": "three_node",
+  "nodes": [
+    {
+      "role": "gateway",
+      "name": "Node 1 \u00b7 Gateway and decisions",
+      "port": 8010,
+      "reachable": true,
+      "status": "ok"
+    },
+    {
+      "status": "ok",
+      "application": "happy_project",
+      "role": "policy",
+      "port": 8011,
+      "reachable": true,
+      "name": "Node 2 \u00b7 Policy retrieval and chat"
+    },
+    {
+      "status": "ok",
+      "application": "happy_project",
+      "role": "vision",
+      "port": 8012,
+      "reachable": true,
+      "name": "Node 3 \u00b7 Local vision and inference"
+    }
+  ],
+  "classifier": {
+    "state": "ready",
+    "provider": "local_onnx",
+    "task": "hardware_type_classification",
+    "advisory_only": true,
+    "model_sha256": "afc89d99fb6ec9543ca1c5a5598a7eb74f837d6c763b7c08732a1456843e30f2",
+    "error": null
+  }
+}

@@ -1,0 +1,6 @@
+# Treat published media as binary; do not alter original policy documents.
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+resources/policies/* -whitespace

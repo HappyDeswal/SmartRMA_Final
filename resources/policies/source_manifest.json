@@ -1,0 +1,10 @@
+{
+  "documents": {
+    "amd_boxed_processor_limited_warranty.pdf": {
+      "source_url": "https://www.amd.com/content/dam/amd/en/documents/products/processors/general/processor-warranty-update.pdf",
+      "retrieved_at": "2026-10-26T16:04:33.381901+00:00",
+      "sha256": "06afe770ef9824aa7230179cd078cb9f0e1c871fc4fa6215f012059d3ef896fe",
+      "product_scope": "processor"
+    }
+  }
+}

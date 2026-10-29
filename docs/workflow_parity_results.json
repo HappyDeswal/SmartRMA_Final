@@ -1,0 +1,179 @@
+{
+  "old_gateway_sha256": "902b83517136a3a7db3f0da60e2fc7819dc94c11e466b41e01da90445df8ef3a",
+  "compared_functions": [
+    "get_tier",
+    "decision_result"
+  ],
+  "cases": [
+    {
+      "case": "price_29999",
+      "tier": "T1",
+      "old_status": "APPROVE",
+      "new_status": "approved",
+      "matched": true
+    },
+    {
+      "case": "price_30000",
+      "tier": "T2",
+      "old_status": "APPROVE",
+      "new_status": "approved",
+      "matched": true
+    },
+    {
+      "case": "price_100000",
+      "tier": "T2",
+      "old_status": "APPROVE",
+      "new_status": "approved",
+      "matched": true
+    },
+    {
+      "case": "price_100001",
+      "tier": "T3",
+      "old_status": "APPROVE",
+      "new_status": "approved",
+      "matched": true
+    },
+    {
+      "case": "price_250000",
+      "tier": "T3",
+      "old_status": "APPROVE",
+      "new_status": "approved",
+      "matched": true
+    },
+    {
+      "case": "price_250001",
+      "tier": "T4",
+      "old_status": "ESCALATE",
+      "new_status": "needs_review",
+      "matched": true
+    },
+    {
+      "case": "confidence_25000_0.849",
+      "tier": "T1",
+      "old_status": "REJECT",
+      "new_status": "rejected",
+      "matched": true
+    },
+    {
+      "case": "confidence_25000_0.85",
+      "tier": "T1",
+      "old_status": "APPROVE",
+      "new_status": "approved",
+      "matched": true
+    },
+    {
+      "case": "confidence_75000_0.849",
+      "tier": "T2",
+      "old_status": "REJECT",
+      "new_status": "rejected",
+      "matched": true
+    },
+    {
+      "case": "confidence_75000_0.85",
+      "tier": "T2",
+      "old_status": "APPROVE",
+      "new_status": "approved",
+      "matched": true
+    },
+    {
+      "case": "confidence_150000_0.949",
+      "tier": "T3",
+      "old_status": "REJECT",
+      "new_status": "rejected",
+      "matched": true
+    },
+    {
+      "case": "confidence_150000_0.95",
+      "tier": "T3",
+      "old_status": "APPROVE",
+      "new_status": "approved",
+      "matched": true
+    },
+    {
+      "case": "physical_damage",
+      "tier": "T2",
+      "old_status": "REJECT",
+      "new_status": "rejected",
+      "matched": true
+    },
+    {
+      "case": "tampered",
+      "tier": "T2",
+      "old_status": "REJECT",
+      "new_status": "rejected",
+      "matched": true
+    },
+    {
+      "case": "cosmetic_wear",
+      "tier": "T2",
+      "old_status": "REJECT",
+      "new_status": "rejected",
+      "matched": true
+    },
+    {
+      "case": "uncertain",
+      "tier": "T2",
+      "old_status": "REJECT",
+      "new_status": "rejected",
+      "matched": true
+    },
+    {
+      "case": "similar_photo",
+      "tier": "T2",
+      "old_status": "REJECT",
+      "new_status": "rejected",
+      "matched": true
+    },
+    {
+      "case": "edited_photo",
+      "tier": "T2",
+      "old_status": "REJECT",
+      "new_status": "rejected",
+      "matched": true
+    },
+    {
+      "case": "missing_inspection",
+      "tier": "T2",
+      "old_status": "REJECT",
+      "new_status": "rejected",
+      "matched": true
+    },
+    {
+      "case": "conflicting_evidence",
+      "tier": "T2",
+      "old_status": "REJECT",
+      "new_status": "rejected",
+      "matched": true
+    },
+    {
+      "case": "grounded_exclusion",
+      "tier": "T2",
+      "old_status": "REJECT",
+      "new_status": "rejected",
+      "matched": true
+    },
+    {
+      "case": "unknown_policy",
+      "tier": "T2",
+      "old_status": "APPROVE",
+      "new_status": "approved",
+      "matched": true
+    },
+    {
+      "case": "high_risk",
+      "tier": "T2",
+      "old_status": "REJECT",
+      "new_status": "rejected",
+      "matched": true
+    },
+    {
+      "case": "t4_damaged_still_human",
+      "tier": "T4",
+      "old_status": "ESCALATE",
+      "new_status": "needs_review",
+      "matched": true
+    }
+  ],
+  "matched": 24,
+  "scope": "Tier and decision-routing fixtures; not visual accuracy or complete application equivalence"
+}

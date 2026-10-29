@@ -1,0 +1,27 @@
+{
+  "image": "images/ram/0996f4945592cc58c7162d63faf1337d6f2861c28a98e7b2e86d2308bf84edc1.jpg",
+  "condition_model": "qwen3-vl:8b",
+  "elapsed_seconds": 24.086160292004934,
+  "observation": {
+    "hardware_visible": true,
+    "condition": "clean",
+    "findings": "No visible damage to RAM modules including cracked boards, bent contacts, or bulging capacitors.",
+    "confidence": 0.9,
+    "anomaly_score": 0.1,
+    "hardware_hint": {
+      "product_type": "ram",
+      "score": 0.9876070441652827,
+      "model_sha256": "afc89d99fb6ec9543ca1c5a5598a7eb74f837d6c763b7c08732a1456843e30f2",
+      "advisory_only": true,
+      "score_method": "validation_temperature_scaled_not_condition_confidence"
+    }
+  },
+  "classifier_health": {
+    "state": "ready",
+    "provider": "local_onnx",
+    "task": "hardware_type_classification",
+    "advisory_only": true,
+    "model_sha256": "afc89d99fb6ec9543ca1c5a5598a7eb74f837d6c763b7c08732a1456843e30f2",
+    "error": null
+  }
+}

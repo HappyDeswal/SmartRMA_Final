@@ -1,5 +1,43 @@
-.DS_Store
-__pycache__/
-*.pyc
+# Private runtime state and credentials
+/var/
 .env
-.system_generated/
+.env.*
+!.env.example
+*.sqlite
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+first_login.json
+audit.key
+
+# Local environments and generated files
+/.venv/
+/venv/
+__pycache__/
+*.py[cod]
+*.log
+.DS_Store
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Diagnostic artifacts stay local
+/tests/artifacts/*
+!/tests/artifacts/.gitkeep
+
+# Training inputs, caches and learned weights stay out of source commits.
+/training/data/
+/training/runs/
+/training/*.zip
+
+# Local consolidation backups, legacy records and research artifacts
+/output/
+/working/
+/legacy_data/
+/.snapshots/
+/dataset/
+/.env
+/happy_project/
+/cases_store.json
+/audit_ledger.json
