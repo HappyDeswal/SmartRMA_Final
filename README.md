@@ -134,3 +134,7 @@ Node 3 additionally runs the trained MobileNetV3 Small hardware-type classifier 
 Each inspected image can have a separate hardware hint (graphics card, motherboard, RAM or SSD), model checksum and recognition score. The hint is saved with vision telemetry in case history and shown in Technician Review. The score does not replace the vision LLM condition confidence, alter risk or determine approval. All T1–T4 rules remain unchanged, including mandatory human decisions above $2,500. Node 3 `/health` exposes classifier readiness separately from Ollama readiness.
 
 The retained Colab experiment used 971 images (679 train, 147 validation, 145 test). It measured 122/145 = 84.14% hardware-type recognition accuracy, macro F1 0.8301; GPU recall was 52.17%. No damage labels or physical-item IDs were available; these figures do not establish damage or RMA-decision accuracy or unit-disjoint generalization. The classifier has no validated out-of-distribution rejection guarantee. Model weights and private history are excluded from Git.
+
+## Reproducible evaluation and label review
+
+See [evaluation/README.md](evaluation/README.md) for the new damage-photo and warranty-question review workflow, validated metric functions, and read-only retrieval timing baseline. Review pools start without damage/relevance ground truth and are not validated benchmarks. The old journal graph values remain unverified targets. These tools do not change the running application's decisions or claim that targets have been achieved.
