@@ -1,2 +1,0 @@
-# Optional Node 3 local classifier runtime; no training packages in the server.
-onnxruntime==1.24.1

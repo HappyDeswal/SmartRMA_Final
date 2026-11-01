@@ -1,211 +1,128 @@
-<p align="center"><img src="web/assets/smartrma_logo.png" alt="SmartRMA logo" width="180"></p>
+# SmartRMA — local-only hardware return review
 
-# Multi-Model Agentic RAG System for Automated RMA
+SmartRMA runs three FastAPI services and uses installed local Ollama models only.
+No cloud credentials are read. Inference is fixed to loopback, bypasses proxies, rejects external
+redirects, and excludes remote/cloud model aliases. The browser uses local assets and system fonts.
 
-**SmartRMA** is a local hardware-return screening application built with **Python, FastAPI, SQLite, HTML, CSS and JavaScript**. Upload original product photos, inspect them with a locally installed vision model, retrieve manufacturer policy passages, and retain the evidence and decision in signed case history.
+## Run
 
-The application runs **three separate backend processes**. Vision and text LLM inference goes through **local Ollama**; the optional trained hardware classifier runs in local ONNX Runtime. No hosted AI provider, cloud inference endpoint or AI API key is supported. Local HTTP APIs connect the browser, nodes and Ollama.
-
-## Three-node workflow
-
-```mermaid
-flowchart TD
-    Browser[Browser workspace] --> Gateway[Node 1 · Gateway and decisions · 8010]
-    Gateway --> Vision[Node 3 · Vision and local inference · 8012]
-    Gateway --> Policy[Node 2 · Policy retrieval and local text LLM · 8011]
-    Policy --> Ollama
-    Vision --> Ollama[Local Ollama · 11434]
-    Gateway --> Store[Private SQLite · original photos and signed history]
-```
-
-| Component | Responsibility |
-|---|---|
-| **Node 1** | Serves the UI, validates uploads, saves durable jobs, coordinates the other nodes, applies decision rules, and owns the database and audit history. Runs no LLM. |
-| **Node 2** | Retrieves manufacturer-specific policy passages with document/page citations and executes policy chat through its own local Ollama text-model client. Current retrieval uses lexical keyword scoring. |
-| **Node 3** | Inspects photos and answers selected-photo questions with local vision models. Its inference lock is shared with Node 2 to prevent competing model loads. |
-
-Inspection follows **Node 1 → Node 3 → Node 1 → Node 2 → Node 1 decision**. Policy chat follows **Node 1 → Node 2 → local Ollama text model**. The architecture page shows this flow and live node health; its replay is illustrative, not request telemetry.
-
-## Requirements
-
-- Python **3.12 or newer**; the retained development environment uses **Python 3.14.6 on macOS**.
-- Ollama running on `127.0.0.1:11434`, with supported models downloaded locally.
-- Sufficient RAM and disk space for the selected models; the application serializes its model calls.
-- Free local ports **8010, 8011 and 8012**, and a local filesystem for SQLite.
-
-Package installation and initial model downloads need internet access. Inference uses local model weights. The application does not download or start models automatically.
-
-## Quick start
+Use Python 3.10+ and the packages listed in `requirements.txt`:
 
 ```sh
-git clone https://github.com/HappyDeswal/SmartRMA_Final.git
-cd SmartRMA_Final
-python3 -m venv .venv
-source .venv/bin/activate
-python3 -m pip install -r requirements.lock
-```
-
-Install the primary models once:
-
-```sh
-ollama pull qwen3-vl:8b
-ollama pull qwen2.5:7b
-```
-
-If Ollama is not running, start it in a separate terminal:
-
-```sh
+python3 -m pip install -r requirements.txt
 OLLAMA_NO_CLOUD=1 ollama serve
 ```
 
-Then start the three application nodes:
+In a second terminal, from this project folder:
 
 ```sh
 python3 run.py
 ```
 
-Open **http://127.0.0.1:8010**. On macOS, after setup, `start.command` also launches the cluster. Stop the launcher with **Ctrl+C**. Check all three nodes with:
+Supported vision models, in order: `qwen3-vl:8b`, `llama3.2-vision:latest`, `moondream:latest`.
+Supported chat models: `qwen2.5:7b`, `qwen2.5-coder:14b`, `ornith:35b`, `llama3.1:8b`.
+Only installed local models are selected; the launcher does not download models.
+Installation and inference readiness are reported separately. Until a successful request, a model
+is **untested**, not ready. Failed inference is reported; a local fallback may still be usable.
 
-```sh
-python3 run.py --status
-```
+Open `http://127.0.0.1:8001/index.html` for intake, `review.html` for technician review,
+and `architecture.html` for service health. `--no-browser` suppresses browser opening, `--status`
+checks services, and `--stop` stops recognized SmartRMA services only. Individual services also run
+with `python3 -m node.node1_gateway` (or `node2_policy_rag`, `node3_vision`).
+Use one worker per service: storage coordination is process-local.
 
-### Local workspace access
+## Automatic decision rules
 
-The browser opens directly into the local administrator workspace, with **no login page**. Automatic entry requires both a loopback client connection and a loopback configured origin. Backend sessions, CSRF protection, authorization and account administration remain active.
+The current user preset is **IMAGE_RULES_V2**: local AI evaluates uploaded photos of graphics cards, motherboards, RAM and SSDs. T1–T3 receive an automatic approval or rejection. Only T4 (declared value above $2,500) requires a human decision.
 
-A fresh private data directory generates an administrator, a random bootstrap password and an audit key. Bootstrap credentials are stored in `var/first_login.json`; changing the password through **Account** removes that file and revokes previous sessions. `var/` is private runtime data and is excluded from this repository.
+Approval requires an assessed clean image, consistent evidence, risk below 30, and confidence at least 85% (T1/T2) or 95% (T3). Damage, tampering, cosmetic wear, actual identifier mismatches, similarity/editing flags, or a grounded policy exclusion reject the request. Unavailable/uncertain inspection, conflicting observations, low confidence or high risk also reject, with an explicit **resubmit evidence** reason. An evidence rejection does not claim the product is damaged, fraudulent or legally ineligible for warranty service.
 
-`HAPPY_LOCAL_AUTO_LOGIN=0` disables automatic entry. The bundled UI has no interactive login form, so this setting requires an authenticated client/integration using the backend login endpoint. Remote access is not a ready-to-use public browser deployment; review authentication and TLS before exposing it.
+Unreadable serial/model/OEM and absent policy sources are advisory, not mandatory-human-review gates. They remain unverified in the dossier. No identity or manufacturer authorization is fabricated. A known grounded policy exclusion can reject automatically; unknown policy does not become an invented approval clause.
 
-## Using the application
+| Tier | Declared value | Workflow |
+|---|---|---|
+| T1 | Below $300 | Automatic approval/rejection; clean approval needs ≥85% confidence |
+| T2 | $300–$1,000 | Automatic approval/rejection; clean approval needs ≥85% confidence |
+| T3 | Above $1,000–$2,500 | Automatic approval/rejection; clean approval needs ≥95% confidence |
+| T4 | Above $2,500 | Mandatory human approval/rejection |
 
-1. Enter an order reference, supported hardware type, product/model, declared USD value and complaint. Manufacturer and serial identity are advisory.
-2. Upload **1–5 original photos** of the same item. Prefer full front/back views plus contacts, suspected damage and identifier-label details.
-3. Submit the case. Original photos and a durable job are saved immediately; the browser shows processing progress.
-4. Local vision records structured observations, policy retrieval supplies relevant passages, and the gateway applies the configured rules.
-5. Open **Review / History** to inspect photos, findings, citations, saved decisions, historical snapshots and exports. Record a reason when making a human decision.
+These are application return-screening decisions. They do not issue external manufacturer RMA numbers, payments or shipping labels. Confidence is self-reported and uncalibrated. Technicians may optionally re-evaluate a lower-tier automatic result, but it is not held pending for them.
 
-Accepted images: single-frame **JPEG, PNG, WebP and BMP**, up to **10 MiB each / 25 MiB combined**. Animated and malformed files are rejected. Supported products: **graphics cards, motherboards, RAM and SSDs**.
+The vision request now asks for compact condition evidence, not unneeded serial/coordinate fields, to reduce truncated structured responses. Optional identifiers remain null instead of being invented. The fallback model is unloaded after use to limit local memory pressure.
 
-### Preset decision rules
+## Inspection and policy behavior
 
-| Tier | Declared value | Routing | Minimum clean-condition confidence |
-|---|---|---|---|
-| T1 | Below $300 | Automatic approve/reject | 85% |
-| T2 | $300–$1,000 inclusive | Automatic approve/reject | 85% |
-| T3 | Above $1,000 through $2,500 inclusive | Automatic approve/reject | 95% |
-| T4 | Above $2,500 | **Mandatory human approval or rejection** | AI evidence only |
+- Supply 1–5 distinct photo slots. All supplied views are inspected under one total deadline.
+- Original uploads retain EXIF for the gateway; the vision copy applies EXIF orientation and resizing.
+- Similarity checks use only durably committed photos, including previous images for resubmitted slots.
+  A failed uncommitted request does not create a duplicate-photo/fraud record.
+- EXIF is evidence, not proof of authenticity; pHash is not an Internet image search.
+- Unknown/missing/conflicting OCR remains unverified. The model is not given a serial to copy into its findings.
+- Moondream descriptions are retained as inconclusive because reliable structured OCR was not established.
+- Policy search uses manufacturer-filtered keyword scoring, not vector RAG. Explicit board brands take
+  precedence over `RTX`/chip-family names. Unsupported brands never borrow another manufacturer's terms.
+- Scoped negation and burn-in/cooling terminology are handled before classifying damage. Ambiguous
+  language remains flagged in the policy advisory. Chat cannot authorize claims; output checks filter personal outcome promises.
+- Timeouts are coordinated: 240 seconds total vision budget, 255 seconds gateway vision wait,
+  285 seconds route wait, and 330 seconds browser allowance. Each model attempt is also bounded.
+  Chat has a total 180-second budget and a 210-second browser allowance.
 
-Automatic approval also requires **risk below 30**, consistent usable observations for every submitted photo, and no visible damage/wear/tampering, editing metadata, similar-photo warning or grounded exclusion. Exactly **$2,500 belongs to T3**.
+## Policy sources
 
-An unavailable or inconclusive inspection produces an evidence-resubmission rejection; it is not a confirmed damage or fraud diagnosis. Missing OCR identity or indexed manufacturer policy remains advisory. Only T4 has a mandatory human gate; reviewers can optionally re-evaluate other completed cases with a recorded reason.
+The rebuilt index contains **26 readable documents and 1,423 chunks**, at most 900 characters per chunk.
+`python3 policy/build_policy_index.py` rebuilds it atomically and reports ingestion failures.
+The invalid AMD HTML download was preserved under `policy/invalid_sources/` and replaced in the corpus
+with a validated [official AMD boxed-processor warranty PDF](https://www.amd.com/content/dam/amd/en/documents/products/processors/general/processor-warranty-update.pdf).
+Its source URL, retrieval time, SHA-256, and processor-only scope are recorded in `policy/source_manifest.json`.
+These processor terms are not applied to Radeon graphics claims. Regional/purchase-date applicability
+still requires technician verification; indexing a source is not proof of claim eligibility.
 
-## Local models
+## Storage, historical evidence, and recovery
 
-| Task | Preference order |
-|---|---|
-| Vision / photo questions | `qwen3-vl:8b` → `llama3.2-vision:latest` → `moondream:latest` |
-| Text / policy chat | `qwen2.5:7b` → `qwen2.5-coder:14b` → `ornith:35b` → `llama3.1:8b` |
+`cases_store.json` stores current dossiers. `audit_ledger.json` stores the complete SHA-256 chain.
+New audit blocks bind a hash of the full dossier, including photo data, model findings, and decision reasons.
+The corresponding version is saved in the private `.snapshots/` directory. `pending_transaction.json`
+recovers interrupted dossier/audit writes. Do not manually remove a pending journal.
 
-Only installed supported candidates are used. Qwen/Llama vision output must pass the condition schema. Moondream descriptive output is retained as inconclusive evidence and does not create invented confidence. Installation alone does not demonstrate successful inference.
+Verification checks chain links, current dossier content/stamps, and historical snapshot hashes.
+Modified dossiers cannot be signed off or exported as verified records. Historical audit clicks open
+read-only versions; historical JSON downloads retain the old disposition after later re-evaluation.
 
-The transport rejects remote/cloud aliases, proxy routing and redirects. The inference lock coordinates this application's calls; other applications may still compete for Ollama resources.
+Existing historical data is preserved. Legacy dossiers without a recorded binding are explicitly marked
+unverified; no claim of retroactive authentication is made. The ledger is tamper-evident, not immutable
+against someone who can rewrite all local files and recompute every hash.
 
-## Features
-
-- Intake with original-photo preservation, preview and upload validation.
-- Durable inspection queue, bounded retries, idempotent submissions and restart recovery.
-- Deterministic financial routing with a T4 human-review boundary.
-- Review/history, original-image exports and immutable decision snapshots.
-- Manufacturer policy search with source-document access and citations.
-- Local policy chat and selected-photo questions.
-- Architecture workflow, live node health, light/dark themes and responsive layouts.
-- Local sessions, roles, account management and CSRF/Origin/Host checks.
-- SHA-256 photo identifiers, HMAC-sealed audit history and integrity verification.
-- Consistent SQLite backups with the matching audit key.
-
-## Project layout
-
-```text
-app/                 Backend, node services, rules, models, policy and storage
-web/                 Browser UI, styles, scripts and branding assets
-resources/policies/  Local policy documents, provenance and retrieval index
-sample_data/         20 attributed demonstration photos grouped by T1–T4
-tests/               Isolated Python tests and optional browser/live diagnostics
-docs/                Architecture and deployment/recovery notes
-run.py               Three-node launcher and status command
-manage.py            Integrity, backup, policy rebuild and admin recovery
-requirements.lock    Pinned runtime dependencies
-```
-
-The original repository now contains the consolidated application directly at its root. The separate rebuilt folder is retired. The internal `happy_project` identifier and `HAPPY_*` environment variables remain for compatibility.
+The UI reset requires confirmation and clears cases, ledger, fingerprints, and private snapshots.
+URL query parameters never reset data. Individual case/ledger clear endpoints are local maintenance
+operations; use full reset to remove both together.
 
 ## Verification
 
-From the repository root, with the virtual environment active:
-
 ```sh
-python3 -m unittest discover -s tests -v
-python3 -m pip check
+python3 run.py --test
+# or:
+python3 test_security_audit.py
 ```
 
-The Python suite uses disposable data directories and controlled model fixtures to test application behavior. It does not establish vision accuracy or reproduce journal benchmarks. [TEST_REPORT.md](TEST_REPORT.md) records earlier live and browser verification separately from the publication check.
+Tests use temporary storage and controlled inference outputs, including positive automatic decisions,
+negative cases, concurrent commits, tampering, snapshot history, and crash recovery.
 
-Browser diagnostics in `tests/*.cjs` additionally require Node.js, Playwright and Chrome; the retained scripts target macOS Chrome and fixed local fixture ports. Live scripts can create labelled demonstration cases and require local credentials. They are opt-in diagnostics, not startup steps. Generated logs, screenshots and runtime case records are excluded from Git.
-
-## Operations and recovery
+For live model/browser checks, start a separate app with temporary storage:
 
 ```sh
-python3 manage.py verify
-python3 manage.py backup /absolute/path/to/new-private-backup
-# Stop the application before administrator recovery:
-python3 manage.py reset-admin
-# After editing trusted local policy documents, rebuild and restart:
-python3 manage.py rebuild-policies
+SMARTRMA_DATA_DIR=/tmp/smartrma-verification-data python3 run.py --no-browser
+# In another terminal:
+python3 tests/live_local_smoke.py
 ```
 
-Keep a backup's `.happy_data`, `happy.sqlite3` and `audit.key` together. Restore to a **new private directory** with the server stopped, set `HAPPY_DATA_DIR` to it, then run `manage.py verify` before starting. Do not overlay an active database or mix audit keys. Backups contain private photos and password hashes and require protected storage.
+`tests/browser_smoke.cjs` requires Playwright and installed Chrome. It refuses to reset normal workspace
+storage. Model checks use the actual configured inventory rather than historical hardcoded names.
+See `working/pc20_run_20261027_021918/REPORT.md` for the current 20-case image-screening workflow and verification. Earlier audit reports describe historical rule versions.
 
-| Environment variable | Default | Purpose |
-|---|---|---|
-| `HAPPY_DATA_DIR` | Repository `var/` | Private database, original photos and audit key |
-| `HAPPY_ORIGIN` | `http://127.0.0.1:8010` | Exact browser/application origin |
-| `HAPPY_LOCAL_AUTO_LOGIN` | `1` | Local automatic administrator session |
-| `HAPPY_SECURE_COOKIE` | `0` | Set `1` for reviewed HTTPS deployments |
+## Remaining product boundaries
 
-See [architecture](docs/ARCHITECTURE.md) and [deployment and recovery](docs/DEPLOYMENT.md) for node boundaries and operational details.
-
-## Data attribution and scope
-
-The demonstration set contains **20 attributed photos**, five per tier, with synthetic test prices. Conditions are not independently annotated. Preserve [sample image credits](sample_data/CREDITS.md) and [the manifest](sample_data/manifest.json) when reusing them.
-
-The included corpus has **26 local policy documents** and **1,423 indexed chunks** in the retained snapshot. Policy documents retain their publishers' rights; review their current region, date and product applicability. This repository does not grant new rights to third-party material.
-
-The application performs **screening and traceable review**. It does not issue refunds, manufacturer authorizations, shipping labels or external tickets. Photos cannot prove hidden electrical defects or purchase eligibility, and model confidence is not calibrated diagnostic accuracy. Passing tests is not a guarantee of zero defects or production readiness; independent evaluation and deployment acceptance remain necessary.
-
-## Optional hardware model trained in Colab
-
-The [hardware training workflow](training/README.md) and self-contained
-[Colab notebook](training/SmartRMA_Hardware_Training.ipynb) train a small
-MobileNetV3 classifier on versioned GPU, motherboard, RAM and SSD photographs.
-The prepared dataset contains 971 original images (679 train, 147 validation,
-145 test) after exact duplicate removal and near-duplicate grouping. Public
-source labels are hardware types; they are not damage or warranty labels.
-
-Download the Colab export, install `requirements-hardware.txt`, then run
-`python training/install_model.py /path/to/smartrma_hardware_bundle.zip` and
-restart the application. Node 3 serves the model locally through ONNX Runtime.
-Hardware recognition appears as an advisory in case history; the existing local
-vision LLM still assesses visible condition. Recognition scores do not replace
-condition confidence, affect return decisions, or bypass T4 human approval.
-See the training documentation for attribution, measured results and dataset
-limits. Training data and weights are excluded from source commits.
-
-The [workflow parity comparison](docs/WORKFLOW_PARITY.md) maps the original and rebuilt node responsibilities and distinguishes preserved behavior from implementation improvements.
-
-## Consolidated project (29 October 2026)
-
-The maintained project is now SmartRMA_Final. Run `python3 run.py` from this folder. Gateway/UI remains on port 8010, policy/text on 8011 and vision on 8012. The implementation, local-only LLMs, trained advisory classifier and preset return rules are carried over from the rebuilt project. There is one active launcher and application.
-
-Existing rebuilt SQLite history, original uploads, matching audit key and installed local classifier were preserved in private `var/`. Earlier JSON dossiers and audit records are preserved in local `legacy_data/` and a verified recovery ZIP under `output/backups/`. They are not imported into the signed SQLite history or displayed as newly evaluated cases. Pre-consolidation academic figures remain historical and are not evidence of current model accuracy. See [migration notes](docs/CONSOLIDATION.md).
+This is a trusted local, single-user prototype. `TECH-402` is a workstation identity, not an authenticated
+multi-user login. There is no external order/invoice database, human ticketing, manufacturer RMA-number,
+shipping, or refund integration. JSON exports are review records. Generated thermal/laser/X-ray assets
+are labeled synthetic; they are not sensor measurements. Legacy research tables are not reproducible
+accuracy evidence for the current code.

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Hardware RMA Triage & Telemetry | SmartRMA</title>
+  <meta name="description" content="Automated hardware return triage with computer vision anomaly detection, false-color heatmaps, and warranty policy RAG verification.">
+  <link rel="icon" type="image/png" href="assets/smartrma_icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <div class="bar">
+      <a class="brand-wrapper" href="index.html" title="SmartRMA Client Web Interface">
+        <img src="assets/smartrma_logo.png" alt="SmartRMA Client Web Interface" class="brand-logo-img">
+        <span class="brand-pill">v3.0 Local</span>
+      </a>
+
+      <nav aria-label="Main Navigation">
+        <a href="index.html" aria-current="page" id="nav-triage">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+          RMA Triage
+        </a>
+        <a href="review.html" id="nav-review">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+          Technician Review
+        </a>
+        <a href="architecture.html" id="nav-arch">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="2" width="20" height="8" rx="2"/>
+            <rect x="2" y="14" width="20" height="8" rx="2"/>
+            <line x1="6" y1="6" x2="6.01" y2="6"/>
+            <line x1="6" y1="18" x2="6.01" y2="18"/>
+          </svg>
+          Architecture
+        </a>
+      </nav>
+
+      <div class="header-actions">
+        <div class="sys-status-pill">
+          <span class="status-dot"></span>
+          <span>Local Ollama only</span>
+        </div>
+        <button id="theme-toggle" class="icon-btn" type="button" aria-label="Toggle theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="app-scroll">
+  <main>
+    <div class="page-header">
+      <h1>RMA Hardware Triage Bay</h1>
+      <p class="sub">Graphics card, motherboard, RAM and SSD returns. Upload photos for local AI screening. Only values above $2,500 require human approval.</p>
+    </div>
+
+    <div class="g2">
+      <!-- Intake Form Card -->
+      <form id="f" class="card">
+        <div class="card-header-bar">
+          <div class="card-title-group">
+            <div class="card-title-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+            </div>
+            <div>
+              <h2>Hardware Incident Dossier</h2>
+            </div>
+          </div>
+          <span class="mono brand-pill" id="intake-stage">STATUS: PENDING INTAKE</span>
+        </div>
+
+        <div class="row">
+          <label class="f">
+            Order Reference *
+            <input id="oid" required placeholder="e.g. ORD-98214" autocomplete="off">
+          </label>
+          <label class="f">
+            Serial Barcode / Unit ID (optional)
+            <input id="ser" placeholder="Leave blank if unreadable" class="mono" autocomplete="off">
+          </label>
+        </div>
+
+        <div class="row">
+          <label class="f">
+            Declared Order Value (USD) *
+            <input id="val" type="number" min="1" max="100000" step="0.01" required placeholder="e.g. 750" class="mono">
+            <small id="tp" class="mu mono" style="display:block;margin-top:4px">Enter declared value to compute SLA tier policy</small>
+          </label>
+          <label class="f">
+            Manufacturer / OEM *
+            <select id="mfg-select" required>
+              <option value="" disabled selected>Select Manufacturer / OEM...</option>
+              <option value="NVIDIA">NVIDIA</option>
+              <option value="GIGABYTE">GIGABYTE / AORUS</option>
+              <option value="ASUS">ASUS (ROG / TUF)</option>
+              <option value="MSI">MSI (Gaming / Ventus)</option>
+              <option value="EVGA">EVGA</option>
+              <option value="AMD">AMD (Radeon / Ryzen)</option>
+              <option value="Apple">Apple (Mac / Silicon)</option>
+              <option value="Dell">Dell / Alienware</option>
+              <option value="Lenovo">Lenovo (ThinkPad / Legion)</option>
+              <option value="HP">HP (OMEN / Victus)</option>
+              <option value="Acer">Acer (Predator / Nitro)</option>
+              <option value="Intel">Intel (Arc / Core / Xeon)</option>
+              <option value="Corsair">Corsair</option>
+              <option value="Samsung">Samsung</option><option value="Micron">Micron</option>
+              <option value="Kingston">Kingston</option><option value="Crucial">Crucial</option>
+              <option value="SanDisk">SanDisk</option><option value="G.Skill">G.Skill</option>
+              <option value="UNVERIFIED">Unknown / Not provided</option>
+              <option value="Other OEM">Other OEM / Custom</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="row">
+          <label class="f" style="grid-column:1 / -1">
+            Hardware Model Line &amp; Component Details *
+            <input id="model-line" required placeholder="e.g. GeForce RTX 4080 Super Gaming OC / ROG Strix Z790" autocomplete="off">
+          </label>
+        </div>
+
+        <label class="f">
+          Return Symptom Description *
+          <textarea id="rsn" required rows="3" maxlength="2000" placeholder="Describe the hardware defect, failure symptoms, power anomaly, or reason for return..."></textarea>
+        </label>
+
+        <!-- Guided Hardware Photo Bay -->
+        <div class="inspection-bay">
+          <div class="bay-header">
+            <h3>Guided Diagnostic Photos</h3>
+            <span class="mono brand-pill" id="cnt">0 of 5 views verified</span>
+          </div>
+          <div class="slots" id="slots"></div>
+          <p class="mu" style="margin:8px 0 16px;font-size:0.78rem">
+            High-resolution studio or macro camera required. Original photo metadata is preserved. Server-side inspection runs when you submit.
+          </p>
+        </div>
+
+        <div class="acts">
+          <button class="btn" type="submit" id="btn-submit">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Run Hardware Triage
+          </button>
+          <button class="btn btn-outline" type="button" id="btn-reset">
+            Clear Form
+          </button>
+        </div>
+        <p class="err" id="err" role="alert"></p>
+      </form>
+
+      <!-- WhatsApp-Style Live RMA Assistant Chatbot Section -->
+      <div class="whatsapp-card" id="wa-card">
+        <!-- WhatsApp Header -->
+        <div class="wa-header">
+          <div class="wa-profile-info">
+            <div class="wa-avatar">
+              <img src="assets/smartrma_icon.png" alt="SmartRMA Assistant" style="width:100%;height:100%;border-radius:50%;object-fit:cover">
+              <div class="wa-avatar-online"></div>
+            </div>
+            <div class="wa-profile-meta">
+              <div class="wa-profile-name">
+                SmartRMA Assistant
+                <span class="wa-verified-badge" title="Verified Business Channel">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                  </svg>
+                </span>
+              </div>
+              <div class="wa-profile-status" id="wa-status">
+                Official Support Channel &bull; <span style="color:#00A884;font-weight:600" id="wa-status-text">● Online</span>
+              </div>
+            </div>
+          </div>
+          <div class="wa-header-icons">
+            <span class="mono brand-pill" style="font-size:0.68rem;padding:3px 8px;background:var(--accent-subtle);color:var(--accent);border:1px solid var(--accent-border)">
+              <span id="policy-count">Loading policy index…</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- WhatsApp Chat Stream -->
+        <div class="wa-body" id="wa-body">
+          <div class="wa-date-pill">TODAY</div>
+          <div class="wa-enc-notice">
+            🔒 Inquiries are verified against manufacturer policy archives. Informational return policy guidance only.
+          </div>
+
+          <div id="wa-messages" style="display:flex;flex-direction:column;gap:12px">
+            <!-- Initial Welcome Message from Bot -->
+            <div class="wa-msg-row in">
+              <div class="wa-bubble">
+                <div style="font-weight:700;font-size:0.78rem;color:var(--accent);margin-bottom:4px">SmartRMA Assistant &bull; Node 2</div>
+                <div>
+                  👋 Hello! I am your <strong>SmartRMA Technical &amp; Policy Assistant</strong> powered by <strong>Node 2 Policy RAG</strong> and high-performance neural reasoning.<br><br>
+                  I can answer questions regarding indexed manufacturer warranty policies (Apple, ASUS, Dell, Gigabyte, HP, etc.) and general hardware troubleshooting.<br><br>
+                  <small style="color:var(--text-muted)"><em>Note:</em> The chatbot is strictly an informational assistant. It cannot process photo uploads, authorize returns, or guarantee claim approvals. Official return evaluations require submitting a hardware claim with authentic photos via the Return Intake Form on the left.</small>
+                </div>
+                <div class="wa-quick-chips">
+                  <button type="button" class="wa-chip" onclick="askPresetQuestion('What is the Gigabyte GPU warranty period and is customer induced damage covered?')">⚡ Gigabyte Warranty &amp; CID Exclusions</button>
+                  <button type="button" class="wa-chip" onclick="askPresetQuestion('Does Apple Mac limited warranty cover liquid spill or unauthorized modifications?')">🍏 Apple Mac Liquid &amp; Mod Policy</button>
+                  <button type="button" class="wa-chip" onclick="askPresetQuestion('What are Dell hardware return procedures and limited warranty durations?')">🏢 Dell Warranty &amp; Return Terms</button>
+                  <button type="button" class="wa-chip" onclick="askPresetQuestion('Can I return a custom laser-engraved gold-plated microwave under warranty?')">❓ Unindexed Policy Question</button>
+                </div>
+                <div class="wa-meta">
+                  <span id="wa-start-time">11:15 AM</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WhatsApp Chat Footer (Text only, no image attachments) -->
+        <form class="wa-footer" id="wa-form" onsubmit="handleChatSubmit(event)">
+          <div class="wa-input-wrap">
+            <input type="text" id="wa-input" class="wa-input" placeholder="Type a warranty or hardware question..." autocomplete="off">
+          </div>
+          <button class="wa-send-btn" type="submit" id="wa-send" title="Send message">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="assets/smartrma_logo.png" alt="SmartRMA Logo" class="footer-logo">
+        <p>Enterprise Autonomous Hardware Triage, Vision Telemetry &amp; Cryptographic RMA Ledger.</p>
+      </div>
+      <div class="footer-meta">
+        <span class="mono">SmartRMA Client Web Interface &bull; Local prototype v3.0</span>
+        <span class="mono" style="color:var(--text-muted)">SHA-256 Tamper-Evident Ledger Integrity Active</span>
+      </div>
+    </div>
+  </footer>
+  </div>
+
+  <script src="common.js"></script>
+  <script src="triage.js"></script>
+</body>
+</html>

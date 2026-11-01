@@ -1,7 +1,0 @@
-{
-  "bundle_sha256": "03418bdd8774168ed43f81359af709b8184198fb7eec9e6f16c87f4f5f0e5910",
-  "regression_tests": 104,
-  "live_local_qwen_and_onnx": true,
-  "local_test_predictions_match_colab": 145,
-  "three_nodes_running": true
-}
