@@ -26,6 +26,9 @@ from node.local_runtime import (LocalAccessMiddleware, ALLOWED_ORIGINS, VISION_M
     VISION_ATTEMPT_SECONDS, ROUTE_REQUEST_SECONDS, record_model_result, model_readiness)
 from node.decision_rules import normalize_identifier, canonical_model, canonical_manufacturer, mentioned_brands, CHIP_BRANDS
 
+from node.hardware_classifier import HardwareClassifier
+HARDWARE_CLASSIFIER = HardwareClassifier.environment()
+
 Image.MAX_IMAGE_PIXELS = 25_000_000
 warnings.simplefilter('error', Image.DecompressionBombWarning)
 app = FastAPI(title='SmartRMA Node 3 - Local Vision', version='3.0.0')
@@ -197,6 +200,8 @@ def aggregate_inspections(req, observations):
             'details': 'Based only on text reported visible in supplied photos.'},
         'inspection_points': points, 'images_inspected': len(rows),
         'model_used': ', '.join(dict.fromkeys(item['model_used'] for item in observations)),
+        'hardware_recognition': [{'slot': item['slot'], 'name': item['name'], **item['hardware_hint']}
+                                 for item in observations if item.get('hardware_hint')],
         'view_inspections': [{**item, 'observation': item['observation'].model_dump()} for item in observations]
     }
 
@@ -206,7 +211,8 @@ def health():
     return {'status': 'ONLINE', 'service': 'SmartRMA Node 3 - Local Vision', 'port': 8002,
             'local_only': True, 'inference_provider': 'local_ollama',
             **model_readiness(models), 'primary_vision_model': models[0] if models else None,
-            'available_models': models, 'stats': STATS}
+            'available_models': models, 'stats': STATS,
+            'hardware_classifier': HARDWARE_CLASSIFIER.health()}
 
 @app.post('/api/v1/inspect')
 def inspect_endpoint(req: InspectRequest):
@@ -237,8 +243,18 @@ def inspect_endpoint(req: InspectRequest):
         )
         text, model = call_vision_llm(b64, prompt, structured=True, deadline=deadline)
         cleaned = re.sub(r'^```(?:json)?\s*|\s*```$', '', text).strip()
+        hint = None
+        try:
+            image, raw = decode_image(item.image_b64, item.url)
+            image.close()
+            prediction = HARDWARE_CLASSIFIER.predict(raw)
+            hint = prediction.model_dump() if prediction is not None else None
+        except Exception:
+            # Product recognition is optional and cannot replace condition evidence.
+            pass
         observations.append({'slot': item.slot, 'name': item.name,
-                             'observation': Observation.model_validate_json(cleaned), 'model_used': model})
+                             'observation': Observation.model_validate_json(cleaned), 'model_used': model,
+                             'hardware_hint': hint})
     telemetry = aggregate_inspections(req, observations)
     if telemetry['assessment_available']:
         STATS['anomalies_detected' if telemetry['severity'] in {'CRITICAL', 'MODERATE'} else 'clean_units'] += 1

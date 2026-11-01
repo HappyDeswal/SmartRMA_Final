@@ -31,3 +31,6 @@ pending_transaction.json
 /research_paper.md
 /result matrix.md
 /system_architecture_diagram.jpg
+
+# Local Colab model weights and evidence
+/models/

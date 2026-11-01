@@ -126,3 +126,11 @@ multi-user login. There is no external order/invoice database, human ticketing, 
 shipping, or refund integration. JSON exports are review records. Generated thermal/laser/X-ray assets
 are labeled synthetic; they are not sensor measurements. Legacy research tables are not reproducible
 accuracy evidence for the current code.
+
+## Colab hardware classifier in the original project
+
+Node 3 additionally runs the trained MobileNetV3 Small hardware-type classifier locally with ONNX Runtime. Install `python3 -m pip install -r requirements-hardware.txt` and place the Colab export files (hardware.onnx, metadata.json, metrics.json) in `models/hardware/`, then restart. `SMARTRMA_HARDWARE_MODEL_DIR` overrides that directory; an empty value disables recognition. Missing/corrupt files or optional dependencies disable the advisory safely. The original interface remains on port 8001 and the original three-node workflow remains in use.
+
+Each inspected image can have a separate hardware hint (graphics card, motherboard, RAM or SSD), model checksum and recognition score. The hint is saved with vision telemetry in case history and shown in Technician Review. The score does not replace the vision LLM condition confidence, alter risk or determine approval. All T1–T4 rules remain unchanged, including mandatory human decisions above $2,500. Node 3 `/health` exposes classifier readiness separately from Ollama readiness.
+
+The retained Colab experiment used 971 images (679 train, 147 validation, 145 test). It measured 122/145 = 84.14% hardware-type recognition accuracy, macro F1 0.8301; GPU recall was 52.17%. No damage labels or physical-item IDs were available; these figures do not establish damage or RMA-decision accuracy or unit-disjoint generalization. The classifier has no validated out-of-distribution rejection guarantee. Model weights and private history are excluded from Git.

@@ -84,6 +84,7 @@ function renderDetails() {
     <div class="nodes-telemetry-grid"><div class="node-telemetry-box"><h3>Local vision findings</h3>
       <p>Model: ${escapeHtml(vt.model_used || 'Unavailable')}</p><p style="white-space:pre-wrap">${escapeHtml(vt.visual_findings || 'No inspection completed.')}</p>
       <p>Confidence and coordinates are model estimates, not calibrated measurements.</p>
+      ${(vt.hardware_recognition || []).map(h=>`<p><b>Local hardware recognition (${escapeHtml(h.name)}):</b> ${escapeHtml(String(h.product_type).replaceAll('_',' '))} · ${Number.isFinite(h.score)?(h.score*100).toFixed(1)+'%':'Unavailable'} recognition score. Advisory only; this does not measure damage or determine the return decision.</p>`).join('')}
       ${(vt.inspection_points || []).map(point=>`<p><b>${escapeHtml(point.point)}: ${escapeHtml(point.status)}</b><br>${escapeHtml(point.details)}</p>`).join('')}</div>
       <div class="node-telemetry-box"><h3>Policy suggestion: ${escapeHtml(pg.verdict || 'Unassessed')}</h3>
       <p>${escapeHtml(pg.source_document || 'No indexed source')}${pg.page?` — page ${Number(pg.page)}`:''}</p>
