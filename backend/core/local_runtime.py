@@ -14,7 +14,14 @@ from fastapi import HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+_dir = Path(__file__).resolve().parent
+while _dir.parent != _dir:
+    if (_dir / 'run.py').exists() or (_dir / 'requirements.txt').exists():
+        BASE_DIR = _dir
+        break
+    _dir = _dir.parent
+else:
+    BASE_DIR = Path(__file__).resolve().parent.parent.parent
 OLLAMA_URL = 'http://127.0.0.1:11434'
 # Ignore system proxy settings: image/text payloads must remain on loopback.
 class LoopbackRedirectHandler(urllib.request.HTTPRedirectHandler):
@@ -74,6 +81,14 @@ def safe_image_path(path_str):
         return None
     path = Path(path_str)
     candidate = (BASE_DIR / path).resolve() if not path.is_absolute() else path.resolve()
+    if not candidate.is_file():
+        alt_frontend = (BASE_DIR / 'frontend' / path).resolve()
+        if alt_frontend.is_file() and alt_frontend.is_relative_to(BASE_DIR):
+            candidate = alt_frontend
+        else:
+            alt_fixture = (BASE_DIR / 'tests' / 'fixtures' / path).resolve()
+            if alt_fixture.is_file() and alt_fixture.is_relative_to(BASE_DIR):
+                candidate = alt_fixture
     if not candidate.is_relative_to(BASE_DIR):
         return None
     if candidate.suffix.lower() not in {'.jpg', '.jpeg', '.png', '.webp', '.bmp'}:

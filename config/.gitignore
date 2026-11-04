@@ -1,0 +1,37 @@
+.DS_Store
+__pycache__/
+*.pyc
+.env
+.system_generated/
+
+pending_transaction.json
+*.tmp
+
+.snapshots/
+
+# Private records, environments, reports and recovery archives
+/.venv/
+/var/
+/legacy_data/
+/output/
+/working/
+/dataset/
+/cases_store.json
+/audit_ledger.json
+*.log
+.pytest_cache/
+# Retained local academic and diagnostic materials
+/docs/
+/tests/fixtures/
+/approve
+/unapproved
+/approved
+/policy
+/evaluation
+/models
+
+# Local model weights and evidence
+*.onnx
+*.pt
+/models/
+/backend/models/hardware/

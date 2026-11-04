@@ -16,17 +16,25 @@ from PIL import Image, ImageOps
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ConfigDict, ValidationError
-# Support both `python -m node...` and direct script execution.
 import sys
 from pathlib import Path
-if __package__ in {None, ''}:
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from node.local_runtime import (LocalAccessMiddleware, ALLOWED_ORIGINS, VISION_MODELS,
-    available_models, local_json, decode_image, safe_image_path, VISION_REQUEST_SECONDS,
-    VISION_ATTEMPT_SECONDS, ROUTE_REQUEST_SECONDS, record_model_result, model_readiness)
-from node.decision_rules import normalize_identifier, canonical_model, canonical_manufacturer, mentioned_brands, CHIP_BRANDS
+_ws_root = Path(__file__).resolve().parent.parent.parent
+if str(_ws_root) not in sys.path:
+    sys.path.insert(0, str(_ws_root))
 
-from node.hardware_classifier import HardwareClassifier
+try:
+    from backend.core.local_runtime import (LocalAccessMiddleware, ALLOWED_ORIGINS, VISION_MODELS,
+        available_models, local_json, decode_image, safe_image_path, VISION_REQUEST_SECONDS,
+        VISION_ATTEMPT_SECONDS, ROUTE_REQUEST_SECONDS, record_model_result, model_readiness, LOCAL_HTTP)
+    from backend.core.decision_rules import normalize_identifier, canonical_model, canonical_manufacturer, mentioned_brands, CHIP_BRANDS
+    from backend.models.hardware_classifier import HardwareClassifier
+except ImportError:
+    from node.local_runtime import (LocalAccessMiddleware, ALLOWED_ORIGINS, VISION_MODELS,
+        available_models, local_json, decode_image, safe_image_path, VISION_REQUEST_SECONDS,
+        VISION_ATTEMPT_SECONDS, ROUTE_REQUEST_SECONDS, record_model_result, model_readiness, LOCAL_HTTP)
+    from node.decision_rules import normalize_identifier, canonical_model, canonical_manufacturer, mentioned_brands, CHIP_BRANDS
+    from node.hardware_classifier import HardwareClassifier
+
 HARDWARE_CLASSIFIER = HardwareClassifier.environment()
 
 Image.MAX_IMAGE_PIXELS = 25_000_000
@@ -266,7 +274,7 @@ def inspect_endpoint(req: InspectRequest):
 def analyze_and_route_endpoint(req: AnalyzeAndRouteRequest):
     # A single gateway transaction prevents recursive inspection and duplicate ledger writes.
     import urllib.request
-    from node.local_runtime import LOCAL_HTTP
+    # Use loopback HTTP client
     request = urllib.request.Request('http://127.0.0.1:8000/api/v1/intake',
         data=req.model_dump_json().encode(), headers={'Content-Type': 'application/json'})
     try:

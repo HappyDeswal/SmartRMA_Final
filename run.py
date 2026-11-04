@@ -22,7 +22,10 @@ import webbrowser
 import subprocess
 import urllib.request
 import urllib.error
-from node.local_runtime import CHAT_MODELS, VISION_MODELS
+try:
+    from backend.core.local_runtime import CHAT_MODELS, VISION_MODELS
+except ImportError:
+    from node.local_runtime import CHAT_MODELS, VISION_MODELS
 
 # ANSI Terminal Styling
 C_RESET = "\033[0m"
@@ -36,12 +39,15 @@ C_BLUE = "\033[94m"
 C_DIM = "\033[2m"
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-NODE_DIR = os.path.join(BASE_DIR, "node")
+BACKEND_DIR = os.path.join(BASE_DIR, "backend")
+SERVICES_DIR = os.path.join(BACKEND_DIR, "services")
+NODE_DIR = SERVICES_DIR if os.path.exists(SERVICES_DIR) else os.path.join(BASE_DIR, "node")
 
 NODE1_SCRIPT = os.path.join(NODE_DIR, "node1_gateway.py")
 NODE2_SCRIPT = os.path.join(NODE_DIR, "node2_policy_rag.py")
 NODE3_SCRIPT = os.path.join(NODE_DIR, "node3_vision.py")
-TEST_SCRIPT = os.path.join(BASE_DIR, "test_security_audit.py")
+TEST_SCRIPT = os.path.join(BASE_DIR, "tests", "test_security_audit.py")
+DATA_DIR = os.path.join(BASE_DIR, "data")
 
 OLLAMA_URL = "http://localhost:11434"
 NODE1_HEALTH = "http://127.0.0.1:8000/health"
@@ -192,8 +198,9 @@ def start_microservices():
                 raise RuntimeError(f"Port {port} is occupied. Stop the conflicting application explicitly before launching SmartRMA.")
 
         # Launch node subprocess
+        mod_prefix = "backend.services." if os.path.exists(os.path.join(BACKEND_DIR, "services")) else "node."
         proc = subprocess.Popen(
-            [sys.executable, "-m", "node." + os.path.basename(script_path)[:-3]],
+            [sys.executable, "-m", mod_prefix + os.path.basename(script_path)[:-3]],
             cwd=BASE_DIR,
             stdout=None,
             stderr=None,
@@ -233,7 +240,7 @@ def print_status_dashboard():
     • Local LLM Engine (Ollama)        : {C_MAGENTA}http://localhost:11434{C_RESET}  (Local Model Inference)
 
   {C_BOLD}🔒 SECURITY & LEDGER:{C_RESET}
-    • Cryptographic Audit Ledger       : {C_DIM}{os.path.join(os.environ.get("SMARTRMA_DATA_DIR", BASE_DIR), "audit_ledger.json")}{C_RESET}
+    • Cryptographic Audit Ledger       : {C_DIM}{os.path.join(os.environ.get("SMARTRMA_DATA_DIR", DATA_DIR), "audit_ledger.json")}{C_RESET}
     • Perimeter Firewall Guard         : {C_GREEN}Active{C_RESET} (Blocks .py downloads, dotfiles)
 
   {C_BOLD}⌨️  CONTROLS:{C_RESET}

@@ -12,7 +12,11 @@ import random
 from datetime import datetime, timezone
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance, ImageOps
 
-ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+from pathlib import Path
+
+_ws_root = Path(__file__).resolve().parent.parent.parent
+_frontend_assets = os.path.join(str(_ws_root), "frontend", "assets")
+ASSETS_DIR = _frontend_assets if os.path.exists(_frontend_assets) else os.path.join(str(_ws_root), "assets")
 FONT_PATH = "/System/Library/Fonts/Menlo.ttc"
 
 try:

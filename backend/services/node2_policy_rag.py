@@ -26,14 +26,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 from pydantic import BaseModel, Field, ConfigDict
-# Support both `python -m node...` and direct script execution.
 import sys
 from pathlib import Path
-if __package__ in {None, ''}:
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from node.local_runtime import (LocalAccessMiddleware, ALLOWED_ORIGINS, CHAT_MODELS,
-    available_models, local_json, CHAT_REQUEST_SECONDS, record_model_result, model_readiness)
-from node.decision_rules import (detect_manufacturer, canonical_manufacturer, damage_evidence, informational_reply)
+_ws_root = Path(__file__).resolve().parent.parent.parent
+if str(_ws_root) not in sys.path:
+    sys.path.insert(0, str(_ws_root))
+
+try:
+    from backend.core.local_runtime import (LocalAccessMiddleware, ALLOWED_ORIGINS, CHAT_MODELS,
+        available_models, local_json, CHAT_REQUEST_SECONDS, record_model_result, model_readiness)
+    from backend.core.decision_rules import (detect_manufacturer, canonical_manufacturer, damage_evidence, informational_reply)
+except ImportError:
+    from node.local_runtime import (LocalAccessMiddleware, ALLOWED_ORIGINS, CHAT_MODELS,
+        available_models, local_json, CHAT_REQUEST_SECONDS, record_model_result, model_readiness)
+    from node.decision_rules import (detect_manufacturer, canonical_manufacturer, damage_evidence, informational_reply)
 
 app = FastAPI(title="SmartRMA Node 2 - Policy RAG Engine", version="2.5.0")
 
@@ -55,7 +61,7 @@ class SecurityFirewallMiddleware(BaseHTTPMiddleware):
         # 3. Block access to internal source files, ledgers, and system configurations
         blocked_extensions = {".py", ".pyc", ".sh", ".env", ".key", ".pem", ".log", ".tmp"}
         blocked_filenames = {"audit_ledger.json", "cases_store.json", "pending_transaction.json", "package.json", "package-lock.json"}
-        blocked_dirs = {"node", "tests", "working", "invalid_sources", ".git", ".system_generated"}
+        blocked_dirs = {"backend", "node", "tests", "working", "invalid_sources", ".git", ".system_generated"}
         if any(seg in blocked_dirs for seg in segments):
             return JSONResponse({"error": "Access forbidden: Restricted system directory."}, status_code=403)
         
@@ -85,9 +91,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-NODE_DIR = os.path.dirname(os.path.abspath(__file__))
-BASE_DIR = os.path.dirname(NODE_DIR)
-POLICY_DIR = os.path.join(BASE_DIR, "policy") if not BASE_DIR.endswith("policy") else BASE_DIR
+SERVICES_DIR = os.path.dirname(os.path.abspath(__file__))
+BACKEND_DIR = os.path.dirname(SERVICES_DIR)
+BASE_DIR = os.path.dirname(BACKEND_DIR)
+FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")
+POLICY_DIR = os.path.join(BACKEND_DIR, "policy") if os.path.exists(os.path.join(BACKEND_DIR, "policy")) else os.path.join(BASE_DIR, "policy")
 INDEX_FILE = os.path.join(POLICY_DIR, "policy_index.json")
 
 # Load Indexed Policy Chunks
@@ -426,8 +434,75 @@ def triage_evaluate(req: TriageRequest):
         'notes': 'Rule-based policy suggestion; purchase date, regional terms, and eligibility require technician verification.'
     }
 
-# Mount workspace directory for static web files, assets, and downloaded PDF policies
+# Serve frontend web applications and assets
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+@app.get("/", include_in_schema=False)
+@app.get("/index.html", include_in_schema=False)
+async def serve_index():
+    path = os.path.join(FRONTEND_DIR, "pages", "index.html")
+    if not os.path.exists(path):
+        path = os.path.join(BASE_DIR, "index.html")
+    return FileResponse(path)
+
+@app.get("/review.html", include_in_schema=False)
+async def serve_review():
+    path = os.path.join(FRONTEND_DIR, "pages", "review.html")
+    if not os.path.exists(path):
+        path = os.path.join(BASE_DIR, "review.html")
+    return FileResponse(path)
+
+@app.get("/architecture.html", include_in_schema=False)
+async def serve_architecture():
+    path = os.path.join(FRONTEND_DIR, "pages", "architecture.html")
+    if not os.path.exists(path):
+        path = os.path.join(BASE_DIR, "architecture.html")
+    return FileResponse(path)
+
+@app.get("/styles.css", include_in_schema=False)
+async def serve_styles():
+    path = os.path.join(FRONTEND_DIR, "css", "styles.css")
+    if not os.path.exists(path):
+        path = os.path.join(BASE_DIR, "styles.css")
+    return FileResponse(path, media_type="text/css")
+
+@app.get("/common.js", include_in_schema=False)
+async def serve_common():
+    path = os.path.join(FRONTEND_DIR, "js", "common.js")
+    if not os.path.exists(path):
+        path = os.path.join(BASE_DIR, "common.js")
+    return FileResponse(path, media_type="application/javascript")
+
+@app.get("/triage.js", include_in_schema=False)
+async def serve_triage():
+    path = os.path.join(FRONTEND_DIR, "js", "triage.js")
+    if not os.path.exists(path):
+        path = os.path.join(BASE_DIR, "triage.js")
+    return FileResponse(path, media_type="application/javascript")
+
+@app.get("/review.js", include_in_schema=False)
+async def serve_review_js():
+    path = os.path.join(FRONTEND_DIR, "js", "review.js")
+    if not os.path.exists(path):
+        path = os.path.join(BASE_DIR, "review.js")
+    return FileResponse(path, media_type="application/javascript")
+
+# Mount frontend directories
+if os.path.exists(os.path.join(FRONTEND_DIR, "assets")):
+    app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIR, "assets")), name="assets")
+if os.path.exists(os.path.join(FRONTEND_DIR, "css")):
+    app.mount("/css", StaticFiles(directory=os.path.join(FRONTEND_DIR, "css")), name="css")
+if os.path.exists(os.path.join(FRONTEND_DIR, "js")):
+    app.mount("/js", StaticFiles(directory=os.path.join(FRONTEND_DIR, "js")), name="js")
+if os.path.exists(os.path.join(FRONTEND_DIR, "pages")):
+    app.mount("/pages", StaticFiles(directory=os.path.join(FRONTEND_DIR, "pages"), html=True), name="pages")
+
+# Mount policy documents
+if os.path.exists(POLICY_DIR):
+    app.mount("/policy", StaticFiles(directory=POLICY_DIR), name="policy_docs")
+
+# Workspace root static fallback
 app.mount("/", StaticFiles(directory=BASE_DIR, html=True), name="static")
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 import unittest
-from evaluation.metrics import classification,binary_ranking,retrieval
+from backend.evaluation.metrics import classification,binary_ranking,retrieval
 class EvaluationTests(unittest.TestCase):
     def test_confusion_count_denominator_and_macro_f1(self):
         r=classification(['clean','damaged'],['clean','clean','damaged','damaged'],['clean','damaged','damaged','damaged'])

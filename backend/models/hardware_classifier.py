@@ -71,7 +71,9 @@ class HardwareClassifier:
 
     @classmethod
     def environment(cls):
-        default = Path(__file__).resolve().parent.parent/'models/hardware'
+        base = Path(__file__).resolve().parent
+        candidates = [base / 'hardware', base.parent / 'models/hardware', base.parent.parent / 'models/hardware']
+        default = next((c for c in candidates if (c / 'metadata.json').is_file()), base / 'hardware')
         directory = os.environ.get('SMARTRMA_HARDWARE_MODEL_DIR', str(default) if (default/'metadata.json').is_file() else '')
         return cls(directory)
 

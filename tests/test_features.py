@@ -3,6 +3,7 @@ Live Ollama smoke tests are separate so these tests also exercise offline behavi
 """
 import base64
 import concurrent.futures
+from contextlib import contextmanager
 import io
 import json
 import os
@@ -16,8 +17,8 @@ from PIL import Image
 
 TEST_DATA = tempfile.TemporaryDirectory(prefix='smartrma-tests-')
 os.environ['SMARTRMA_DATA_DIR'] = TEST_DATA.name
-from node import node1_gateway as gateway, node2_policy_rag as policy, node3_vision as vision
-from node import local_runtime
+from backend.services import node1_gateway as gateway, node2_policy_rag as policy, node3_vision as vision
+from backend.core import local_runtime
 
 
 def photo(color='white', exif=False):
@@ -28,6 +29,18 @@ def photo(color='white', exif=False):
         metadata[305] = 'Adobe Photoshop'
     image.save(buffer, format='JPEG', exif=metadata)
     return 'data:image/jpeg;base64,' + base64.b64encode(buffer.getvalue()).decode()
+
+
+@contextmanager
+def local_reference(relative_path):
+    """Exercise named local references without private, untracked photos."""
+    with tempfile.TemporaryDirectory(prefix='smartrma-reference-') as directory:
+        root = Path(directory).resolve()
+        image = root / relative_path
+        image.parent.mkdir(parents=True, exist_ok=True)
+        image.write_bytes(base64.b64decode(photo().split(',', 1)[1]))
+        with patch.object(local_runtime, 'BASE_DIR', root):
+            yield relative_path
 
 
 def observation(**updates):
@@ -136,8 +149,9 @@ class FeatureTests(unittest.TestCase):
         self.assertEqual(self.intake(payload(order_id='ORD-81210')).json()['disposition'],'APPROVE')
 
     def test_approved_reference_still_calls_model(self):
-        with patch.object(vision,'call_vision_llm',return_value=(json.dumps(observation(visible_serial=None)), 'moondream:latest')) as model:
-            response=self.v.post('/api/v1/inspect',json={'images':[{'slot':0,'url':'approve/01_clean_gpu_shroud_front.jpg'}]})
+        with local_reference('approve/01_clean_gpu_shroud_front.jpg') as reference, \
+             patch.object(vision,'call_vision_llm',return_value=(json.dumps(observation(visible_serial=None)), 'moondream:latest')) as model:
+            response=self.v.post('/api/v1/inspect',json={'images':[{'slot':0,'url':reference}]})
             self.assertEqual(response.status_code,200);model.assert_called_once()
             self.assertEqual(response.json()['telemetry']['serial_verification']['status'],'UNVERIFIED')
 
@@ -321,8 +335,9 @@ class FeatureTests(unittest.TestCase):
         self.assertFalse(gateway.KNOWN_PHASH_DB)
 
     def test_unapproved_reference_does_not_bypass_inference(self):
-        with patch.object(vision, 'call_vision_llm', return_value=(json.dumps(observation()), 'test-local')) as call:
-            result=self.v.post('/api/v1/inspect',json={'images':[{'slot':2,'url':'unapproved/03_minor_pcie_slot_insertion_mark.jpg'}]})
+        with local_reference('unapproved/03_minor_pcie_slot_insertion_mark.jpg') as reference, \
+             patch.object(vision, 'call_vision_llm', return_value=(json.dumps(observation()), 'test-local')) as call:
+            result=self.v.post('/api/v1/inspect',json={'images':[{'slot':2,'url':reference}]})
             self.assertEqual(result.status_code,200);call.assert_called_once()
 
     def test_conflicting_serial_views_do_not_match(self):
@@ -371,7 +386,7 @@ class FeatureTests(unittest.TestCase):
             self.assertEqual(self.v.post('/api/v1/analyze_and_route',json=payload()).status_code,503)
 
     def test_policy_chunk_bounds_for_long_sentences(self):
-        from policy.build_policy_index import chunk_text
+        from backend.policy.build_policy_index import chunk_text
         chunks=chunk_text('longword '*1000)
         self.assertGreater(len(chunks),1);self.assertTrue(all(len(chunk)<=900 for chunk in chunks))
         with self.assertRaises(ValueError):chunk_text('abc',max_chars=10,overlap=10)
@@ -393,7 +408,7 @@ class FeatureTests(unittest.TestCase):
             kill.assert_not_called()
 
     def test_asset_generator_produces_labeled_synthetic_catalog(self):
-        import generate_assets_catalog as generator
+        from backend.tools import generate_assets_catalog as generator
         with tempfile.TemporaryDirectory() as temp,patch.object(generator,'ASSETS_DIR',temp):
             generator.generate_catalog()
             manifest=json.loads((Path(temp)/'manifest.json').read_text())
@@ -477,7 +492,7 @@ class FeatureTests(unittest.TestCase):
         self.assertEqual(decision,'REJECT');self.assertIn('INDEXED_POLICY_EXCLUSION',reasons)
 
     def test_policy_negation_and_burnin_regressions(self):
-        from node.decision_rules import damage_evidence
+        from backend.core.decision_rules import damage_evidence
         negatives=['No evidence of corrosion. Artifacts under load.','Burn-in test passed; artifacts under load.',
                    'No visible evidence of cracks or burns.','Corrosion is absent.','No physical damage or liquid damage.',
                    'Without any visible cracks or corrosion.','The water-cooled GPU crashes.','The board is corrosion-free.']
@@ -500,7 +515,7 @@ class FeatureTests(unittest.TestCase):
             self.assertEqual(result['manufacturer_detected'],'MSI');self.assertFalse(result['grounded']);self.assertEqual(result['sources'],[])
 
     def test_informational_outcome_guard_covers_paraphrases(self):
-        from node.decision_rules import informational_reply
+        from backend.core.decision_rules import informational_reply
         blocked=['Your warranty claim is now approved.','Your claim has been accepted.','We will refund you.',
                  'Your refund is confirmed.','Refund granted.','We approve your return.',
                  'We cannot inspect it but your claim is approved.','You will receive a replacement.']

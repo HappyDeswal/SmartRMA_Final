@@ -7,7 +7,7 @@ The old graph values are target claims, not established measurements. No benchma
 From the project root:
 
 ```sh
-python -m evaluation.prepare --source output/SmartRMA_Colab_Training_Input.zip --output dataset/evaluation_review_20261101
+python -m backend.evaluation.prepare --source output/SmartRMA_Colab_Training_Input.zip --output dataset/evaluation_review_20261101
 ```
 
 This creates 250 source-attributed hardware photos and 150 newly authored warranty questions across nine manufacturers. It is NOT the original journal test set. Every damage and policy relevance label begins pending. Open review_images.html and review_policies.html locally; save your reviewed JSON downloads. Navigating the page retains edits in memory only: download before closing. The annotation images may be mostly clean or contain unsuitable content; reviewers must exclude invalid examples and identify gaps. Additional verified burnt socket, cracked board, corrosion and contact-damage photos will likely be necessary to form a useful damage benchmark.
@@ -17,7 +17,7 @@ Two independent reviewers should label examples, then adjudicate disagreements. 
 ## Baseline diagnostics
 
 ```sh
-python -m evaluation.baseline --queries dataset/evaluation_review_20261101/policy_annotations.json --output working/evaluation_baseline.json
+python -m backend.evaluation.baseline --queries dataset/evaluation_review_20261101/policy_annotations.json --output working/evaluation_baseline.json
 ```
 
 This runs the actual current keyword retriever five times per question, recording chunk IDs and timing. It reports no accuracy until gold labels are approved. This is retrieval-function latency; it excludes vision, model generation, HTTP, queue waiting and ledger commits. It cannot be compared to tier turnaround or manufacturer depot service times.

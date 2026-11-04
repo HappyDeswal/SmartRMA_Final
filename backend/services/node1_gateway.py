@@ -20,19 +20,24 @@ import imagehash
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, ConfigDict, field_validator
-# Support both `python -m node...` and direct script execution.
 import sys
 from pathlib import Path
-if __package__ in {None, ''}:
-    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from node.local_runtime import (BASE_DIR, LocalAccessMiddleware, ALLOWED_ORIGINS,
-    LOCAL_HTTP, decode_image, safe_image_path, GATEWAY_VISION_SECONDS)
+_ws_root = Path(__file__).resolve().parent.parent.parent
+if str(_ws_root) not in sys.path:
+    sys.path.insert(0, str(_ws_root))
+
+try:
+    from backend.core.local_runtime import (BASE_DIR, LocalAccessMiddleware, ALLOWED_ORIGINS,
+        LOCAL_HTTP, decode_image, safe_image_path, GATEWAY_VISION_SECONDS)
+except ImportError:
+    from node.local_runtime import (BASE_DIR, LocalAccessMiddleware, ALLOWED_ORIGINS,
+        LOCAL_HTTP, decode_image, safe_image_path, GATEWAY_VISION_SECONDS)
 
 app = FastAPI(title='SmartRMA Node 1 - Gateway & Decision Router', version='3.0.0')
 app.add_middleware(CORSMiddleware, allow_origins=ALLOWED_ORIGINS,
                    allow_methods=['GET', 'POST', 'DELETE'], allow_headers=['Content-Type'])
 app.add_middleware(LocalAccessMiddleware)
-DATA_DIR = Path(os.environ.get('SMARTRMA_DATA_DIR', str(BASE_DIR))).resolve()
+DATA_DIR = Path(os.environ.get('SMARTRMA_DATA_DIR', str(BASE_DIR / 'data'))).resolve()
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 LEDGER_FILE = str(DATA_DIR / 'audit_ledger.json')
 CASES_FILE = str(DATA_DIR / 'cases_store.json')

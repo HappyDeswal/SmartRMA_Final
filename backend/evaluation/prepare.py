@@ -58,4 +58,4 @@ def prepare(source,index,output,count=250):
     return summary
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--source',required=True);p.add_argument('--index',default='policy/policy_index.json');p.add_argument('--output',required=True);a=p.parse_args();print(json.dumps(prepare(a.source,a.index,a.output),indent=2))
+    p=argparse.ArgumentParser();p.add_argument('--source',required=True);p.add_argument('--index',default=str(Path(__file__).resolve().parents[1]/'policy'/'policy_index.json'));p.add_argument('--output',required=True);a=p.parse_args();print(json.dumps(prepare(a.source,a.index,a.output),indent=2))

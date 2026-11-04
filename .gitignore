@@ -1,36 +1,43 @@
+# Local configuration and Python environments
 .DS_Store
-__pycache__/
-*.pyc
 .env
-.system_generated/
-
-pending_transaction.json
+.env.*
+!.env.example
+__pycache__/
+*.py[cod]
+/.venv/
+/.system_generated/
+.pytest_cache/
+*.log
 *.tmp
 
-.snapshots/
-
-# Private records, environments, reports and recovery archives
-/.venv/
+# Private case records, snapshots and local working materials
+/data/
 /var/
 /legacy_data/
-/output/
-/working/
-/dataset/
 /cases_store.json
 /audit_ledger.json
-*.log
-.pytest_cache/
-# Retained local academic and diagnostic materials
-/Research paper/
-/figures/
-/approve/
-/unapproved/
-/approved
-/TEST_REPORT.md
-/presentation_data.md
-/research_paper.md
-/result matrix.md
-/system_architecture_diagram.jpg
+pending_transaction.json
+.snapshots/
+/tmp/
+/output/
+/working/
+/docs/
+/.chart-data-*/
+/tests/fixtures/
 
-# Local Colab model weights and evidence
+# Local datasets, review pools and learned weights
+/dataset/
 /models/
+/backend/models/hardware/
+*.onnx
+*.pt
+*.pth
+*.safetensors
+
+# Retired local workspaces and evidence folders
+/approve
+/approved
+/unapproved
+/policy
+/evaluation

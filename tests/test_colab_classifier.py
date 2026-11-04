@@ -5,8 +5,8 @@ from unittest.mock import patch,MagicMock
 from PIL import Image
 ISOLATED_DATA = tempfile.TemporaryDirectory(prefix='smartrma-classifier-tests-')
 os.environ['SMARTRMA_DATA_DIR'] = ISOLATED_DATA.name
-from node.hardware_classifier import HardwareClassifier,HardwareHint
-from node import node3_vision as vision,node1_gateway as gateway
+from backend.models.hardware_classifier import HardwareClassifier,HardwareHint
+from backend.services import node3_vision as vision,node1_gateway as gateway
 
 class ColabIntegrationTests(unittest.TestCase):
     def request(self):
