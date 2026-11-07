@@ -29,7 +29,7 @@ let browser;
   check('T3 confidence label', (await page.locator('#tp').innerText()).includes('95%'));
   await page.locator('#val').fill('3000');
   check('T4 mandatory human review label',(await page.locator('#tp').innerText()).includes('mandatory technician review'));
-  await page.locator('#slots input').nth(4).setInputFiles(path.resolve('approve/01_clean_gpu_shroud_front.jpg'));
+  await page.locator('#slots input').nth(4).setInputFiles(path.resolve('tests/fixtures/approve/01_clean_gpu_shroud_front.jpg'));
   await page.waitForFunction(()=>document.querySelector('#cnt').textContent==='1 of 5 views uploaded');
   check('upload does not claim verification',(await page.locator('#sl-status-4').innerText())==='Uploaded');
   const intake=page.waitForResponse(response=>response.url().endsWith('/api/v1/intake')&&response.request().method()==='POST',{timeout:330000});

@@ -95,7 +95,7 @@
       </div>
 
       <svg class="dg" viewBox="0 0 720 580" role="img" aria-labelledby="dgt">
-        <title id="dgt">SmartRMA Data Pipeline: Customer Input -> Intake Gateway -> Vision Engine -> Policy RAG -> Decision Router -> Verdicts -> Immutable Ledger</title>
+        <title id="dgt">SmartRMA Data Pipeline: Customer Input -> Intake Gateway -> Vision Engine -> Policy RAG -> Decision Router -> Verdicts -> Tamper-evident Audit Ledger</title>
         <defs>
           <linearGradient id="grad-intake" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stop-color="#1E293B"/>
@@ -237,16 +237,16 @@
         <div class="chips" style="margin:8px 0 12px">
           <span class="chip-tag" id="status-node3" style="color:#00A884;border-color:rgba(0,168,132,0.4)">Status: Checking</span>
           <span class="chip-tag">FastAPI</span>
-          <span class="chip-tag">Llama 3.2 Vision</span>
+          <span class="chip-tag">Qwen3-VL Instruct</span>
           <span class="chip-tag">Multimodal LLM</span>
         </div>
         <p style="font-size:0.84rem;color:var(--text-secondary);margin-bottom:12px">
-          <strong style="color:#00A884">Service role:</strong> Live FastAPI multimodal inspection service listening on port 8002. Powered by local Vision LLM (<code class="mono">llama3.2-vision:latest</code> / <code class="mono">moondream:latest</code>) for real-time visual anomaly grading, coordinate localization, and cross-node telemetry streaming.
+          <strong style="color:#00A884">Service role:</strong> Live FastAPI multimodal inspection service listening on port 8002. Powered by local Vision LLM (<code class="mono">qwen3-vl:8b-instruct</code>, with installed local fallbacks) for photo condition observations and per-view evidence.
         </p>
         <ul style="padding-left:18px;font-size:0.82rem;color:var(--text-secondary);display:flex;flex-direction:column;gap:5px">
           <li>Image format, size, and decompression validation</li>
-          <li>Vision LLM multimodal defect analysis &amp; coordinate localization</li>
-          <li>Model-estimated scores and optional coordinates; inconclusive evidence requires review</li>
+          <li>Vision LLM condition observations and optional readable identity text</li>
+          <li>Model-estimated scores are not calibrated measurements; unreadable identity text remains unverified</li>
           <li>Gateway receives vision evidence before retrieving policy context</li>
         </ul>
       </div>
@@ -264,7 +264,7 @@
           <span class="chip-tag"><span id="policy-chunk-count">Loading index…</span></span>
         </div>
         <p style="font-size:0.84rem;color:var(--text-secondary);margin-bottom:12px">
-          <strong style="color:#00A884">Service role:</strong> Live FastAPI service listening on port 8001. Connected to local Ollama LLM and loading 25 indexed PDF and Markdown documents.
+          <strong style="color:#00A884">Service role:</strong> Live FastAPI service listening on port 8001. Uses the local policy index and installed Ollama chat models. Model availability is checked above.
         </p>
         <ul style="padding-left:18px;font-size:0.82rem;color:var(--text-secondary);display:flex;flex-direction:column;gap:5px">
           <li>Manufacturer-filtered keyword scoring over the local policy index</li>
@@ -361,7 +361,7 @@
           <tr>
             <td><b>Local service or model unavailable</b></td>
             <td>T1–T3 automatically reject with a retry reason; T4 stays in human review</td>
-            <td>Customer notified of standard queue processing</td>
+            <td>A service failure does not prove damage or fraud</td>
           </tr>
           <tr>
             <td><b>Degraded Photo Quality / Glare</b></td>

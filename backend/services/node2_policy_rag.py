@@ -129,6 +129,8 @@ CRITICAL OPERATIONAL BOUNDARIES & MANDATORY LIMITATIONS:
    - Clarify that official return authorization requires formal submission via the Return Intake form with authentic hardware photos, followed by automated pipeline analysis and human technician review.
 
 3. ACCURATE POLICY TERMS & RETURN PROCESS PREPARATION:
+   - Answer the specific question. Do not append a return checklist unless the customer asks for preparation steps.
+   - Keep retail refunds/unused-product returns separate from defect warranty claims. A requirement for one process does not automatically apply to the other.
    - Provide accurate manufacturer warranty terms, coverage periods, and exclusions (e.g. Customer Induced Damage / CID, liquid spills, cracked PCBs, burnt pins) based on official indexed policies.
    - When guiding a user on general return preparation, explain the standard preparation steps:
      • Retain proof of purchase (invoice / store receipt) with matching serial number.
@@ -322,8 +324,10 @@ def chat_endpoint(req: ChatRequest):
 {user_query}
 
 Instructions:
-- Explain the warranty coverage and terms based on the official {detected_mfg} documentation above.
-- Mention key preparation points for returns (receipt/invoice, no physical CID, anti-static ESD packaging, obtain manufacturer shipping authorization).
+- Answer only the customer's specific question using the retrieved {detected_mfg} passages. Name the document and page for any stated requirement.
+- Distinguish retail refunds/30-day returns from defect warranty service. Do not apply unopened or unused-product return conditions to a defect warranty claim.
+- If the requested requirement is not stated for the requested process, say the retrieved passages do not establish it. Do not fill the gap from a different process.
+- Give packing or return-preparation steps only when the customer asks for those steps.
 - Remember: You are strictly informational. Do not approve, guarantee, or promise any return or refund outcome.
 - Conclude by stating: "For official claim submission and return authorization, please use the SmartRMA Intake Portal or contact your manufacturer."
 - Keep the response well-structured and under 150 words."""
@@ -502,8 +506,8 @@ if os.path.exists(os.path.join(FRONTEND_DIR, "pages")):
 if os.path.exists(POLICY_DIR):
     app.mount("/policy", StaticFiles(directory=POLICY_DIR), name="policy_docs")
 
-# Workspace root static fallback
-app.mount("/", StaticFiles(directory=BASE_DIR, html=True), name="static")
+# Never expose workspace reports, datasets or configuration through a catch-all mount.
+# Public pages/assets and policy documents have explicit routes above.
 
 if __name__ == "__main__":
     import uvicorn

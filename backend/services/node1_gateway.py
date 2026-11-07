@@ -369,6 +369,16 @@ def verify_ledger():
                       legacy_dossiers=[key for key, status in statuses.items() if status == 'LEGACY_UNVERIFIED'])
         result['dossiers_valid'] = not tampered and not broken_snapshots and not missing
         result['valid'] = result['chain_valid'] and result['dossiers_valid']
+        if not result['chain_valid']:
+            result['status'] = 'TAMPERED'
+        elif not result['dossiers_valid']:
+            result['status'] = 'DOSSIER_INTEGRITY_FAILED'
+        else:
+            result['status'] = 'VERIFIED_WITH_LEGACY' if result['legacy_dossiers'] else 'VERIFIED'
+        # Chain inconsistencies and dossier availability have separate meanings.
+        result['tamper_detected_scope'] = 'audit_chain'
+        result['tamper_detected'] = not result['chain_valid']
+        result['integrity_failure_detected'] = not result['valid']
         return result
 
 @app.post('/api/v1/ledger/clear')

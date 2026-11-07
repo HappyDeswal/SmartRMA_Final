@@ -171,7 +171,7 @@ class FeatureTests(unittest.TestCase):
             self.assertEqual(self.g.post('/api/v1/intake',json=payload(**updates)).status_code,422)
         for client,path,data in [(self.p,'/api/chat',{'message':'hello','gemini_api_key':'x'}),(self.v,'/api/v1/inspect',{'images':[{'slot':0,'image_b64':photo()}],'cloud_api_key':'x'})]:
             self.assertEqual(client.post(path,json=data).status_code,422)
-        for client in [self.p,self.v]:self.assertEqual(client.post('/api/config/cloud_key',json={'api_key':'x'}).status_code,404 if client is self.v else 405)
+        for client in [self.p,self.v]:self.assertEqual(client.post('/api/config/cloud_key',json={'api_key':'x'}).status_code,404)
 
     def test_actual_decompression_bomb_rejected(self):
         image=Image.new('L',(6000,5000));buffer=io.BytesIO();image.save(buffer,format='PNG')
@@ -636,6 +636,50 @@ class FeatureTests(unittest.TestCase):
         handler=local_runtime.LoopbackRedirectHandler()
         with self.assertRaises(urllib.error.HTTPError):
             handler.redirect_request(urllib.request.Request('http://127.0.0.1:11434/api/chat'),None,302,'Found',{},'https://example.com/inference')
+
+    def test_workspace_files_are_not_public_static_resources(self):
+        with tempfile.TemporaryDirectory(dir=policy.BASE_DIR, prefix='private-report-') as directory:
+            private = Path(directory) / 'results.json'
+            private.write_text('{"private":true}')
+            route = '/' + private.relative_to(policy.BASE_DIR).as_posix()
+            self.assertEqual(self.p.get(route).status_code, 404)
+        self.assertEqual(self.p.get('/config/requirements.txt').status_code, 404)
+        self.assertEqual(self.p.get('/api/policies').status_code, 200)
+
+    def test_missing_snapshot_has_consistent_overall_verification_status(self):
+        result = self.intake().json()
+        block = gateway.read_records(gateway.LEDGER_FILE)[-1]
+        (gateway.SNAPSHOT_DIR / (block['case_hash'] + '.json')).unlink()
+        verified = self.g.get('/api/v1/ledger/verify').json()
+        self.assertTrue(verified['chain_valid'])
+        self.assertFalse(verified['valid'])
+        self.assertEqual(verified['status'], 'DOSSIER_INTEGRITY_FAILED')
+        self.assertTrue(verified['integrity_failure_detected'])
+        self.assertEqual(verified['tamper_detected_scope'], 'audit_chain')
+        self.assertFalse(verified['tamper_detected'])
+        self.assertIn(result['case_id'], verified['broken_snapshots'])
+
+    def test_explicit_instruct_model_is_preferred_and_identity_is_nullable(self):
+        inventory = {'models': [{'name':'qwen3-vl:8b'}, {'name':'qwen3-vl:8b-instruct'}]}
+        with patch.object(local_runtime, 'local_json', return_value=inventory):
+            self.assertEqual(local_runtime.available_models(local_runtime.VISION_MODELS)[0], 'qwen3-vl:8b-instruct')
+        with patch.object(vision, 'available_models', return_value=['qwen3-vl:8b-instruct']), \
+             patch.object(vision, 'local_json', return_value={'response':json.dumps(observation(visible_serial=None))}) as call:
+            reply, model = vision.call_vision_llm('abc', 'inspect', structured=True)
+        self.assertEqual(model, 'qwen3-vl:8b-instruct')
+        sent = call.call_args.args[1]
+        self.assertIn('visible_serial', sent['format']['required'])
+        self.assertTrue(any(branch.get('type') == 'null' for branch in sent['format']['properties']['visible_serial']['anyOf']))
+        self.assertIsNone(json.loads(reply)['visible_serial'])
+
+    def test_token_truncated_generation_is_discarded_even_if_json_parses(self):
+        with patch.object(vision, 'available_models', return_value=['qwen3-vl:8b-instruct','moondream:latest']), \
+             patch.object(vision, 'local_json', side_effect=[
+                 {'response':json.dumps(observation()), 'done_reason':'length'},
+                 {'response':'A computer board is visible.', 'done_reason':'stop'}]):
+            reply, model = vision.call_vision_llm('abc', 'inspect', structured=True)
+        self.assertEqual(model, 'moondream:latest')
+        self.assertEqual(json.loads(reply)['condition'], 'uncertain')
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

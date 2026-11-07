@@ -108,11 +108,12 @@ def call_vision_llm(b64_image, prompt, structured=False, deadline=None):
             try:
                 payload = {'model': model, 'prompt': prompt, 'images': [b64_image],
                            'stream': False, 'think': False, 'keep_alive': 0 if 'moondream' in model else '2m',
-                           'options': {'temperature': 0, 'num_predict': 350 if structured else 700, 'num_ctx': 4096}}
+                           'options': {'temperature': 0, 'num_predict': 768 if structured else 700, 'num_ctx': 4096}}
                 if structured and 'moondream' not in model:
                     schema = Observation.model_json_schema()
-                    # Keep the constrained output small: identity OCR is optional advisory evidence.
-                    keys = ['hardware_visible', 'condition', 'findings', 'confidence', 'anomaly_score']
+                    # Unreadable identities remain null; never infer them from the claim.
+                    keys = ['hardware_visible', 'condition', 'findings', 'confidence', 'anomaly_score',
+                            'visible_serial', 'visible_model', 'visible_manufacturer']
                     payload['format'] = {'type': 'object', 'properties': {key: schema['properties'][key] for key in keys},
                                          'required': keys, 'additionalProperties': False}
                     payload['format']['properties']['findings'] = {'type': 'string', 'minLength': 12, 'maxLength': 240}
@@ -121,6 +122,9 @@ def call_vision_llm(b64_image, prompt, structured=False, deadline=None):
                     # Keep its actual description as inconclusive evidence for a technician.
                     payload['prompt'] = 'Describe the visible computer hardware and any visible physical defects. Do not infer hidden damage or serial numbers.'
                 data = local_json('/api/generate', payload, timeout=min(VISION_ATTEMPT_SECONDS, remaining))
+                if data.get('done_reason') == 'length':
+                    record_model_result(model, False, 'Generation token limit reached; incomplete inspection discarded')
+                    continue
                 reply = data.get('response', '').strip()
                 if not reply:
                     record_model_result(model, False, 'Empty local response')
@@ -141,7 +145,7 @@ def call_vision_llm(b64_image, prompt, structured=False, deadline=None):
                 continue
     finally:
         INFERENCE_LOCK.release()
-    raise HTTPException(status_code=503, detail='Local vision model unavailable or returned an invalid inspection. Start Ollama and install qwen3-vl:8b, llama3.2-vision:latest, or moondream:latest.')
+    raise HTTPException(status_code=503, detail='Local vision model unavailable or returned an invalid inspection. Start Ollama and install qwen3-vl:8b-instruct, llama3.2-vision:latest, or moondream:latest.')
 
 def aggregate_inspections(req, observations):
     rows = [r['observation'] for r in observations]
@@ -244,10 +248,14 @@ def inspect_endpoint(req: InspectRequest):
             'for SSDs inspect their board, casing and connectors. Do not infer electrical function or hidden damage. '
             'Confidence must describe certainty of the condition assessment, not merely recognition of the product. '
             'Disassembly alone is not damage. Use uncertain if the image cannot be assessed. '
-            'Return ONLY a compact JSON object with these five keys: hardware_visible (boolean), '
+            'Read identity text only when clearly legible in the photo. Copy a visible serial number verbatim; '
+            'use null for an unreadable, missing or uncertain serial, model or manufacturer. '
+            'Never invent identifiers or infer an exact model from appearance. '
+            'Return ONLY a compact JSON object with these eight keys: hardware_visible (boolean), '
             'condition (clean, physical_damage, cosmetic_wear, tampered, uncertain), '
-            'findings (one sentence, at most 30 words), confidence (0 to 1), anomaly_score (0 to 1). '
-            'No serial numbers, coordinates, markdown or extra keys. Confidence is an estimate.'
+            'findings (one sentence, at most 30 words), confidence (0 to 1), anomaly_score (0 to 1), '
+            'visible_serial (string or null), visible_model (string or null), visible_manufacturer (string or null). '
+            'No coordinates, markdown or extra keys. Confidence is an estimate.'
         )
         text, model = call_vision_llm(b64, prompt, structured=True, deadline=deadline)
         cleaned = re.sub(r'^```(?:json)?\s*|\s*```$', '', text).strip()

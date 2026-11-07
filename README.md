@@ -61,7 +61,7 @@ OLLAMA_NO_CLOUD=1 ollama serve
 In another terminal, install the models you want to use, then launch the application from the project root:
 
 ```sh
-ollama pull qwen3-vl:8b
+ollama pull qwen3-vl:8b-instruct
 ollama pull qwen2.5:7b
 python run.py
 ```
@@ -84,7 +84,7 @@ python run.py --stop
 
 `--stop` targets recognized SmartRMA services. Use one worker per service because storage coordination is process-local. Services can also run individually with `python -m backend.services.node1_gateway`, `node2_policy_rag` or `node3_vision`.
 
-Supported vision candidates, in preference order, are `qwen3-vl:8b`, `llama3.2-vision:latest` and `moondream:latest`. Chat candidates are `qwen2.5:7b`, `qwen2.5-coder:14b`, `ornith:35b` and `llama3.1:8b`. Selection uses the installed local inventory. An installed model remains untested until inference succeeds; service health and model readiness are reported separately.
+Supported vision candidates, in preference order, are `qwen3-vl:8b-instruct`, `qwen3-vl:8b`, `llama3.2-vision:latest` and `moondream:latest`. Chat candidates are `qwen2.5:7b`, `qwen2.5-coder:14b`, `ornith:35b` and `llama3.1:8b`. Selection uses the installed local inventory. An installed model remains untested until inference succeeds; service health and model readiness are reported separately.
 
 Settings in [config/.env.example](config/.env.example) are examples for the invoking shell. The application does not load this file automatically. Model requests are restricted to loopback, bypass proxies and reject remote/cloud model aliases.
 
@@ -109,10 +109,10 @@ The system records application screening decisions. It does not issue manufactur
 
 - Original image information is retained for EXIF screening; inference uses an oriented, resized copy. Input limits and canonical path checks constrain image processing.
 - Perceptual hashing compares durably committed local photo fingerprints. It does not search internet images. EXIF and similarity flags are evidence signals, not proof of authenticity or deception.
-- Multi-view results retain individual observations and uncertainty. Moondream descriptions remain inconclusive because reliable structured output and OCR were not established for that fallback.
+- Multi-view results retain individual observations and uncertainty. Clearly readable serial/model/manufacturer text is optional visual evidence; missing or uncertain text stays unverified. Moondream descriptions remain inconclusive because reliable structured output and OCR were not established for that fallback.
 - Policy retrieval uses manufacturer-filtered keyword scores and category bonuses. It is not a dense-vector or hybrid retriever. Explicit board manufacturers take precedence over chip-family terms, and unsupported brands do not borrow another manufacturer's terms.
 - The retained policy index contains 26 readable documents and 1,423 chunks. Regional scope, purchase channel, dates and ownership still need review. Chat returns sources but cannot authorize claims or change a stored decision.
-- The frontend includes synthetic thermal, laser and X-ray illustrations. These are not sensor measurements or validated localization evidence.
+- The asset tools include synthetic thermal, laser and X-ray illustrations. These are not sensor measurements or validated localization evidence.
 
 Rebuild the local policy index from the project root:
 
@@ -164,10 +164,16 @@ SMARTRMA_DATA_DIR=/tmp/smartrma-verification-data python run.py --no-browser
 python tests/live_local_smoke.py
 ```
 
-`tests/browser_smoke.cjs` additionally requires Playwright and installed Chrome. It refuses to reset normal workspace storage. `python run.py --test` runs verification after launching the services.
+`tests/browser_smoke.cjs` additionally requires Playwright and installed Chrome. It refuses to reset normal workspace storage. `python run.py --test` runs the isolated regression suite and exits without launching services.
 
 See [backend/evaluation/README.md](backend/evaluation/README.md) for review-pool preparation, metric functions and retrieval timing. Damage and policy-relevance labels remain pending until independent review. Historical journal graphs are not reproducible accuracy evidence for the current code. Datasets, review annotations and generated evaluation outputs are excluded from source publication.
 
 ## Deployment limits
 
 SmartRMA is a trusted local, single-user prototype. `TECH-402` identifies the workstation operator; it is not an authenticated technician account. Production use needs authenticated roles, stronger transactional storage, protected audit checkpoints, reviewed policy applicability and independent evaluation of image and decision quality.
+
+## Runtime checks
+
+Use the explicit `qwen3-vl:8b-instruct` tag for structured inspections. Thinking variants can consume the generation budget before completing their JSON. The service discards token-truncated responses and validates each completed observation. A successful image description alone does not validate condition accuracy.
+
+The web service exposes only explicit frontend and policy routes; the workspace root, reports, configuration and datasets are not public static roots. Ledger verification reports overall dossier integrity separately from chain-only checks. Missing snapshots must be recovered from content that matches the pre-existing recorded digest; never recreate unknown history or alter audit hashes to make verification pass.

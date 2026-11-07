@@ -8,6 +8,7 @@ const ph = Array(5).fill(null);
 const history = [];
 let intakeBusy = false;
 let chatBusy = false;
+let chatAvailabilityText = 'Checking local assistant…';
 const getTier = value => value < 300 ? 'T1' : value <= 1000 ? 'T2' : value <= 2500 ? 'T3' : 'T4';
 const TIERS = {
   T1:'Under $300: automatic image screening; clean images need risk under 30 and at least 85% confidence.',
@@ -60,7 +61,17 @@ function appendMessage(text, outgoing=false, html=false) {
   row.append(bubble); $('#wa-messages').append(row);
   $('#wa-body').scrollTop = $('#wa-body').scrollHeight;
 }
-function showBotTyping(active) { $('#wa-status').textContent = active ? 'Local model processing…' : 'Informational assistant • Local Ollama only'; }
+function showBotTyping(active) { $('#wa-status').textContent = active ? 'Local model processing…' : chatAvailabilityText; }
+async function refreshChatReadiness() {
+  try {
+    const health = await fetchJson('/health', {}, 5000);
+    chatAvailabilityText = !health.active_models?.length ? 'Chat model unavailable • Install qwen2.5:7b' :
+      health.inference_ready ? 'Informational assistant • Local Ollama only' :
+      health.inference_state === 'unavailable' ? 'Local chat inference failed • Retry your question' :
+      'Local chat model installed • Inference not yet verified';
+  } catch { chatAvailabilityText = 'Local assistant service unavailable'; }
+  if (!chatBusy && !intakeBusy) showBotTyping(false);
+}
 window.askPresetQuestion = text => { $('#wa-input').value = text; handleChatSubmit(); };
 window.handleChatSubmit = async event => {
   event?.preventDefault();
@@ -72,6 +83,7 @@ window.handleChatSubmit = async event => {
   try {
     const data = await fetchJson('/api/chat', {method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({message, history:history.slice(-6)})}, 210000);
+    chatAvailabilityText = 'Informational assistant • Local Ollama only';
     history.push({role:'user',content:message}, {role:'assistant',content:data.reply.slice(0,1000)});
     const sources = data.sources.map(source => `<div>📄 ${escapeHtml(source.document)} — page ${Number(source.page)}</div>`).join('');
     appendMessage(`<div style="white-space:pre-wrap">${escapeHtml(data.reply)}</div><small>Local model: ${escapeHtml(data.model_used)}</small>${sources}`,false,true);
@@ -127,6 +139,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (draft) Object.entries(draft).forEach(([id,value])=>{if ($('#'+id)) $('#'+id).value=value;});
   } catch {}
   initSlots(); updateTierDisplay(); $('#f').onsubmit=handleTriageSubmit;
+  refreshChatReadiness(); setInterval(refreshChatReadiness, 20000);
   $('#f').addEventListener('input',()=>{updateTierDisplay();saveCurrentIntakeDraft();});
   $('#btn-reset').onclick=()=>{$('#f').reset();ph.fill(null);initSlots();updateTierDisplay();$('#err').textContent='';try{sessionStorage.removeItem('smartrma_intake_text');}catch{}};
   $('#wa-start-time').textContent=new Date().toLocaleTimeString();

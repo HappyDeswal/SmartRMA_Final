@@ -33,7 +33,8 @@ class LoopbackRedirectHandler(urllib.request.HTTPRedirectHandler):
 
 LOCAL_HTTP = urllib.request.build_opener(urllib.request.ProxyHandler({}), LoopbackRedirectHandler())
 CHAT_MODELS = ['qwen2.5:7b', 'qwen2.5-coder:14b', 'ornith:35b', 'llama3.1:8b']
-VISION_MODELS = ['qwen3-vl:8b', 'llama3.2-vision:latest', 'moondream:latest']
+# Pin the non-thinking variant for bounded, structured photo inspections.
+VISION_MODELS = ['qwen3-vl:8b-instruct', 'qwen3-vl:8b', 'llama3.2-vision:latest', 'moondream:latest']
 VISION_REQUEST_SECONDS = 240
 VISION_ATTEMPT_SECONDS = 70
 GATEWAY_VISION_SECONDS = VISION_REQUEST_SECONDS + 15

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 SmartRMA - Unified Master Launcher & Orchestrator
-Single-file command to boot the entire distributed SmartRMA ecosystem:
-  - Ollama Local LLM Server & Model Verification (moondream:latest, qwen2.5-coder:14b)
+Single command to start the three local SmartRMA services:
+  - Ollama Local LLM Server & Model Verification (Qwen3-VL Instruct, Qwen2.5)
   - Node 1: Ingest & Security Gateway + Decision Router (Port 8000)
   - Node 2: Warranty Policy RAG & Web Static Server (Port 8001)
   - Node 3: Vision Telemetry & Multimodal Vision LLM (Port 8002)
@@ -62,7 +62,7 @@ def print_banner():
     banner = f"""{C_CYAN}{C_BOLD}
   ╔═══════════════════════════════════════════════════════════════════════════╗
   ║                           S M A R T  R M A                                ║
-  ║         Autonomous Distributed Hardware Triage & Telemetry Platform        ║
+  ║         Local Hardware Triage & Technician Review Platform        ║
   ╚═══════════════════════════════════════════════════════════════════════════╝{C_RESET}
   {C_DIM}Root Workspace: {BASE_DIR}{C_RESET}
   {C_DIM}Microservices : {NODE_DIR}{C_RESET}
@@ -153,7 +153,7 @@ def check_or_start_ollama() -> bool:
             if has_vision:
                 print(f"  {C_GREEN}✔{C_RESET} Vision candidates installed; inference is verified on first use")
             else:
-                print(f"  {C_YELLOW}⚠{C_RESET} No supported local vision model installed. Recommended: qwen3-vl:8b")
+                print(f"  {C_YELLOW}⚠{C_RESET} No supported local vision model installed. Recommended: qwen3-vl:8b-instruct")
                 
             # Check Policy LLM
             has_policy = bool(local_models.intersection(CHAT_MODELS))
@@ -293,7 +293,7 @@ def shutdown(signum=None, frame=None):
 def main():
     parser = argparse.ArgumentParser(description="SmartRMA - Unified Master Launcher & Orchestrator")
     parser.add_argument("--no-browser", action="store_true", help="Do not automatically open the browser")
-    parser.add_argument("--test", "--audit", action="store_true", help="Run full security audit test suite after boot")
+    parser.add_argument("--test", "--audit", action="store_true", help="Run the isolated regression suite and exit")
     parser.add_argument("--stop", action="store_true", help="Stop all SmartRMA services and exit")
     parser.add_argument("--status", action="store_true", help="Display cluster status without launching")
     args = parser.parse_args()
